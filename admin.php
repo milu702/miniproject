@@ -39,80 +39,106 @@ if (isset($_GET['delete_id'])) {
         body {
             display: flex;
             min-height: 100vh;
-            background: url('log.jpeg') no-repeat center center/cover;
-            backdrop-filter: blur(10px);
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('log.jpeg') no-repeat center center/cover;
         }
         .sidebar {
-            width: 250px;
-            background:rgb(105, 29, 5);
-            padding: 20px;
+            width: 280px;
+            background: rgba(105, 29, 5, 0.95);
+            padding: 30px;
             color: white;
             position: fixed;
             height: 100%;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 25px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+        }
+        .sidebar h2 {
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 10px;
         }
         .sidebar a {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px;
+            gap: 12px;
+            padding: 12px 15px;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 5px;
-            transition: background 0.3s;
+            border-radius: 8px;
+            transition: all 0.3s ease;
             text-decoration: none;
             color: white;
+            font-weight: 500;
         }
         .sidebar a:hover {
             background: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
         }
         .content {
-            margin-left: 270px;
-            padding: 20px;
+            margin-left: 300px;
+            padding: 30px;
             flex: 1;
-            backdrop-filter: blur(5px);
-            background: rgba(50, 243, 11, 0.8);
-            border-radius: 10px;
-        
-            background: url('log.jpeg') no-repeat center center/cover;
-            font:white;
-            
+            background: rgba(255, 255, 255, 0.9);
+            min-height: 100vh;
+            border-radius: 0;
         }
         
         table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             background: white;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
         th, td {
-            padding: 10px;
-            border: 1px solid #ddd;
+            padding: 15px;
+            border: none;
+            border-bottom: 1px solid #eee;
             text-align: left;
-            font:brown;
+            color: #333;
         }
         th {
-            background:rgb(99, 248, 62);
+            background: rgb(105, 29, 5);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+        tr:hover {
+            background: #f8f8f8;
         }
         .btn {
-            padding: 5px 10px;
+            padding: 8px 15px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0 5px;
         }
         .btn-edit {
-            background:rgb(73, 17, 2);
+            background: rgb(105, 29, 5);
             color: white;
         }
         .btn-delete {
-            background:rgb(1, 241, 1);
+            background: #e74c3c;
             color: white;
         }
-        h3
-        {
-            color: white;
-            font:bold;
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        h3 {
+            color: rgb(105, 29, 5);
+            font-size: 1.8em;
+            margin: 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgb(105, 29, 5);
         }
     </style>
 </head>
@@ -121,7 +147,7 @@ if (isset($_GET['delete_id'])) {
         <h2>GrowGuide Admin,hello..<?php echo htmlspecialchars($_SESSION['username']); ?>  </h2>
         <a href="#"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
         <a href="#"><i class="fas fa-users"></i> Manage Users</a>
-        <a href="logout.php" class="btn btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <a href="login.php" class="btn btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
     <div class="content">
         <h3 >Employees</h3>

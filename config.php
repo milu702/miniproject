@@ -25,6 +25,10 @@ class DatabaseConfig {
         // Create tables
         $this->createUsersTable();
         $this->createEmployeesTable();
+        $this->createFarmersTable();
+        $this->createCropsTable();
+        $this->createCropGrowthDataTable();
+        $this->createWeatherAlertsTable();
     }
 
     private function createDatabase() {
@@ -66,6 +70,76 @@ class DatabaseConfig {
 
         if (!mysqli_query($this->conn, $sql)) {
             $this->handleError("Error creating employees table", mysqli_error($this->conn));
+        }
+    }
+
+    private function createFarmersTable() {
+        $sql = "CREATE TABLE IF NOT EXISTS farmers (
+            farmer_id INT PRIMARY KEY AUTO_INCREMENT,
+            user_id INT NOT NULL,
+            farm_location VARCHAR(255) NOT NULL,
+            farm_size DECIMAL(10,2) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )";
+
+        if (!mysqli_query($this->conn, $sql)) {
+            $this->handleError("Error creating farmers table", mysqli_error($this->conn));
+        }
+    }
+
+    private function createCropsTable() {
+        $sql = "CREATE TABLE IF NOT EXISTS crops (
+            crop_id INT PRIMARY KEY AUTO_INCREMENT,
+            farmer_id INT NOT NULL,
+            crop_name VARCHAR(100) NOT NULL,
+            planted_date DATE NOT NULL,
+            expected_harvest_date DATE,
+            status ENUM('active', 'harvested', 'failed') DEFAULT 'active',
+            area_planted DECIMAL(10,2) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (farmer_id) REFERENCES farmers(farmer_id) ON DELETE CASCADE
+        )";
+
+        if (!mysqli_query($this->conn, $sql)) {
+            $this->handleError("Error creating crops table", mysqli_error($this->conn));
+        }
+    }
+
+    private function createCropGrowthDataTable() {
+        $sql = "CREATE TABLE IF NOT EXISTS crop_growth_data (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            farmer_id INT NOT NULL,
+            growth_date DATE NOT NULL,
+            growth_rate DECIMAL(5,2) NOT NULL,
+            rainfall DECIMAL(5,2) NOT NULL,
+            temperature DECIMAL(5,2),
+            humidity DECIMAL(5,2),
+            notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (farmer_id) REFERENCES farmers(farmer_id) ON DELETE CASCADE
+        )";
+
+        if (!mysqli_query($this->conn, $sql)) {
+            $this->handleError("Error creating crop_growth_data table", mysqli_error($this->conn));
+        }
+    }
+
+    private function createWeatherAlertsTable() {
+        $sql = "CREATE TABLE IF NOT EXISTS weather_alerts (
+            alert_id INT PRIMARY KEY AUTO_INCREMENT,
+            farmer_id INT NOT NULL,
+            alert_type ENUM('rain', 'drought', 'frost', 'storm', 'other') NOT NULL,
+            severity ENUM('low', 'medium', 'high') NOT NULL,
+            message TEXT NOT NULL,
+            alert_date DATE NOT NULL,
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (farmer_id) REFERENCES farmers(farmer_id) ON DELETE CASCADE
+        )";
+
+        if (!mysqli_query($this->conn, $sql)) {
+            $this->handleError("Error creating weather_alerts table", mysqli_error($this->conn));
         }
     }
 

@@ -4,16 +4,16 @@ require_once 'config.php';
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $identifier = trim($_POST['identifier']); // Can be email or phone
+    $identifier = trim($_POST['identifier']); // Now just email
     $password = $_POST['password'];
     
     if (empty($identifier) || empty($password)) {
         $error = "Please fill in all fields";
     } else {
-        // Check if the identifier is an email or phone number
-        $sql = "SELECT * FROM users WHERE email = ? OR phone = ?";
+        // Check only email
+        $sql = "SELECT * FROM users WHERE email = ?";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ss", $identifier, $identifier);
+        $stmt->bind_param("s", $identifier);
         $stmt->execute();
         $result = $stmt->get_result();
         
@@ -73,11 +73,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             display: flex;
             justify-content: center;
             align-items: center;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5); /* Darker overlay */
+            z-index: 1;
         }
 
         .container {
+            position: relative;
+            z-index: 2;
             width: 350px;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.2);
             padding: 20px;
             border-radius: 15px;
             backdrop-filter: blur(10px);
@@ -89,6 +103,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         .container h2 {
             font-size: 24px;
             margin-bottom: 20px;
+        }
+
+        .error-message {
+            background: rgba(255, 0, 0, 0.2);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: <?php echo !empty($error) ? 'block' : 'none'; ?>;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .input-group input {
+            padding-left: 35px;
         }
 
         .form-group {
@@ -164,14 +204,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </a> 
     <div class="container">
         <h2>GrowGuide Login</h2>
+        <?php if (!empty($error)): ?>
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i> <?php echo $error; ?>
+            </div>
+        <?php endif; ?>
         <form method="POST">
             <div class="form-group">
-                <label for="identifier">Email or Phone Number</label>
-                <input type="text" id="identifier" name="identifier" placeholder="Enter your email or phone number" required>
+                <label for="identifier">Email</label>
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="identifier" name="identifier" placeholder="Enter your email address" required>
+                </div>
             </div>
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                </div>
             </div>
             <div class="forgot-password">
                 <a href="forgot.php">Forgot Password?</a>

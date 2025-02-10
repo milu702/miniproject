@@ -3,7 +3,7 @@ session_start();
 require_once 'config.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'employee') {
-    header("Location: login.php");
+    header("Location: employee_signup.pph");
     exit();
 }
 

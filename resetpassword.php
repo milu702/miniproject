@@ -12,13 +12,25 @@ if ($conn->connect_error) {
     $error_message = "An error occurred during login. Please try again later.";
 } else {
     if($_SERVER["REQUEST_METHOD"]=="POST"){
-        $password= $_POST['new_password'];
-        $confirm_password= $_POST['confirm_password'];
-        if($password==$confirm_password){
+        $password = $_POST['new_password'];
+        $confirm_password = $_POST['confirm_password'];
+        
+        // Add server-side password validation
+        if (strlen($password) < 8 || 
+            !preg_match('/[A-Z]/', $password) || 
+            !preg_match('/[a-z]/', $password) || 
+            !preg_match('/\d/', $password)) {
+            $error_message = "Password must be 8+ characters with uppercase, lowercase, and a number.";
+        }
+        else if($password == $confirm_password){
             $hashed_password = password_hash($password, PASSWORD_BCRYPT);
-            $sql = "UPDATE users SET password = '$hashed_password' WHERE email = '" . $_SESSION['email'] . "'";
+            $sql = "UPDATE users SET password = ? WHERE email = ?";
             
-            if ($conn->query($sql) === TRUE) {
+            // Use prepared statement to prevent SQL injection
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("ss", $hashed_password, $_SESSION['email']);
+            
+            if ($stmt->execute()) {
                 $_SESSION['success_message'] = "Your password has been successfully updated!";
                 header('Location: login.php');
                 unset($_SESSION['email']);  
@@ -26,10 +38,10 @@ if ($conn->connect_error) {
             } else {
                 $error_message = "Error updating password: " . $conn->error;
             }
-            
+        } else {
+            $error_message = "Passwords do not match";
+        }
     }
-    
-} 
 }  
 
 ?>
