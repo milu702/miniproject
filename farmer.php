@@ -14,6 +14,7 @@ $user_id = $_SESSION['user_id'];
 $stmt = $conn->prepare("
     SELECT 
         f.farmer_id,
+        u.username,
         COALESCE(f.farm_size, 0) as farm_size,
         COALESCE(f.farm_location, 'Not Set') as farm_location,
         COALESCE(COUNT(c.crop_id), 0) as total_cardamom_plots,
@@ -24,10 +25,14 @@ $stmt = $conn->prepare("
         END), 0) as total_revenue,
         COALESCE(p.soil_type, '') as soil_type,
         COALESCE(p.soil_ph, 0) as soil_ph,
-        COALESCE(p.soil_moisture, 0) as soil_moisture
+        COALESCE(p.soil_moisture, 0) as soil_moisture,
+        0 as temperature,
+        0 as humidity,
+        0 as rainfall
     FROM farmers f
     LEFT JOIN crops c ON f.farmer_id = c.farmer_id AND c.crop_name LIKE '%cardamom%'
     LEFT JOIN farmer_profiles p ON f.farmer_id = p.farmer_id
+    LEFT JOIN users u ON f.user_id = u.id
     WHERE f.user_id = ?
     GROUP BY f.farmer_id, f.farm_size, f.farm_location, p.soil_type, p.soil_ph, p.soil_moisture"
 );
@@ -57,7 +62,7 @@ $stmt->bind_param("i", $farmerData['farmer_id']);
 $stmt->execute();
 $recentCrops = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-$username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : 'Farmer';
+$username = isset($farmerData['username']) ? htmlspecialchars($farmerData['username']) : 'Farmer';
 ?>
 
 <!DOCTYPE html>
@@ -164,6 +169,7 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
             min-height: 100vh;
             margin: 0;
             padding: 0;
+            position: relative;
         }
 
         .sidebar {
@@ -175,6 +181,8 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
             height: 100vh;
             left: 0;
             top: 0;
+            overflow-y: auto;
+            z-index: 1000;
         }
 
         .sidebar-header {
@@ -202,6 +210,16 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
 
         .nav-menu {
             margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 250px);
+            justify-content: space-between;
+        }
+
+        .nav-menu-items {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }
 
         .nav-item {
@@ -225,10 +243,16 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
             text-align: center;
         }
 
+        .nav-item.active {
+            background: rgba(255,255,255,0.2);
+        }
+
         .main-content {
             flex: 1;
             margin-left: var(--sidebar-width);
             padding: 20px;
+            width: calc(100% - var(--sidebar-width));
+            box-sizing: border-box;
         }
 
         .farm-info-card {
@@ -252,6 +276,77 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
             border-radius: 20px;
             font-size: 0.9em;
         }
+
+        .data-form {
+            padding: 20px 0;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .form-group {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .submit-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        .submit-btn:hover {
+            background: var(--secondary-color);
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
     </style>
 </head>
 <body>
@@ -268,31 +363,55 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
                 <p>Cardamom Farmer</p>
             </div>
             <nav class="nav-menu">
-                <a href="#" class="nav-item active">
-                    <i class="fas fa-home"></i> Dashboard
-                </a>
-                <a href="#" class="nav-item">
-                    <i class="fas fa-map-marker-alt"></i> Farm Details
-                </a>
-                <a href="#" class="nav-item">
-                    <i class="fas fa-chart-line"></i> Analytics
-                </a>
-                <a href="#" class="nav-item">
-                    <i class="fas fa-calendar"></i> Schedule
-                </a>
-                <a href="#" class="nav-item">
-                    <i class="fas fa-cog"></i> Settings
-                </a>
-                <a href="logout.php" class="nav-item">
+                <div class="nav-menu-items">
+                    <a href="farmer.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'farmer.php' ? 'active' : ''; ?>">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    <a href="farm_details.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'farm_details.php' ? 'active' : ''; ?>">
+                        <i class="fas fa-map-marker-alt"></i> Farm Details
+                    </a>
+                    <a href="analytics.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'analytics.php' ? 'active' : ''; ?>">
+                        <i class="fas fa-chart-line"></i> Analytics
+                    </a>
+                    <a href="schedule.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'schedule.php' ? 'active' : ''; ?>">
+                        <i class="fas fa-calendar"></i> Schedule
+                    </a>
+                    <a href="weather.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'weather.php' ? 'active' : ''; ?>">
+                        <i class="fas fa-cloud-sun"></i> Weather
+                    </a>
+                    <a href="settings.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'active' : ''; ?>">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                </div>
+                <a href="logout.php" class="nav-item" style="margin-top: auto; color: #ff6b6b;">
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </a>
             </nav>
+            
         </div>
 
         <div class="main-content">
+            <?php if (isset($_SESSION['success'])): ?>
+                <div class="alert alert-success">
+                    <?php 
+                    echo $_SESSION['success']; 
+                    unset($_SESSION['success']);
+                    ?>
+                </div>
+            <?php endif; ?>
+            
+            <?php if (isset($_SESSION['error'])): ?>
+                <div class="alert alert-error">
+                    <?php 
+                    echo $_SESSION['error']; 
+                    unset($_SESSION['error']);
+                    ?>
+                </div>
+            <?php endif; ?>
+
             <div class="farm-info-card">
                 <div class="farm-info-header">
-                    <h2><i class="fas fa-farm"></i> Farm Overview</h2>
+                    <h2><i class="fas fa-tractor"></i> Farm Overview</h2>
                     <span class="location-badge">
                         <i class="fas fa-map-marker-alt"></i> 
                         <?php echo htmlspecialchars($farmerData['farm_location']); ?>
@@ -320,6 +439,79 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
                         <div class="stat-value">$<?php echo number_format($farmerData['total_revenue'], 2); ?></div>
                     </div>
                 </div>
+            </div>
+
+            <div class="farm-info-card">
+                <div class="farm-info-header">
+                    <h2><i class="fas fa-flask"></i> Soil & Weather Data</h2>
+                </div>
+                <form action="update_farm_data.php" method="POST" class="data-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <h3>Soil Data</h3>
+                            <div class="input-group">
+                                <label for="soil_type">Soil Type:</label>
+                                <select name="soil_type" id="soil_type" required>
+                                    <option value="">Select soil type</option>
+                                    <?php
+                                    $soil_types = [
+                                        'loamy' => 'Loamy',
+                                        'clay' => 'Clay',
+                                        'sandy' => 'Sandy',
+                                        'silt' => 'Silt',
+                                        'sandy_loam' => 'Sandy Loam',
+                                        'clay_loam' => 'Clay Loam',
+                                        'silty_loam' => 'Silty Loam',
+                                        'forest_loam' => 'Forest Loam',
+                                        'organic' => 'Organic Rich',
+                                        'laterite' => 'Laterite'
+                                    ];
+                                    
+                                    foreach ($soil_types as $value => $label) {
+                                        $selected = (isset($farmerData['soil_type']) && strtolower($farmerData['soil_type']) === $value) ? 'selected' : '';
+                                        echo "<option value=\"" . htmlspecialchars($value) . "\" {$selected}>" . htmlspecialchars($label) . "</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label for="soil_ph">Soil pH:</label>
+                                <input type="number" name="soil_ph" id="soil_ph" step="0.1" min="0" max="14" 
+                                    value="<?php echo htmlspecialchars($farmerData['soil_ph']); ?>" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="soil_moisture">Soil Moisture (%):</label>
+                                <input type="number" name="soil_moisture" id="soil_moisture" step="0.1" min="0" max="100" 
+                                    value="<?php echo htmlspecialchars($farmerData['soil_moisture']); ?>" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <h3>Weather Data</h3>
+                            <div class="input-group">
+                                <label for="temperature">Temperature (°C):</label>
+                                <input type="number" name="temperature" id="temperature" 
+                                    step="0.1" min="-20" max="50" 
+                                    value="<?php echo !empty($farmerData['temperature']) ? htmlspecialchars($farmerData['temperature']) : '0'; ?>" 
+                                    required>
+                            </div>
+                            <div class="input-group">
+                                <label for="humidity">Humidity (%):</label>
+                                <input type="number" name="humidity" id="humidity" 
+                                    step="1" min="0" max="100" 
+                                    value="<?php echo !empty($farmerData['humidity']) ? htmlspecialchars($farmerData['humidity']) : '0'; ?>" 
+                                    required>
+                            </div>
+                            <div class="input-group">
+                                <label for="rainfall">Rainfall (mm):</label>
+                                <input type="number" name="rainfall" id="rainfall" 
+                                    step="0.1" min="0" max="5000" 
+                                    value="<?php echo isset($farmerData['rainfall']) ? htmlspecialchars($farmerData['rainfall']) : ''; ?>" 
+                                    required>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-btn">Update Data</button>
+                </form>
             </div>
 
             <div class="cardamom-types">

@@ -273,7 +273,7 @@ if ($recommendations_query) {
             <h1>Cardamom Plantation Dashboard</h1>
             <div>
                 <span>Welcome, <?php echo htmlspecialchars($username); ?></span>
-                <a href="logout.php" style="margin-left: 10px;"><i class="fas fa-sign-out-alt"></i></a>
+                <a href="login.php" style="margin-left: 10px;"><i class="fas fa-sign-out-alt"></i></a>
             </div>
         </header>
 
@@ -689,6 +689,70 @@ if ($recommendations_query) {
             farmerFields.style.display = this.value === 'farmer' ? 'block' : 'none';
             employeeFields.style.display = this.value === 'employee' ? 'block' : 'none';
         });
+
+        function openModal(type) {
+            document.getElementById('userModal').style.display = 'block';
+            document.getElementById('modalTitle').textContent = `Add New ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+            document.getElementById('userForm').reset();
+            document.getElementById('userId').value = '';
+            document.getElementById('userRole').value = type;
+            document.getElementById('roleSelect').value = type;
+            
+            // Show/hide relevant fields
+            document.getElementById('farmerFields').style.display = type === 'farmer' ? 'block' : 'none';
+            document.getElementById('employeeFields').style.display = type === 'employee' ? 'block' : 'none';
+        }
+
+        function closeModal() {
+            document.getElementById('userModal').style.display = 'none';
+        }
+
+        function editUser(userId, type) {
+            fetch(`get_user.php?id=${userId}`)
+                .then(response => response.json())
+                .then(user => {
+                    document.getElementById('userModal').style.display = 'block';
+                    document.getElementById('modalTitle').textContent = 'Edit User';
+                    document.getElementById('userId').value = user.user_id;
+                    document.getElementById('username').value = user.username;
+                    document.getElementById('fullName').value = user.full_name;
+                    document.getElementById('email').value = user.email;
+                    document.getElementById('roleSelect').value = user.role;
+                    
+                    if (user.role === 'farmer') {
+                        document.getElementById('farmLocation').value = user.farm_location || '';
+                        document.getElementById('farmSize').value = user.farm_size || '';
+                        document.getElementById('farmerFields').style.display = 'block';
+                        document.getElementById('employeeFields').style.display = 'none';
+                    } else if (user.role === 'employee') {
+                        document.getElementById('position').value = user.position || '';
+                        document.getElementById('farmerFields').style.display = 'none';
+                        document.getElementById('employeeFields').style.display = 'block';
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function deleteUser(userId, type) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                fetch('save_user.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `action=delete&user_id=${userId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        loadPageData(type);
+                    } else {
+                        alert(data.message || 'Error deleting user');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
     </script>
 </body>
 </html>

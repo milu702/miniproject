@@ -62,7 +62,7 @@ if ($conn->connect_error) {
         }
 
         body {
-            background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
+            background: linear-gradient(135deg, #e6f4ea 0%, #ffffff 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -71,10 +71,10 @@ if ($conn->connect_error) {
         }
 
         .login-container {
-            background: white;
+            background: light green;
             padding: 2.5rem;
             border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 30px rgba(76, 175, 80, 0.1);
             width: 100%;
             max-width: 400px;
             animation: slideUp 0.5s ease-out;
@@ -87,12 +87,12 @@ if ($conn->connect_error) {
             font-weight: 700;
         }
 
-        .task { color: #2563eb; }
-        .mate { color: #3b82f6; }
+        .task { color: #4CAF50; }
+        .mate { color: #81C784; }
 
         h2 {
             text-align: center;
-            color: #1e293b;
+            color: #2E7D32;
             margin-bottom: 2rem;
         }
 
@@ -103,7 +103,7 @@ if ($conn->connect_error) {
         .form-group label {
             display: block;
             margin-bottom: 0.5rem;
-            color: #64748b;
+            color: #558B2F;
             font-size: 0.9rem;
         }
 
@@ -118,14 +118,14 @@ if ($conn->connect_error) {
 
         .form-group input:focus {
             outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
         }
 
         .login-btn {
             width: 100%;
             padding: 1rem;
-            background: #2563eb;
+            background: #4CAF50;
             color: white;
             border: none;
             border-radius: 10px;
@@ -136,9 +136,9 @@ if ($conn->connect_error) {
         }
 
         .login-btn:hover {
-            background: #1d4ed8;
+            background: #388E3C;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
         }
 
         .error-message {
@@ -149,8 +149,8 @@ if ($conn->connect_error) {
         }
 
         .error-message1 {
-            background-color: #fee2e2;
-            color: #dc2626;
+            background-color: #ffebee;
+            color: #c62828;
             padding: 0.75rem;
             border-radius: 8px;
             margin-bottom: 1rem;
