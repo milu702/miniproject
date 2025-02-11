@@ -8,185 +8,687 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 $username = $_SESSION['username'];
 
-// Fetch employees and farmers data
-$employees = $conn->query("SELECT * FROM users WHERE role = 'employee'");
-$farmers = $conn->query("SELECT * FROM users WHERE role = 'farmer'");
+// Initialize variables with default values
+$total_farmers = 0;
+$total_land = 0;
+$total_varieties = 0;
+$total_employees = 0;
 
-// Delete user
-if (isset($_GET['delete_id'])) {
-    $delete_id = $_GET['delete_id'];
-    $conn->query("DELETE FROM users WHERE id = $delete_id");
-    header("Location: admin.php");
-    exit();
+// Fetch total farmers
+$farmers_query = $conn->query("SELECT COUNT(*) as count FROM users WHERE role='farmer'");
+if ($farmers_query) {
+    $total_farmers = $farmers_query->fetch_assoc()['count'];
+}
+
+// Fetch total land
+$land_query = $conn->query("SELECT COALESCE(SUM(farm_size), 0) as total FROM farmers");
+if ($land_query) {
+    $total_land = $land_query->fetch_assoc()['total'];
+}
+
+// Fetch total varieties
+$varieties_query = $conn->query("SELECT COUNT(*) as count FROM cardamom_variety");
+if ($varieties_query) {
+    $total_varieties = $varieties_query->fetch_assoc()['count'];
+}
+
+// Fetch total employees
+$employees_query = $conn->query("SELECT COUNT(*) as count FROM users WHERE role='employee'");
+if ($employees_query) {
+    $total_employees = $employees_query->fetch_assoc()['count'];
+}
+
+// Fetch recent soil tests and recommendations with error handling
+$recent_soil_tests = [];
+$soil_tests_query = $conn->query("
+    SELECT st.*, f.farm_location, u.username 
+    FROM soil_tests st
+    JOIN farmers f ON st.farmer_id = f.farmer_id
+    JOIN users u ON f.user_id = u.user_id
+    ORDER BY st.test_date DESC 
+    LIMIT 5
+");
+if ($soil_tests_query) {
+    while ($row = $soil_tests_query->fetch_assoc()) {
+        $recent_soil_tests[] = $row;
+    }
+}
+
+// Fetch recent fertilizer recommendations with error handling
+$recent_recommendations = [];
+$recommendations_query = $conn->query("
+    SELECT fr.*, st.ph_level, u.username
+    FROM fertilizer_recommendations fr
+    JOIN soil_tests st ON fr.soil_test_id = st.soil_test_id
+    JOIN farmers f ON st.farmer_id = f.farmer_id
+    JOIN users u ON f.user_id = u.user_id
+    ORDER BY fr.application_date DESC 
+    LIMIT 5
+");
+if ($recommendations_query) {
+    while ($row = $recommendations_query->fetch_assoc()) {
+        $recent_recommendations[] = $row;
+    }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | GrowGuide</title>
+    <title>GrowGuide | Admin Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Arial', sans-serif;
         }
         body {
             display: flex;
-            min-height: 100vh;
-            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('log.jpeg') no-repeat center center/cover;
+            background: #f4f6f9;
         }
         .sidebar {
-            width: 280px;
-            background: rgba(105, 29, 5, 0.95);
-            padding: 30px;
-            color: white;
+            width: 250px;
+            background: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            height: 100vh;
             position: fixed;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
-        }
-        .sidebar h2 {
-            padding-bottom: 15px;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 10px;
-        }
-        .sidebar a {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            color: white;
-            font-weight: 500;
-        }
-        .sidebar a:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateX(5px);
+            left: 0;
+            top: 0;
         }
         .content {
-            margin-left: 300px;
-            padding: 30px;
-            flex: 1;
-            background: rgba(255, 255, 255, 0.9);
-            min-height: 100vh;
-            border-radius: 0;
+            margin-left: 250px;
+            width: calc(100% - 250px);
+            padding: 20px;
         }
-        
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .stat-icon {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 50%;
+        }
+        .section-title {
+            margin: 20px 0 10px;
+            color: #2e7d32;
+        }
+        .data-table {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
         table {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            background: white;
-            margin-bottom: 30px;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-collapse: collapse;
         }
         th, td {
-            padding: 15px;
-            border: none;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #f1f1f1;
+            padding: 10px;
             text-align: left;
-            color: #333;
         }
-        th {
-            background: rgb(105, 29, 5);
-            color: white;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.9em;
+        .sidebar-nav a {
+            display: block;
+            padding: 15px;
+            color: #2e7d32;
+            text-decoration: none;
         }
-        tr:hover {
-            background: #f8f8f8;
+        .sidebar-nav a.active {
+            background: #e8f5e9;
+        }
+        .error-message {
+            color: red;
+            margin: 10px 0;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            width: 80%;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
         .btn {
             padding: 8px 15px;
             border: none;
-            border-radius: 5px;
+            border-radius: 4px;
             cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-            margin: 0 5px;
         }
-        .btn-edit {
-            background: rgb(105, 29, 5);
+        .btn-primary {
+            background: #2e7d32;
             color: white;
         }
-        .btn-delete {
-            background: #e74c3c;
+        .btn-danger {
+            background: #dc3545;
             color: white;
         }
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
-        h3 {
-            color: rgb(105, 29, 5);
-            font-size: 1.8em;
-            margin: 20px 0;
-            padding-bottom: 10px;
-            border-bottom: 2px solid rgb(105, 29, 5);
+        
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+        
+        .user-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .user-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .user-card-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .user-card-info {
+            margin-bottom: 10px;
+        }
+        
+        .user-card-info p {
+            margin: 5px 0;
+            color: #666;
+        }
+        
+        .user-card-info strong {
+            color: #333;
+        }
+        
+        .form-error {
+            color: red;
+            font-size: 0.8em;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <h2>GrowGuide Admin,hello..<?php echo htmlspecialchars($_SESSION['username']); ?>  </h2>
-        <a href="#"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-        <a href="#"><i class="fas fa-users"></i> Manage Users</a>
-        <a href="login.php" class="btn btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <div class="sidebar-logo" style="padding: 20px; text-align: center;">
+            <h2 style="color: #2e7d32;">GrowGuide</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-link" data-page="dashboard"><i class="fas fa-chart-line"></i> Dashboard</a>
+            <a href="#" class="nav-link" data-page="farmers"><i class="fas fa-users"></i> Farmers</a>
+            <a href="#" class="nav-link" data-page="employees"><i class="fas fa-user-tie"></i> Employees</a>
+            <a href="#" class="nav-link" data-page="soil-tests"><i class="fas fa-flask"></i> Soil Tests</a>
+            <a href="#" class="nav-link" data-page="varieties"><i class="fas fa-seedling"></i> Varieties</a>
+        </nav>
     </div>
+    
     <div class="content">
-        <h3 >Employees</h3>
-        <table>
-            <tr>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Actions</th>
-            </tr>
-            <?php while ($row = $employees->fetch_assoc()): ?>
-                <tr>
-                    <td><?php echo htmlspecialchars($row['username']); ?></td>
-                    <td><?php echo htmlspecialchars($row['email']); ?></td>
-                    <td>
-                        <a href="edit_user.php?id=<?php echo $row['id']; ?>" class="btn btn-edit">Edit</a>
-                        <a href="?delete_id=<?php echo $row['id']; ?>" class="btn btn-delete" onclick="return confirm('Are you sure?')">Delete</a>
-                    </td>
-                </tr>
-            <?php endwhile; ?>
-        </table>
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Cardamom Plantation Dashboard</h1>
+            <div>
+                <span>Welcome, <?php echo htmlspecialchars($username); ?></span>
+                <a href="logout.php" style="margin-left: 10px;"><i class="fas fa-sign-out-alt"></i></a>
+            </div>
+        </header>
 
-        <h3>Farmers</h3>
-        <table>
-            <tr>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Actions</th>
-            </tr>
-            <?php while ($row = $farmers->fetch_assoc()): ?>
-                <tr>
-                    <td><?php echo htmlspecialchars($row['username']); ?></td>
-                    <td><?php echo htmlspecialchars($row['email']); ?></td>
-                    <td>
-                        <a href="edit_user.php?id=<?php echo $row['id']; ?>" class="btn btn-edit">Edit</a>
-                        <a href="?delete_id=<?php echo $row['id']; ?>" class="btn btn-delete" onclick="return confirm('Are you sure?')">Delete</a>
-                    </td>
-                </tr>
-            <?php endwhile; ?>
-        </table>
+        <?php if ($conn->connect_error): ?>
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i> 
+                Database Connection Error: <?php echo $conn->connect_error; ?>
+            </div>
+        <?php endif; ?>
+
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div>
+                    <h4>Total Farmers</h4>
+                    <h2><?php echo number_format($total_farmers); ?></h2>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-user-farmer"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div>
+                    <h4>Total Land Area</h4>
+                    <h2><?php echo number_format($total_land, 2); ?> hectares</h2>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-map"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div>
+                    <h4>Cardamom Varieties</h4>
+                    <h2><?php echo number_format($total_varieties); ?></h2>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-leaf"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div>
+                    <h4>Total Employees</h4>
+                    <h2><?php echo number_format($total_employees); ?></h2>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="data-section">
+            <h2 class="section-title">Recent Soil Tests</h2>
+            <div class="data-table">
+                <?php if (empty($recent_soil_tests)): ?>
+                    <p>No recent soil tests found.</p>
+                <?php else: ?>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Farmer</th>
+                                <th>Location</th>
+                                <th>pH Level</th>
+                                <th>Test Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($recent_soil_tests as $test): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($test['username']); ?></td>
+                                <td><?php echo htmlspecialchars($test['farm_location']); ?></td>
+                                <td><?php echo htmlspecialchars($test['ph_level']); ?></td>
+                                <td><?php echo htmlspecialchars($test['test_date']); ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <div class="data-section">
+            <h2 class="section-title">Recent Fertilizer Recommendations</h2>
+            <div class="data-table">
+                <?php if (empty($recent_recommendations)): ?>
+                    <p>No recent fertilizer recommendations found.</p>
+                <?php else: ?>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Farmer</th>
+                                <th>Fertilizer</th>
+                                <th>Soil pH</th>
+                                <th>Application Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($recent_recommendations as $rec): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($rec['username']); ?></td>
+                                <td><?php echo htmlspecialchars($rec['fertilizer_name']); ?></td>
+                                <td><?php echo htmlspecialchars($rec['ph_level']); ?></td>
+                                <td><?php echo htmlspecialchars($rec['application_date']); ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Add the farmers and employees sections -->
+        <div id="farmers" class="page-section" style="display: none;">
+            <div class="section-header">
+                <h2>Farmers Management</h2>
+                <button class="btn btn-primary" onclick="openModal('farmer')">
+                    <i class="fas fa-plus"></i> Add Farmer
+                </button>
+            </div>
+            <div class="data-table">
+                <table id="farmers-table">
+                    <thead>
+                        <tr>
+                            <th>Full Name</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Farm Location</th>
+                            <th>Farm Size (ha)</th>
+                            <th>Role</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Farmers will be loaded here dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="employees" class="page-section" style="display: none;">
+            <div class="section-header">
+                <h2>Employees Management</h2>
+                <button class="btn btn-primary" onclick="openModal('employee')">
+                    <i class="fas fa-plus"></i> Add Employee
+                </button>
+            </div>
+            <div class="data-table">
+                <table id="employees-table">
+                    <thead>
+                        <tr>
+                            <th>Full Name</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Position</th>
+                            <th>Role</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Employees will be loaded here dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
+
+    <!-- Add/Edit User Modal -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Add New User</h2>
+            <form id="userForm" onsubmit="return saveUser(event)">
+                <input type="hidden" id="userId" name="user_id">
+                <input type="hidden" id="userRole" name="role">
+                
+                <div class="form-group">
+                    <label for="username">Username*</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="fullName">Full Name*</label>
+                    <input type="text" id="fullName" name="full_name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email*</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password*</label>
+                    <input type="password" id="password" name="password">
+                    <small>(Leave blank if updating existing user)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="roleSelect">Role*</label>
+                    <select id="roleSelect" name="assigned_role" required>
+                        <option value="">Select Role</option>
+                        <option value="farmer">Farmer</option>
+                        <option value="employee">Employee</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                
+                <div id="farmerFields" style="display: none;">
+                    <div class="form-group">
+                        <label for="farmLocation">Farm Location*</label>
+                        <input type="text" id="farmLocation" name="farm_location">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="farmSize">Farm Size (hectares)*</label>
+                        <input type="number" id="farmSize" name="farm_size" step="0.01" min="0">
+                    </div>
+                </div>
+                
+                <div id="employeeFields" style="display: none;">
+                    <div class="form-group">
+                        <label for="position">Position*</label>
+                        <input type="text" id="position" name="position">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Save</button>
+                <button type="button" class="btn btn-danger" onclick="closeModal()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Add this JavaScript code
+        document.addEventListener('DOMContentLoaded', function() {
+            // Navigation handling
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const page = this.dataset.page;
+                    showPage(page);
+                    loadPageData(page);
+                });
+            });
+            
+            // Show dashboard by default
+            showPage('dashboard');
+        });
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById(pageId).style.display = 'block';
+            
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.dataset.page === pageId) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        function loadPageData(page) {
+            if (page === 'farmers') {
+                fetchFarmers();
+            } else if (page === 'employees') {
+                fetchEmployees();
+            }
+        }
+
+        function fetchFarmers() {
+            fetch('get_users.php?role=farmer')
+                .then(response => response.json())
+                .then(farmers => {
+                    const tbody = document.querySelector('#farmers-table tbody');
+                    tbody.innerHTML = '';
+                    
+                    farmers.forEach(farmer => {
+                        const row = `
+                            <tr>
+                                <td>${farmer.full_name}</td>
+                                <td>${farmer.username}</td>
+                                <td>${farmer.email}</td>
+                                <td>${farmer.farm_location || 'N/A'}</td>
+                                <td>${farmer.farm_size || 'N/A'}</td>
+                                <td>${farmer.role}</td>
+                                <td>
+                                    <button class="btn btn-primary btn-sm" onclick="editUser(${farmer.user_id}, 'farmer')">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteUser(${farmer.user_id}, 'farmer')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.insertAdjacentHTML('beforeend', row);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function fetchEmployees() {
+            fetch('get_users.php?role=employee')
+                .then(response => response.json())
+                .then(employees => {
+                    const tbody = document.querySelector('#employees-table tbody');
+                    tbody.innerHTML = '';
+                    
+                    employees.forEach(employee => {
+                        const row = `
+                            <tr>
+                                <td>${employee.full_name}</td>
+                                <td>${employee.username}</td>
+                                <td>${employee.email}</td>
+                                <td>${employee.position || 'N/A'}</td>
+                                <td>${employee.role}</td>
+                                <td>
+                                    <button class="btn btn-primary btn-sm" onclick="editUser(${employee.user_id}, 'employee')">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteUser(${employee.user_id}, 'employee')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.insertAdjacentHTML('beforeend', row);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function validateForm() {
+            const form = document.getElementById('userForm');
+            const password = form.password.value;
+            const email = form.email.value;
+            const role = form.assigned_role.value;
+            
+            // Clear previous errors
+            document.querySelectorAll('.form-error').forEach(error => error.remove());
+            
+            let isValid = true;
+            
+            // Validate email
+            if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+                showError(form.email, 'Please enter a valid email address');
+                isValid = false;
+            }
+            
+            // Validate password for new users
+            if (!form.user_id.value && password.length < 6) {
+                showError(form.password, 'Password must be at least 6 characters long');
+                isValid = false;
+            }
+            
+            // Validate role-specific fields
+            if (role === 'farmer') {
+                if (!form.farm_location.value.trim()) {
+                    showError(form.farm_location, 'Farm location is required');
+                    isValid = false;
+                }
+                if (!form.farm_size.value || form.farm_size.value <= 0) {
+                    showError(form.farm_size, 'Please enter a valid farm size');
+                    isValid = false;
+                }
+            } else if (role === 'employee') {
+                if (!form.position.value.trim()) {
+                    showError(form.position, 'Position is required');
+                    isValid = false;
+                }
+            }
+            
+            return isValid;
+        }
+
+        function showError(input, message) {
+            const error = document.createElement('div');
+            error.className = 'form-error';
+            error.textContent = message;
+            input.parentNode.appendChild(error);
+        }
+
+        function saveUser(event) {
+            event.preventDefault();
+            
+            if (!validateForm()) {
+                return false;
+            }
+            
+            const formData = new FormData(document.getElementById('userForm'));
+            
+            fetch('save_user.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    closeModal();
+                    loadPageData(formData.get('role'));
+                } else {
+                    alert(data.message || 'Error saving user');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+            
+            return false;
+        }
+
+        // Add event listener for role select
+        document.getElementById('roleSelect').addEventListener('change', function() {
+            const farmerFields = document.getElementById('farmerFields');
+            const employeeFields = document.getElementById('employeeFields');
+            
+            farmerFields.style.display = this.value === 'farmer' ? 'block' : 'none';
+            employeeFields.style.display = this.value === 'employee' ? 'block' : 'none';
+        });
+    </script>
 </body>
 </html>
