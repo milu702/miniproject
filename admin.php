@@ -173,6 +173,8 @@ if ($recommendations_query) {
             margin: 50px auto;
             padding: 20px;
             border-radius: 10px;
+            max-height: 90vh;
+            overflow-y: auto;
         }
         .form-group {
             margin-bottom: 15px;
@@ -251,6 +253,14 @@ if ($recommendations_query) {
             color: red;
             font-size: 0.8em;
             margin-top: 5px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
         }
     </style>
 </head>
@@ -436,6 +446,33 @@ if ($recommendations_query) {
                 </table>
             </div>
         </div>
+
+        <!-- Add the varieties section after employees section -->
+        <div id="varieties" class="page-section" style="display: none;">
+            <div class="section-header">
+                <h2>Cardamom Varieties Management</h2>
+                <button class="btn btn-primary" onclick="openVarietyModal()">
+                    <i class="fas fa-plus"></i> Add Variety
+                </button>
+            </div>
+            <div class="data-table">
+                <table id="varieties-table">
+                    <thead>
+                        <tr>
+                            <th>Variety Name</th>
+                            <th>Scientific Name</th>
+                            <th>Growing Period</th>
+                            <th>Yield Rate</th>
+                            <th>Disease Resistance</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Varieties will be loaded here dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- Add/Edit User Modal -->
@@ -502,6 +539,67 @@ if ($recommendations_query) {
         </div>
     </div>
 
+    <!-- Add Variety Modal -->
+    <div id="varietyModal" class="modal">
+        <div class="modal-content">
+            <h2 id="varietyModalTitle">Add New Cardamom Variety</h2>
+            <form id="varietyForm" onsubmit="return saveVariety(event)">
+                <input type="hidden" id="varietyId" name="variety_id">
+                
+                <div class="form-group">
+                    <label for="varietyName">Variety Name*</label>
+                    <input type="text" id="varietyName" name="variety_name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="scientificName">Scientific Name</label>
+                    <input type="text" id="scientificName" name="scientific_name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Description*</label>
+                    <textarea id="description" name="description" required rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="growingPeriod">Growing Period (months)*</label>
+                    <input type="number" id="growingPeriod" name="growing_period" min="1" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="yieldRate">Average Yield Rate (kg/ha)*</label>
+                    <input type="number" id="yieldRate" name="yield_rate" min="0" step="0.01" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="optimalPh">Optimal pH Range</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" id="optimalPhMin" name="optimal_ph_min" min="0" max="14" step="0.1" placeholder="Min">
+                        <input type="number" id="optimalPhMax" name="optimal_ph_max" min="0" max="14" step="0.1" placeholder="Max">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="diseaseResistance">Disease Resistance</label>
+                    <select id="diseaseResistance" name="disease_resistance">
+                        <option value="">Select Resistance Level</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="maintenanceRequirements">Maintenance Requirements</label>
+                    <textarea id="maintenanceRequirements" name="maintenance_requirements" rows="2"></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Save Variety</button>
+                <button type="button" class="btn btn-danger" onclick="closeVarietyModal()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
     <script>
         // Add this JavaScript code
         document.addEventListener('DOMContentLoaded', function() {
@@ -538,6 +636,8 @@ if ($recommendations_query) {
                 fetchFarmers();
             } else if (page === 'employees') {
                 fetchEmployees();
+            } else if (page === 'varieties') {
+                fetchVarieties();
             }
         }
 
@@ -602,6 +702,45 @@ if ($recommendations_query) {
                     });
                 })
                 .catch(error => console.error('Error:', error));
+        }
+
+        function fetchVarieties() {
+            fetch('get_varieties.php')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(varieties => {
+                    const tbody = document.querySelector('#varieties-table tbody');
+                    tbody.innerHTML = '';
+                    
+                    varieties.forEach(variety => {
+                        const row = `
+                            <tr>
+                                <td>${escapeHtml(variety.variety_name)}</td>
+                                <td>${escapeHtml(variety.scientific_name || 'N/A')}</td>
+                                <td>${escapeHtml(variety.growing_period)} months</td>
+                                <td>${escapeHtml(variety.yield_rate)} kg/ha</td>
+                                <td>${escapeHtml(variety.disease_resistance || 'N/A')}</td>
+                                <td>
+                                    <button class="btn btn-primary btn-sm" onclick="editVariety(${variety.variety_id})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteVariety(${variety.variety_id})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.insertAdjacentHTML('beforeend', row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error fetching varieties. Please try again.');
+                });
         }
 
         function validateForm() {
@@ -752,6 +891,111 @@ if ($recommendations_query) {
                 })
                 .catch(error => console.error('Error:', error));
             }
+        }
+
+        function openVarietyModal(varietyId = null) {
+            document.getElementById('varietyModal').style.display = 'block';
+            document.getElementById('varietyModalTitle').textContent = varietyId ? 'Edit Variety' : 'Add New Variety';
+            document.getElementById('varietyForm').reset();
+            document.getElementById('varietyId').value = varietyId || '';
+        }
+
+        function closeVarietyModal() {
+            document.getElementById('varietyModal').style.display = 'none';
+        }
+
+        function saveVariety(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(document.getElementById('varietyForm'));
+            
+            // Add validation
+            const varietyName = formData.get('variety_name');
+            const description = formData.get('description');
+            const growingPeriod = formData.get('growing_period');
+            const yieldRate = formData.get('yield_rate');
+            
+            if (!varietyName || !description || !growingPeriod || !yieldRate) {
+                alert('Please fill in all required fields');
+                return false;
+            }
+            
+            fetch('save_variety.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    closeVarietyModal();
+                    fetchVarieties(); // Refresh the varieties table
+                    alert('Variety saved successfully!');
+                } else {
+                    alert(data.message || 'Error saving variety');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error saving variety. Please try again.');
+            });
+            
+            return false;
+        }
+
+        function editVariety(varietyId) {
+            fetch(`get_variety.php?id=${varietyId}`)
+                .then(response => response.json())
+                .then(variety => {
+                    openVarietyModal(varietyId);
+                    document.getElementById('varietyName').value = variety.variety_name;
+                    document.getElementById('scientificName').value = variety.scientific_name || '';
+                    document.getElementById('description').value = variety.description;
+                    document.getElementById('growingPeriod').value = variety.growing_period;
+                    document.getElementById('yieldRate').value = variety.yield_rate;
+                    document.getElementById('optimalPhMin').value = variety.optimal_ph_min || '';
+                    document.getElementById('optimalPhMax').value = variety.optimal_ph_max || '';
+                    document.getElementById('diseaseResistance').value = variety.disease_resistance || '';
+                    document.getElementById('maintenanceRequirements').value = variety.maintenance_requirements || '';
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function deleteVariety(varietyId) {
+            if (confirm('Are you sure you want to delete this variety?')) {
+                fetch('save_variety.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `action=delete&variety_id=${varietyId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        fetchVarieties();
+                    } else {
+                        alert(data.message || 'Error deleting variety');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+
+        // Helper function to escape HTML and prevent XSS
+        function escapeHtml(unsafe) {
+            if (unsafe === null || unsafe === undefined) return '';
+            return unsafe
+                .toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
         }
     </script>
 </body>
