@@ -383,7 +383,7 @@ $username = isset($farmerData['username']) ? htmlspecialchars($farmerData['usern
                         <i class="fas fa-cog"></i> Settings
                     </a>
                 </div>
-                <a href="logout.php" class="nav-item" style="margin-top: auto; color: #ff6b6b;">
+                <a href="login.php" class="nav-item" style="margin-top: auto; color: #ff6b6b;">
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </a>
             </nav>

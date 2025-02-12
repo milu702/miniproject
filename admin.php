@@ -13,6 +13,7 @@ $total_farmers = 0;
 $total_land = 0;
 $total_varieties = 0;
 $total_employees = 0;
+$total_soil_tests = 0;
 
 // Fetch total farmers
 $farmers_query = $conn->query("SELECT COUNT(*) as count FROM users WHERE role='farmer'");
@@ -36,6 +37,12 @@ if ($varieties_query) {
 $employees_query = $conn->query("SELECT COUNT(*) as count FROM users WHERE role='employee'");
 if ($employees_query) {
     $total_employees = $employees_query->fetch_assoc()['count'];
+}
+
+// Fetch total soil tests
+$total_tests_query = $conn->query("SELECT COUNT(*) as count FROM soil_tests");
+if ($total_tests_query) {
+    $total_soil_tests = $total_tests_query->fetch_assoc()['count'];
 }
 
 // Fetch recent soil tests and recommendations with error handling
@@ -91,8 +98,7 @@ if ($recommendations_query) {
         }
         .sidebar {
             width: 250px;
-            background: white;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            background: #2e7d32;
             height: 100vh;
             position: fixed;
             left: 0;
@@ -116,13 +122,20 @@ if ($recommendations_query) {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
         .stat-icon {
             background: #e8f5e9;
             color: #2e7d32;
-            padding: 10px;
+            padding: 15px;
             border-radius: 50%;
+            font-size: 24px;
         }
         .section-title {
             margin: 20px 0 10px;
@@ -132,25 +145,56 @@ if ($recommendations_query) {
             background: white;
             border-radius: 10px;
             padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .sidebar-nav a {
+            display: block;
+            padding: 15px 20px;
+            color: white;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+        .sidebar-nav a:hover,
+        .sidebar-nav a.active {
+            background: rgba(255,255,255,0.1);
+        }
+        .sidebar-logo {
+            padding: 20px;
+            text-align: center;
+            color: white;
         }
         table {
             width: 100%;
             border-collapse: collapse;
         }
         th, td {
-            border-bottom: 1px solid #f1f1f1;
-            padding: 10px;
+            padding: 12px;
             text-align: left;
+            border-bottom: 1px solid #eee;
         }
-        .sidebar-nav a {
-            display: block;
-            padding: 15px;
-            color: #2e7d32;
-            text-decoration: none;
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
         }
-        .sidebar-nav a.active {
-            background: #e8f5e9;
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background: #2e7d32;
+            color: white;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
         }
         .error-message {
             color: red;
@@ -188,20 +232,6 @@ if ($recommendations_query) {
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
-        }
-        .btn {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .btn-primary {
-            background: #2e7d32;
-            color: white;
-        }
-        .btn-danger {
-            background: #dc3545;
-            color: white;
         }
         .section-header {
             display: flex;
@@ -262,15 +292,33 @@ if ($recommendations_query) {
             border-radius: 4px;
             resize: vertical;
         }
+
+        .validation-message {
+            color: #dc3545;
+            font-size: 0.8em;
+            margin-top: 5px;
+            min-height: 1em;
+        }
+
+        .form-group input.invalid,
+        .form-group select.invalid {
+            border-color: #dc3545;
+        }
+
+        .form-group input.valid,
+        .form-group select.valid {
+            border-color: #28a745;
+        }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <div class="sidebar-logo" style="padding: 20px; text-align: center;">
-            <h2 style="color: #2e7d32;">GrowGuide</h2>
+        <div class="sidebar-logo">
+            <h2>GrowGuide</h2>
+            <p style="color: white; font-size: 14px; margin-top: 5px;">Welcome, <?php echo htmlspecialchars($username); ?></p>
         </div>
         <nav class="sidebar-nav">
-            <a href="#" class="nav-link" data-page="dashboard"><i class="fas fa-chart-line"></i> Dashboard</a>
+            <a href="admin.php" class="nav-link" data-page="dashboard"><i class="fas fa-chart-line"></i> Dashboard</a>
             <a href="#" class="nav-link" data-page="farmers"><i class="fas fa-users"></i> Farmers</a>
             <a href="#" class="nav-link" data-page="employees"><i class="fas fa-user-tie"></i> Employees</a>
             <a href="#" class="nav-link" data-page="soil-tests"><i class="fas fa-flask"></i> Soil Tests</a>
@@ -329,6 +377,15 @@ if ($recommendations_query) {
                 </div>
                 <div class="stat-icon">
                     <i class="fas fa-user-tie"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div>
+                    <h4>Total Soil Tests</h4>
+                    <h2><?php echo number_format($total_soil_tests); ?></h2>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-flask"></i>
                 </div>
             </div>
         </div>
@@ -393,7 +450,35 @@ if ($recommendations_query) {
             </div>
         </div>
 
-        <!-- Add the farmers and employees sections -->
+        <!-- Move soil tests section here, before farmers section -->
+        <div id="soil-tests" class="page-section" style="display: none;">
+            <div class="section-header">
+                <h2>Soil Tests Management</h2>
+                <button class="btn btn-primary" onclick="openSoilTestModal()">
+                    <i class="fas fa-plus"></i> Add Soil Test
+                </button>
+            </div>
+            <div class="data-table">
+                <table id="soil-tests-table">
+                    <thead>
+                        <tr>
+                            <th>Farmer</th>
+                            <th>Test Date</th>
+                            <th>pH Level</th>
+                            <th>Nitrogen (N)</th>
+                            <th>Phosphorus (P)</th>
+                            <th>Potassium (K)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Soil tests will be loaded here dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Farmers section -->
         <div id="farmers" class="page-section" style="display: none;">
             <div class="section-header">
                 <h2>Farmers Management</h2>
@@ -405,11 +490,9 @@ if ($recommendations_query) {
                 <table id="farmers-table">
                     <thead>
                         <tr>
-                            <th>Full Name</th>
                             <th>Username</th>
                             <th>Email</th>
-                            <th>Farm Location</th>
-                            <th>Farm Size (ha)</th>
+                            <th>Phone</th>
                             <th>Role</th>
                             <th>Actions</th>
                         </tr>
@@ -432,10 +515,9 @@ if ($recommendations_query) {
                 <table id="employees-table">
                     <thead>
                         <tr>
-                            <th>Full Name</th>
                             <th>Username</th>
                             <th>Email</th>
-                            <th>Position</th>
+                            <th>Phone</th>
                             <th>Role</th>
                             <th>Actions</th>
                         </tr>
@@ -489,19 +571,23 @@ if ($recommendations_query) {
                 </div>
                 
                 <div class="form-group">
-                    <label for="fullName">Full Name*</label>
-                    <input type="text" id="fullName" name="full_name" required>
-                </div>
-                
-                <div class="form-group">
                     <label for="email">Email*</label>
                     <input type="email" id="email" name="email" required>
                 </div>
                 
                 <div class="form-group">
+                    <label for="phone">Phone*</label>
+                    <input type="tel" id="phone" name="phone" required>
+                </div>
+                
+                <div class="form-group">
                     <label for="password">Password*</label>
-                    <input type="password" id="password" name="password">
-                    <small>(Leave blank if updating existing user)</small>
+                    <input type="password" id="password" name="password" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password*</label>
+                    <input type="password" id="confirmPassword" name="confirm_password" required>
                 </div>
 
                 <div class="form-group">
@@ -510,27 +596,7 @@ if ($recommendations_query) {
                         <option value="">Select Role</option>
                         <option value="farmer">Farmer</option>
                         <option value="employee">Employee</option>
-                        <option value="admin">Admin</option>
                     </select>
-                </div>
-                
-                <div id="farmerFields" style="display: none;">
-                    <div class="form-group">
-                        <label for="farmLocation">Farm Location*</label>
-                        <input type="text" id="farmLocation" name="farm_location">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="farmSize">Farm Size (hectares)*</label>
-                        <input type="number" id="farmSize" name="farm_size" step="0.01" min="0">
-                    </div>
-                </div>
-                
-                <div id="employeeFields" style="display: none;">
-                    <div class="form-group">
-                        <label for="position">Position*</label>
-                        <input type="text" id="position" name="position">
-                    </div>
                 </div>
                 
                 <button type="submit" class="btn btn-primary">Save</button>
@@ -600,8 +666,74 @@ if ($recommendations_query) {
         </div>
     </div>
 
+    <!-- Soil Test Modal -->
+    <div id="soilTestModal" class="modal">
+        <div class="modal-content">
+            <h2 id="soilTestModalTitle">Add New Soil Test</h2>
+            <form id="soilTestForm" onsubmit="return validateAndSaveSoilTest(event)">
+                <input type="hidden" id="soilTestId" name="soil_test_id">
+                
+                <div class="form-group">
+                    <label for="farmer">Farmer*</label>
+                    <select id="farmer" name="farmer_id" required onchange="validateField(this)">
+                        <option value="">Select Farmer</option>
+                    </select>
+                    <div class="validation-message"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="testDate">Test Date*</label>
+                    <input type="date" id="testDate" name="test_date" required onchange="validateField(this)">
+                    <div class="validation-message"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="phLevel">pH Level* (0-14)</label>
+                    <input type="number" id="phLevel" name="ph_level" step="0.1" min="0" max="14" required 
+                           onchange="validateField(this)" oninput="validateField(this)">
+                    <div class="validation-message"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="nitrogen">Nitrogen (N) Level (mg/kg)*</label>
+                    <input type="number" id="nitrogen" name="nitrogen_level" step="0.01" min="0" required 
+                           onchange="validateField(this)" oninput="validateField(this)">
+                    <div class="validation-message"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="phosphorus">Phosphorus (P) Level (mg/kg)*</label>
+                    <input type="number" id="phosphorus" name="phosphorus_level" step="0.01" min="0" required 
+                           onchange="validateField(this)" oninput="validateField(this)">
+                    <div class="validation-message"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="potassium">Potassium (K) Level (mg/kg)*</label>
+                    <input type="number" id="potassium" name="potassium_level" step="0.01" min="0" required 
+                           onchange="validateField(this)" oninput="validateField(this)">
+                    <div class="validation-message"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="organicMatter">Organic Matter (%)</label>
+                    <input type="number" id="organicMatter" name="organic_matter" step="0.01" min="0" max="100"
+                           onchange="validateField(this)" oninput="validateField(this)">
+                    <div class="validation-message"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">Notes</label>
+                    <textarea id="notes" name="notes" rows="3"></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Save Soil Test</button>
+                <button type="button" class="btn btn-danger" onclick="closeSoilTestModal()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
     <script>
-        // Add this JavaScript code
         document.addEventListener('DOMContentLoaded', function() {
             // Navigation handling
             document.querySelectorAll('.nav-link').forEach(link => {
@@ -610,11 +742,27 @@ if ($recommendations_query) {
                     const page = this.dataset.page;
                     showPage(page);
                     loadPageData(page);
+                    
+                    // Update URL hash without page reload
+                    window.location.hash = page;
                 });
             });
             
-            // Show dashboard by default
-            showPage('dashboard');
+            // Handle initial page load based on URL hash
+            const hash = window.location.hash.substring(1);
+            if (hash) {
+                showPage(hash);
+                loadPageData(hash);
+            } else {
+                showPage('dashboard');
+            }
+            
+            // Add click handler for soil test stat card
+            document.querySelector('.stat-card:nth-child(5)').addEventListener('click', function() {
+                showPage('soil-tests');
+                loadPageData('soil-tests');
+                window.location.hash = 'soil-tests';
+            });
         });
 
         function showPage(pageId) {
@@ -638,6 +786,9 @@ if ($recommendations_query) {
                 fetchEmployees();
             } else if (page === 'varieties') {
                 fetchVarieties();
+            } else if (page === 'soil-tests') {
+                fetchSoilTests();
+                loadFarmersList();
             }
         }
 
@@ -651,11 +802,9 @@ if ($recommendations_query) {
                     farmers.forEach(farmer => {
                         const row = `
                             <tr>
-                                <td>${farmer.full_name}</td>
-                                <td>${farmer.username}</td>
-                                <td>${farmer.email}</td>
-                                <td>${farmer.farm_location || 'N/A'}</td>
-                                <td>${farmer.farm_size || 'N/A'}</td>
+                                <td>${escapeHtml(farmer.username)}</td>
+                                <td>${escapeHtml(farmer.email)}</td>
+                                <td>${escapeHtml(farmer.phone)}</td>
                                 <td>${farmer.role}</td>
                                 <td>
                                     <button class="btn btn-primary btn-sm" onclick="editUser(${farmer.user_id}, 'farmer')">
@@ -683,10 +832,9 @@ if ($recommendations_query) {
                     employees.forEach(employee => {
                         const row = `
                             <tr>
-                                <td>${employee.full_name}</td>
-                                <td>${employee.username}</td>
-                                <td>${employee.email}</td>
-                                <td>${employee.position || 'N/A'}</td>
+                                <td>${escapeHtml(employee.username)}</td>
+                                <td>${escapeHtml(employee.email)}</td>
+                                <td>${escapeHtml(employee.phone)}</td>
                                 <td>${employee.role}</td>
                                 <td>
                                     <button class="btn btn-primary btn-sm" onclick="editUser(${employee.user_id}, 'employee')">
@@ -743,42 +891,94 @@ if ($recommendations_query) {
                 });
         }
 
+        function fetchSoilTests() {
+            fetch('get_soil_tests.php')
+                .then(response => response.json())
+                .then(tests => {
+                    const tbody = document.querySelector('#soil-tests-table tbody');
+                    tbody.innerHTML = '';
+                    
+                    tests.forEach(test => {
+                        const row = `
+                            <tr>
+                                <td>${escapeHtml(test.username)}</td>
+                                <td>${escapeHtml(test.test_date)}</td>
+                                <td>${escapeHtml(test.ph_level)}</td>
+                                <td>${escapeHtml(test.nitrogen_level)}</td>
+                                <td>${escapeHtml(test.phosphorus_level)}</td>
+                                <td>${escapeHtml(test.potassium_level)}</td>
+                                <td>
+                                    <button class="btn btn-primary btn-sm" onclick="editSoilTest(${test.soil_test_id})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteSoilTest(${test.soil_test_id})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.insertAdjacentHTML('beforeend', row);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function loadFarmersList() {
+            fetch('get_users.php?role=farmer')
+                .then(response => response.json())
+                .then(farmers => {
+                    const select = document.getElementById('farmer');
+                    select.innerHTML = '<option value="">Select Farmer</option>';
+                    
+                    farmers.forEach(farmer => {
+                        const option = `<option value="${farmer.user_id}">${escapeHtml(farmer.username)}</option>`;
+                        select.insertAdjacentHTML('beforeend', option);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
         function validateForm() {
             const form = document.getElementById('userForm');
             const password = form.password.value;
+            const confirmPassword = form.confirm_password.value;
             const email = form.email.value;
-            const role = form.assigned_role.value;
+            const phone = form.phone.value;
+            const userId = form.user_id.value;
+            const username = form.username.value;
             
             // Clear previous errors
             document.querySelectorAll('.form-error').forEach(error => error.remove());
             
             let isValid = true;
             
+            // Validate username
+            if (!username || username.trim().length < 3) {
+                showError(form.username, 'Username must be at least 3 characters long');
+                isValid = false;
+            }
+            
             // Validate email
-            if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+            if (!email || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
                 showError(form.email, 'Please enter a valid email address');
                 isValid = false;
             }
             
-            // Validate password for new users
-            if (!form.user_id.value && password.length < 6) {
-                showError(form.password, 'Password must be at least 6 characters long');
+            // Validate phone
+            if (!phone || !phone.match(/^\+?[\d\s-]{10,}$/)) {
+                showError(form.phone, 'Please enter a valid phone number (minimum 10 digits)');
                 isValid = false;
             }
             
-            // Validate role-specific fields
-            if (role === 'farmer') {
-                if (!form.farm_location.value.trim()) {
-                    showError(form.farm_location, 'Farm location is required');
+            // Only validate password for new users or if password field is not empty
+            if (!userId || password || confirmPassword) {
+                if (password.length < 6) {
+                    showError(form.password, 'Password must be at least 6 characters long');
                     isValid = false;
                 }
-                if (!form.farm_size.value || form.farm_size.value <= 0) {
-                    showError(form.farm_size, 'Please enter a valid farm size');
-                    isValid = false;
-                }
-            } else if (role === 'employee') {
-                if (!form.position.value.trim()) {
-                    showError(form.position, 'Position is required');
+                
+                if (password !== confirmPassword) {
+                    showError(form.confirm_password, 'Passwords do not match');
                     isValid = false;
                 }
             }
@@ -802,6 +1002,16 @@ if ($recommendations_query) {
             
             const formData = new FormData(document.getElementById('userForm'));
             
+            // Add the role from roleSelect to formData
+            const roleSelect = document.getElementById('roleSelect');
+            formData.set('role', roleSelect.value);
+            
+            // If editing (userId exists), add it to formData
+            const userId = document.getElementById('userId').value;
+            if (userId) {
+                formData.append('user_id', userId);
+            }
+            
             fetch('save_user.php', {
                 method: 'POST',
                 body: formData
@@ -810,12 +1020,17 @@ if ($recommendations_query) {
             .then(data => {
                 if (data.success) {
                     closeModal();
-                    loadPageData(formData.get('role'));
+                    // Reload the appropriate table based on the role
+                    loadPageData(roleSelect.value + 's'); // Add 's' to match page IDs ('farmers', 'employees')
+                    alert('User saved successfully!');
                 } else {
-                    alert(data.message || 'Error saving user');
+                    throw new Error(data.message || 'Error saving user');
                 }
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message || 'Error saving user. Please try again.');
+            });
             
             return false;
         }
@@ -854,17 +1069,14 @@ if ($recommendations_query) {
                     document.getElementById('modalTitle').textContent = 'Edit User';
                     document.getElementById('userId').value = user.user_id;
                     document.getElementById('username').value = user.username;
-                    document.getElementById('fullName').value = user.full_name;
                     document.getElementById('email').value = user.email;
+                    document.getElementById('phone').value = user.phone || '';
                     document.getElementById('roleSelect').value = user.role;
                     
                     if (user.role === 'farmer') {
-                        document.getElementById('farmLocation').value = user.farm_location || '';
-                        document.getElementById('farmSize').value = user.farm_size || '';
                         document.getElementById('farmerFields').style.display = 'block';
                         document.getElementById('employeeFields').style.display = 'none';
                     } else if (user.role === 'employee') {
-                        document.getElementById('position').value = user.position || '';
                         document.getElementById('farmerFields').style.display = 'none';
                         document.getElementById('employeeFields').style.display = 'block';
                     }
@@ -980,6 +1192,148 @@ if ($recommendations_query) {
                         fetchVarieties();
                     } else {
                         alert(data.message || 'Error deleting variety');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+
+        function openSoilTestModal(testId = null) {
+            document.getElementById('soilTestModal').style.display = 'block';
+            document.getElementById('soilTestModalTitle').textContent = testId ? 'Edit Soil Test' : 'Add New Soil Test';
+            document.getElementById('soilTestForm').reset();
+            document.getElementById('soilTestId').value = testId || '';
+            
+            // Clear validation states
+            const form = document.getElementById('soilTestForm');
+            form.querySelectorAll('.validation-message').forEach(msg => msg.textContent = '');
+            form.querySelectorAll('input, select').forEach(field => {
+                field.classList.remove('valid', 'invalid');
+            });
+            
+            if (!testId) {
+                document.getElementById('testDate').valueAsDate = new Date();
+            }
+        }
+
+        function closeSoilTestModal() {
+            document.getElementById('soilTestModal').style.display = 'none';
+        }
+
+        function validateField(field) {
+            const validationMessage = field.parentElement.querySelector('.validation-message');
+            field.classList.remove('valid', 'invalid');
+            validationMessage.textContent = '';
+
+            if (field.required && !field.value) {
+                field.classList.add('invalid');
+                validationMessage.textContent = 'This field is required';
+                return false;
+            }
+
+            switch (field.id) {
+                case 'phLevel':
+                    if (field.value < 0 || field.value > 14) {
+                        field.classList.add('invalid');
+                        validationMessage.textContent = 'pH level must be between 0 and 14';
+                        return false;
+                    }
+                    break;
+                case 'nitrogen':
+                case 'phosphorus':
+                case 'potassium':
+                    if (field.value < 0) {
+                        field.classList.add('invalid');
+                        validationMessage.textContent = 'Value must be positive';
+                        return false;
+                    }
+                    break;
+                case 'organicMatter':
+                    if (field.value && (field.value < 0 || field.value > 100)) {
+                        field.classList.add('invalid');
+                        validationMessage.textContent = 'Organic matter must be between 0 and 100%';
+                        return false;
+                    }
+                    break;
+            }
+
+            field.classList.add('valid');
+            return true;
+        }
+
+        function validateAndSaveSoilTest(event) {
+            event.preventDefault();
+            
+            const form = document.getElementById('soilTestForm');
+            const fields = form.querySelectorAll('input[required], select[required]');
+            let isValid = true;
+
+            fields.forEach(field => {
+                if (!validateField(field)) {
+                    isValid = false;
+                }
+            });
+
+            if (!isValid) {
+                return false;
+            }
+
+            const formData = new FormData(form);
+            
+            fetch('save_soil_test.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    closeSoilTestModal();
+                    fetchSoilTests();
+                    alert('Soil test saved successfully!');
+                } else {
+                    throw new Error(data.message || 'Error saving soil test');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message || 'Error saving soil test. Please try again.');
+            });
+            
+            return false;
+        }
+
+        function editSoilTest(testId) {
+            fetch(`get_soil_test.php?id=${testId}`)
+                .then(response => response.json())
+                .then(test => {
+                    openSoilTestModal(testId);
+                    document.getElementById('farmer').value = test.farmer_id;
+                    document.getElementById('testDate').value = test.test_date;
+                    document.getElementById('phLevel').value = test.ph_level;
+                    document.getElementById('nitrogen').value = test.nitrogen_level;
+                    document.getElementById('phosphorus').value = test.phosphorus_level;
+                    document.getElementById('potassium').value = test.potassium_level;
+                    document.getElementById('organicMatter').value = test.organic_matter || '';
+                    document.getElementById('notes').value = test.notes || '';
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function deleteSoilTest(testId) {
+            if (confirm('Are you sure you want to delete this soil test?')) {
+                fetch('save_soil_test.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `action=delete&soil_test_id=${testId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        fetchSoilTests();
+                    } else {
+                        alert(data.message || 'Error deleting soil test');
                     }
                 })
                 .catch(error => console.error('Error:', error));

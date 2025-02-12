@@ -341,7 +341,32 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
                     <h2><i class="fas fa-tasks"></i> Upcoming Tasks</h2>
                 </div>
                 <div class="task-list" id="taskList">
-                    <!-- Task items will be dynamically added here -->
+                    <?php
+                    // Add this PHP code to fetch and display tasks
+                    try {
+                        $stmt = $pdo->prepare("SELECT * FROM tasks WHERE user_id = ? ORDER BY task_date ASC");
+                        $stmt->execute([$user_id]);
+                        $tasks = $stmt->fetchAll();
+
+                        foreach ($tasks as $task) {
+                            echo '<div class="task-item" data-task-id="' . $task['id'] . '">
+                                <input type="checkbox" class="task-checkbox">
+                                <div class="task-content">
+                                    <div class="task-title">' . htmlspecialchars($task['title']) . '</div>
+                                    <div class="task-date">' . date('M d, Y H:i', strtotime($task['task_date'])) . '</div>
+                                    <div class="task-description">' . htmlspecialchars($task['description']) . '</div>
+                                </div>
+                                <div class="task-actions">
+                                    <button class="task-button" onclick="deleteTask(' . $task['id'] . ')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>';
+                        }
+                    } catch (PDOException $e) {
+                        echo '<p>Error loading tasks: ' . $e->getMessage() . '</p>';
+                    }
+                    ?>
                 </div>
                 <button class="submit-btn" onclick="showAddTaskModal()">
                     <i class="fas fa-plus"></i> Add New Task
@@ -431,8 +456,91 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
 
         function handleAddTask(event) {
             event.preventDefault();
-            // Add task handling logic here
-            closeModal();
+            
+            const formData = new FormData();
+            formData.append('title', document.getElementById('taskTitle').value);
+            formData.append('date', document.getElementById('taskDate').value);
+            formData.append('description', document.getElementById('taskDescription').value);
+            formData.append('priority', document.getElementById('taskPriority').value);
+
+            fetch('add_task.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Add event to calendar
+                    calendar.addEvent({
+                        title: document.getElementById('taskTitle').value,
+                        start: document.getElementById('taskDate').value,
+                        description: document.getElementById('taskDescription').value
+                    });
+
+                    // Add task to task list
+                    const taskList = document.getElementById('taskList');
+                    const taskItem = document.createElement('div');
+                    taskItem.className = 'task-item';
+                    taskItem.dataset.taskId = data.task_id;
+                    taskItem.innerHTML = `
+                        <input type="checkbox" class="task-checkbox">
+                        <div class="task-content">
+                            <div class="task-title">${document.getElementById('taskTitle').value}</div>
+                            <div class="task-date">${new Date(document.getElementById('taskDate').value).toLocaleString()}</div>
+                            <div class="task-description">${document.getElementById('taskDescription').value}</div>
+                        </div>
+                        <div class="task-actions">
+                            <button class="task-button" onclick="deleteTask(${data.task_id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    taskList.prepend(taskItem);
+
+                    // Reset form and close modal
+                    document.getElementById('addTaskForm').reset();
+                    closeModal();
+                } else {
+                    alert('Error adding task: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error adding task');
+            });
+        }
+
+        function deleteTask(taskId) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                fetch('delete_task.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ task_id: taskId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove task from list
+                        const taskElement = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+                        if (taskElement) {
+                            taskElement.remove();
+                        }
+                        // Remove event from calendar
+                        const event = calendar.getEventById(taskId);
+                        if (event) {
+                            event.remove();
+                        }
+                    } else {
+                        alert('Error deleting task: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error deleting task');
+                });
+            }
         }
 
         // Close modal when clicking outside

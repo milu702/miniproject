@@ -1,39 +1,37 @@
 <?php
+header('Content-Type: application/json');
 session_start();
 require_once 'config.php';
 
+// Verify admin access
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    http_response_code(403);
-    exit('Unauthorized');
+    echo json_encode(['error' => 'Unauthorized access']);
+    exit();
 }
 
-$role = isset($_GET['role']) ? $_GET['role'] : '';
-
-if ($role === 'farmer') {
-    $query = "SELECT u.*, f.farm_location, f.farm_size 
-              FROM users u 
-              LEFT JOIN farmers f ON u.user_id = f.user_id 
-              WHERE u.role = 'farmer'";
-} elseif ($role === 'employee') {
-    $query = "SELECT u.*, e.position 
-              FROM users u 
-              LEFT JOIN employees e ON u.user_id = e.user_id 
-              WHERE u.role = 'employee'";
-} else {
-    http_response_code(400);
-    exit('Invalid role specified');
-}
-
-$result = $conn->query($query);
-$users = [];
-
-if ($result) {
+try {
+    $role = isset($_GET['role']) ? $_GET['role'] : null;
+    
+    if ($role) {
+        $stmt = $conn->prepare("SELECT user_id, username, email, phone, role FROM users WHERE role = ?");
+        $stmt->bind_param("s", $role);
+    } else {
+        $stmt = $conn->prepare("SELECT user_id, username, email, phone, role FROM users");
+    }
+    
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $users = [];
+    
     while ($row = $result->fetch_assoc()) {
-        // Remove sensitive information
-        unset($row['password']);
         $users[] = $row;
     }
+    
+    echo json_encode($users);
+    
+} catch (Exception $e) {
+    echo json_encode(['error' => $e->getMessage()]);
 }
 
-header('Content-Type: application/json');
-echo json_encode($users); 
+$conn->close();
+?> 
