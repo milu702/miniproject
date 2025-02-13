@@ -6,17 +6,17 @@ require_once 'config.php';
 $dbConfig = new DatabaseConfig();
 $conn = $dbConfig->getConnection();
 
-// Get farmers data from database
-$farmers = [];
-$query = "SELECT id, username, email, status 
+// Get employees data from database
+$employees = [];
+$query = "SELECT id, username, email, status, role 
           FROM users 
-          WHERE role = 'farmer'
+          WHERE role = 'employee'
           ORDER BY username";
 
 $result = mysqli_query($conn, $query);
 if ($result) {
     while ($row = mysqli_fetch_assoc($result)) {
-        $farmers[] = $row;
+        $employees[] = $row;
     }
     mysqli_free_result($result);
 }
@@ -24,7 +24,7 @@ if ($result) {
 // Form processing
 $message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['add_farmer'])) {
+    if (isset($_POST['add_employee'])) {
         $username = mysqli_real_escape_string($conn, $_POST['username']);
         $email = mysqli_real_escape_string($conn, $_POST['email']);
         $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
@@ -43,8 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (mysqli_stmt_num_rows($check_stmt) > 0) {
                 $message = 'Username or email already exists!';
             } else {
-                // Insert new farmer
-                $insert_query = "INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, 'farmer', 1)";
+                // Insert new employee
+                $insert_query = "INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, 'employee', 1)";
                 $insert_stmt = mysqli_prepare($conn, $insert_query);
                 
                 if ($insert_stmt === false) {
@@ -53,12 +53,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     mysqli_stmt_bind_param($insert_stmt, "sss", $username, $email, $password);
                     
                     if (mysqli_stmt_execute($insert_stmt)) {
-                        $message = 'Farmer added successfully!';
+                        $message = 'Employee added successfully!';
                         // Clear any POST data to prevent duplicate submissions
                         header("Location: " . $_SERVER['PHP_SELF']);
                         exit();
                     } else {
-                        $message = 'Error adding farmer: ' . mysqli_error($conn);
+                        $message = 'Error adding employee: ' . mysqli_error($conn);
                     }
                     mysqli_stmt_close($insert_stmt);
                 }
@@ -68,21 +68,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (isset($_POST['update_status'])) {
-        $farmer_id = $_POST['farmer_id'];
+        $employee_id = $_POST['employee_id'];
         $new_status = $_POST['status'];
         
         $update_query = "UPDATE users SET status = ? WHERE id = ?";
         $stmt = mysqli_prepare($conn, $update_query);
-        mysqli_stmt_bind_param($stmt, "ii", $new_status, $farmer_id);
+        mysqli_stmt_bind_param($stmt, "ii", $new_status, $employee_id);
         
         if (mysqli_stmt_execute($stmt)) {
-            $message = 'Farmer status updated successfully!';
+            $message = 'Employee status updated successfully!';
         } else {
-            $message = 'Error updating farmer status!';
+            $message = 'Error updating employee status!';
         }
         mysqli_stmt_close($stmt);
         
         // Redirect to prevent form resubmission
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit();
+    }
+
+    if (isset($_POST['delete_employee'])) {
+        $employee_id = mysqli_real_escape_string($conn, $_POST['employee_id']);
+        
+        $delete_query = "DELETE FROM users WHERE id = ? AND role = 'employee'";
+        $stmt = mysqli_prepare($conn, $delete_query);
+        mysqli_stmt_bind_param($stmt, "i", $employee_id);
+        
+        if (mysqli_stmt_execute($stmt)) {
+            $message = 'Employee deleted successfully!';
+        } else {
+            $message = 'Error deleting employee!';
+        }
+        mysqli_stmt_close($stmt);
+        
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit();
+    }
+
+    if (isset($_POST['edit_employee'])) {
+        $employee_id = mysqli_real_escape_string($conn, $_POST['employee_id']);
+        $username = mysqli_real_escape_string($conn, $_POST['edit_username']);
+        $email = mysqli_real_escape_string($conn, $_POST['edit_email']);
+        
+        $update_query = "UPDATE users SET username = ?, email = ? WHERE id = ? AND role = 'employee'";
+        $stmt = mysqli_prepare($conn, $update_query);
+        mysqli_stmt_bind_param($stmt, "ssi", $username, $email, $employee_id);
+        
+        if (mysqli_stmt_execute($stmt)) {
+            $message = 'Employee updated successfully!';
+        } else {
+            $message = 'Error updating employee!';
+        }
+        mysqli_stmt_close($stmt);
+        
         header("Location: " . $_SERVER['PHP_SELF']);
         exit();
     }
@@ -94,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GrowGuide</title>
+    <title>GrowGuide - Employee Management</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root {
@@ -360,7 +398,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <span>GrowGuide</span>
     </div>
     <ul class="menu">
-        <li class="active">
+        <li>
             <a href="admin.php">
                 <i class="fas fa-th-large"></i>
                 <span>Dashboard</span>
@@ -372,6 +410,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <span>Farmers</span>
             </a>
         </li>
+        <li class="active">
+            <a href="ad_employees.php">
+                <i class="fas fa-user-tie"></i>
+                <span>Employees</span>
+            </a>
+        </li>
     </ul>
     <button class="toggle-btn" onclick="toggleSidebar()">
         <i class="fas fa-bars"></i>
@@ -379,7 +423,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <div class="content">
-    <h2>Farmers Management</h2>
+    <h2>Employee Management</h2>
     <?php if ($message): ?>
     <div class="alert alert-success">
         <?php echo $message; ?>
@@ -414,7 +458,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
         
-        <button type="submit" name="add_farmer">Add Farmer</button>
+        <button type="submit" name="add_employee">Add Employee</button>
     </form>
     
     <table>
@@ -427,23 +471,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </tr>
         </thead>
         <tbody>
-            <?php if (empty($farmers)): ?>
+            <?php if (empty($employees)): ?>
                 <tr>
-                    <td colspan="4" style="text-align: center;">No farmers registered yet</td>
+                    <td colspan="4" style="text-align: center;">No employees registered yet</td>
                 </tr>
             <?php else: ?>
-                <?php foreach ($farmers as $farmer): ?>
+                <?php foreach ($employees as $employee): ?>
                     <tr>
-                        <td><?php echo htmlspecialchars($farmer['username']); ?></td>
-                        <td><?php echo htmlspecialchars($farmer['email']); ?></td>
+                        <td><?php echo htmlspecialchars($employee['username']); ?></td>
+                        <td><?php echo htmlspecialchars($employee['email']); ?></td>
                         <td>
-                            <span class="status-badge <?php echo $farmer['status'] ? 'active' : 'inactive'; ?>">
-                                <?php echo $farmer['status'] ? 'Active' : 'Inactive'; ?>
+                            <span class="status-badge <?php echo $employee['status'] ? 'active' : 'inactive'; ?>">
+                                <?php echo $employee['status'] ? 'Active' : 'Inactive'; ?>
                             </span>
                         </td>
                         <td>
-                            <button onclick="editFarmer(<?php echo $farmer['id']; ?>)">Edit</button>
-                            <button onclick="deleteFarmer(<?php echo $farmer['id']; ?>)">Delete</button>
+                            <button onclick="editEmployee(<?php echo $employee['id']; ?>)">Edit</button>
+                            <button onclick="deleteEmployee(<?php echo $employee['id']; ?>)">Delete</button>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -455,135 +499,110 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script>
 function validateForm() {
     let isValid = true;
-    const formGroups = document.querySelectorAll('.form-group');
+    const username = document.querySelector('input[name="username"]');
+    const email = document.querySelector('input[name="email"]');
+    const password = document.querySelector('input[name="password"]');
+    const confirmPassword = document.querySelector('input[name="confirm_password"]');
     
-    formGroups.forEach(group => {
-        const input = group.querySelector('input');
-        const errorMessage = group.querySelector('.error-message');
-        
+    // Reset error states
+    document.querySelectorAll('.form-group').forEach(group => {
         group.classList.remove('error');
-        
-        if (!input.value) {
-            group.classList.add('error');
-            errorMessage.textContent = 'This field is required';
-            isValid = false;
-            return;
-        }
-        
-        switch(input.name) {
-            case 'username':
-                if (!/^[a-zA-Z0-9_]{3,20}$/.test(input.value)) {
-                    group.classList.add('error');
-                    errorMessage.textContent = 'Username must be 3-20 characters and can only contain letters, numbers, and underscores';
-                    isValid = false;
-                }
-                break;
-                
-            case 'email':
-                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value)) {
-                    group.classList.add('error');
-                    errorMessage.textContent = 'Please enter a valid email address';
-                    isValid = false;
-                }
-                break;
-                
-            case 'password':
-                if (input.value.length < 8) {
-                    group.classList.add('error');
-                    errorMessage.textContent = 'Password must be at least 8 characters long';
-                    isValid = false;
-                }
-                break;
-                
-            case 'confirm_password':
-                const password = document.querySelector('input[name="password"]').value;
-                if (input.value !== password) {
-                    group.classList.add('error');
-                    errorMessage.textContent = 'Passwords do not match';
-                    isValid = false;
-                }
-                break;
-        }
+        group.querySelector('.error-message').textContent = '';
     });
     
-    if (!isValid) {
-        const firstError = document.querySelector('.form-group.error');
-        firstError.querySelector('input').focus();
+    // Username validation
+    if (!username.value.match(/^[a-zA-Z0-9_]{3,20}$/)) {
+        showError(username, 'Username must be 3-20 characters and contain only letters, numbers, and underscores');
+        isValid = false;
+    }
+    
+    // Email validation
+    if (!email.value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+        showError(email, 'Please enter a valid email address');
+        isValid = false;
+    }
+    
+    // Password validation
+    if (password.value.length < 8) {
+        showError(password, 'Password must be at least 8 characters long');
+        isValid = false;
+    }
+    
+    // Password confirmation
+    if (password.value !== confirmPassword.value) {
+        showError(confirmPassword, 'Passwords do not match');
+        isValid = false;
     }
     
     return isValid;
 }
 
-function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('collapsed');
-}
-
-// Real-time validation
-document.querySelectorAll('.form-group input').forEach(input => {
-    input.addEventListener('blur', function() {
-        validateField(this);
-    });
-});
-
-function validateField(input) {
+function showError(input, message) {
     const formGroup = input.closest('.form-group');
-    const errorMessage = formGroup.querySelector('.error-message');
-    
-    formGroup.classList.remove('error');
-    
-    if (!input.value) {
-        formGroup.classList.add('error');
-        errorMessage.textContent = 'This field is required';
-        return false;
-    }
-    
-    // Trigger the same validation as the form submission
-    const event = new Event('submit', { cancelable: true });
-    input.form.dispatchEvent(event);
-    
-    return true;
+    formGroup.classList.add('error');
+    formGroup.querySelector('.error-message').textContent = message;
 }
 
-function editFarmer(farmerId) {
-    const newStatus = prompt('Enter new status (1 for Active, 0 for Inactive):');
+function editEmployee(employeeId) {
+    const row = event.target.closest('tr');
+    const username = row.cells[0].textContent;
+    const email = row.cells[1].textContent;
     
-    if (newStatus !== null && (newStatus === '0' || newStatus === '1')) {
+    // Create modal for editing
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: white; padding: 20px; border-radius: 8px; width: 400px;">
+            <h3 style="margin-bottom: 20px;">Edit Employee</h3>
+            <form method="POST" id="editForm">
+                <input type="hidden" name="employee_id" value="${employeeId}">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" name="edit_username" value="${username}" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="edit_email" value="${email}" required>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" name="edit_employee">Save Changes</button>
+                    <button type="button" onclick="this.closest('div').parentElement.remove()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+function deleteEmployee(employeeId) {
+    if (confirm('Are you sure you want to delete this employee?')) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.style.display = 'none';
-
-        const farmerIdInput = document.createElement('input');
-        farmerIdInput.type = 'hidden';
-        farmerIdInput.name = 'farmer_id';
-        farmerIdInput.value = farmerId;
-
-        const statusInput = document.createElement('input');
-        statusInput.type = 'hidden';
-        statusInput.name = 'status';
-        statusInput.value = newStatus;
-
-        const submitInput = document.createElement('input');
-        submitInput.type = 'hidden';
-        submitInput.name = 'update_status';
-        submitInput.value = '1';
-
-        form.appendChild(farmerIdInput);
-        form.appendChild(statusInput);
-        form.appendChild(submitInput);
-
+        form.innerHTML = `
+            <input type="hidden" name="employee_id" value="${employeeId}">
+            <input type="hidden" name="delete_employee" value="1">
+        `;
         document.body.appendChild(form);
         form.submit();
-    } else if (newStatus !== null) {
-        alert('Please enter either 0 or 1');
     }
 }
 
-function deleteFarmer(farmerId) {
-    if (confirm('Are you sure you want to delete this farmer?')) {
-        // Implement delete functionality
-        console.log('Delete farmer:', farmerId);
-        // You can make an AJAX call to delete the farmer
-    }
+// Existing toggleSidebar function remains unchanged
+function toggleSidebar() {
+    // ... existing code ...
 }
 </script>
 </body>

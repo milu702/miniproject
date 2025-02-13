@@ -1,5 +1,14 @@
 <?php
 session_start();
+
+// Add database connection
+$conn = mysqli_connect("localhost", "root", "", "growguide");
+
+// Check connection
+if (!$conn) {
+    die("Connection failed: " . mysqli_connect_error());
+}
+
 // Add any PHP logic here
 $current_page = basename($_SERVER['PHP_SELF']);
 
@@ -9,6 +18,31 @@ $total_land = 0.00;
 $total_varieties = 0;
 $total_employees = 1;
 $total_soil_tests = 0;
+
+// Get dashboard data with soil tests
+$dashboard_data = [];
+$query = "SELECT 
+            u.username as farmer_name,
+            u.id as farmer_id,
+            COUNT(st.id) as total_soil_tests,
+            MAX(st.test_date) as latest_test_date,
+            st.ph_level as latest_ph,
+            st.nitrogen as latest_n,
+            st.phosphorus as latest_p,
+            st.potassium as latest_k
+          FROM users u
+          LEFT JOIN soil_tests st ON u.id = st.farmer_id
+          WHERE u.role = 'farmer' AND u.status = 1
+          GROUP BY u.id, u.username
+          ORDER BY latest_test_date DESC";
+
+$result = mysqli_query($conn, $query);
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $dashboard_data[] = $row;
+    }
+    mysqli_free_result($result);
+}
 ?>
 
 <!DOCTYPE html>
@@ -193,6 +227,51 @@ $total_soil_tests = 0;
         .icon-container i {
             font-size: 1.2rem;
         }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .dashboard-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .dashboard-card h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+        }
+
+        .soil-details {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .soil-details h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+
+        .soil-details ul {
+            list-style: none;
+            padding-left: 0;
+            margin: 5px 0;
+        }
+
+        .soil-details li {
+            margin: 5px 0;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -216,11 +295,11 @@ $total_soil_tests = 0;
                 <i class="fas fa-users"></i>
                 <span class="menu-text">Farmers</span>
             </a>
-            <a href="#" class="menu-item">
+            <a href="ad_employee.php" class="menu-item">
                 <i class="fas fa-user-tie"></i>
                 <span class="menu-text">Employees</span>
             </a>
-            <a href="#" class="menu-item">
+            <a href="soil_test.php" class="menu-item">
                 <i class="fas fa-flask"></i>
                 <span class="menu-text">Soil Tests</span>
             </a>
@@ -296,6 +375,32 @@ $total_soil_tests = 0;
         <div class="recent-section">
             <h2>Recent Farmers</h2>
             <p>No recent farmers found.</p>
+        </div>
+
+        <div class="dashboard-grid">
+            <?php foreach ($dashboard_data as $data): ?>
+                <div class="dashboard-card">
+                    <h3><?php echo htmlspecialchars($data['farmer_name']); ?></h3>
+                    <div class="card-content">
+                        <p>Total Soil Tests: <?php echo $data['total_soil_tests']; ?></p>
+                        <?php if ($data['latest_test_date']): ?>
+                            <p>Latest Test Date: <?php echo date('F j, Y', strtotime($data['latest_test_date'])); ?></p>
+                            <div class="soil-details">
+                                <h4>Latest Soil Test Results:</h4>
+                                <p>pH Level: <?php echo number_format($data['latest_ph'], 1); ?></p>
+                                <p>NPK Values:</p>
+                                <ul>
+                                    <li>Nitrogen: <?php echo number_format($data['latest_n'], 2); ?>%</li>
+                                    <li>Phosphorus: <?php echo number_format($data['latest_p'], 2); ?>%</li>
+                                    <li>Potassium: <?php echo number_format($data['latest_k'], 2); ?>%</li>
+                                </ul>
+                            </div>
+                        <?php else: ?>
+                            <p>No soil tests recorded yet</p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
         </div>
     </div>
 
