@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 
 $query = "
-    SELECT st.*, u.username 
+    SELECT st.*, u.username as farmer_name
     FROM soil_tests st
     JOIN farmers f ON st.farmer_id = f.farmer_id
     JOIN users u ON f.user_id = u.user_id
