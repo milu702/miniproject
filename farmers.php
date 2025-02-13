@@ -1,19 +1,90 @@
 <?php
 session_start();
+require_once 'config.php';
 
-// Database connection would go here
-// Sample farmers data - replace with database query
-$farmers = [
-    ['id' => 1, 'username' => 'farmer1', 'email' => 'farmer1@example.com', 'status' => 'active'],
-    ['id' => 2, 'username' => 'farmer2', 'email' => 'farmer2@example.com', 'status' => 'inactive']
-];
+// Initialize database connection
+$dbConfig = new DatabaseConfig();
+$conn = $dbConfig->getConnection();
+
+// Get farmers data from database
+$farmers = [];
+$query = "SELECT id, username, email, status 
+          FROM users 
+          WHERE role = 'farmer'
+          ORDER BY username";
+
+$result = mysqli_query($conn, $query);
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $farmers[] = $row;
+    }
+    mysqli_free_result($result);
+}
 
 // Form processing
 $message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_farmer'])) {
-        // Validation would go here
-        $message = 'Farmer added successfully!';
+        $username = mysqli_real_escape_string($conn, $_POST['username']);
+        $email = mysqli_real_escape_string($conn, $_POST['email']);
+        $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+        
+        // Check if username or email already exists
+        $check_query = "SELECT id FROM users WHERE username = ? OR email = ?";
+        $check_stmt = mysqli_prepare($conn, $check_query);
+        
+        if ($check_stmt === false) {
+            $message = 'Error preparing statement: ' . mysqli_error($conn);
+        } else {
+            mysqli_stmt_bind_param($check_stmt, "ss", $username, $email);
+            mysqli_stmt_execute($check_stmt);
+            mysqli_stmt_store_result($check_stmt);
+            
+            if (mysqli_stmt_num_rows($check_stmt) > 0) {
+                $message = 'Username or email already exists!';
+            } else {
+                // Insert new farmer
+                $insert_query = "INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, 'farmer', 1)";
+                $insert_stmt = mysqli_prepare($conn, $insert_query);
+                
+                if ($insert_stmt === false) {
+                    $message = 'Error preparing insert statement: ' . mysqli_error($conn);
+                } else {
+                    mysqli_stmt_bind_param($insert_stmt, "sss", $username, $email, $password);
+                    
+                    if (mysqli_stmt_execute($insert_stmt)) {
+                        $message = 'Farmer added successfully!';
+                        // Clear any POST data to prevent duplicate submissions
+                        header("Location: " . $_SERVER['PHP_SELF']);
+                        exit();
+                    } else {
+                        $message = 'Error adding farmer: ' . mysqli_error($conn);
+                    }
+                    mysqli_stmt_close($insert_stmt);
+                }
+            }
+            mysqli_stmt_close($check_stmt);
+        }
+    }
+
+    if (isset($_POST['update_status'])) {
+        $farmer_id = $_POST['farmer_id'];
+        $new_status = $_POST['status'];
+        
+        $update_query = "UPDATE users SET status = ? WHERE id = ?";
+        $stmt = mysqli_prepare($conn, $update_query);
+        mysqli_stmt_bind_param($stmt, "ii", $new_status, $farmer_id);
+        
+        if (mysqli_stmt_execute($stmt)) {
+            $message = 'Farmer status updated successfully!';
+        } else {
+            $message = 'Error updating farmer status!';
+        }
+        mysqli_stmt_close($stmt);
+        
+        // Redirect to prevent form resubmission
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit();
     }
 }
 ?>
@@ -263,6 +334,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             padding: 10px;
             margin-top: 20px;
         }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-badge.active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-badge.inactive {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
     </style>
 </head>
 <body>
@@ -300,12 +388,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     <form method="POST" onsubmit="return validateForm()">
         <div class="form-grid">
-            <div class="form-group">
-                <label><i class="fas fa-user"></i> Full Name</label>
-                <input type="text" name="name" required minlength="2" maxlength="50">
-                <i class="fas fa-user"></i>
-                <div class="error-message"></div>
-            </div>
             <div class="form-group">
                 <label><i class="fas fa-user-circle"></i> Username</label>
                 <input type="text" name="username" required pattern="[a-zA-Z0-9_]{3,20}">
@@ -345,17 +427,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($farmers as $farmer): ?>
-            <tr>
-                <td><?php echo $farmer['username']; ?></td>
-                <td><?php echo $farmer['email']; ?></td>
-                <td><?php echo ucfirst($farmer['status']); ?></td>
-                <td>
-                    <button>Edit</button>
-                    <button>Delete</button>
-                </td>
-            </tr>
-            <?php endforeach; ?>
+            <?php if (empty($farmers)): ?>
+                <tr>
+                    <td colspan="4" style="text-align: center;">No farmers registered yet</td>
+                </tr>
+            <?php else: ?>
+                <?php foreach ($farmers as $farmer): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($farmer['username']); ?></td>
+                        <td><?php echo htmlspecialchars($farmer['email']); ?></td>
+                        <td>
+                            <span class="status-badge <?php echo $farmer['status'] ? 'active' : 'inactive'; ?>">
+                                <?php echo $farmer['status'] ? 'Active' : 'Inactive'; ?>
+                            </span>
+                        </td>
+                        <td>
+                            <button onclick="editFarmer(<?php echo $farmer['id']; ?>)">Edit</button>
+                            <button onclick="deleteFarmer(<?php echo $farmer['id']; ?>)">Delete</button>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
         </tbody>
     </table>
 </div>
@@ -379,14 +471,6 @@ function validateForm() {
         }
         
         switch(input.name) {
-            case 'name':
-                if (input.value.length < 2) {
-                    group.classList.add('error');
-                    errorMessage.textContent = 'Name must be at least 2 characters long';
-                    isValid = false;
-                }
-                break;
-                
             case 'username':
                 if (!/^[a-zA-Z0-9_]{3,20}$/.test(input.value)) {
                     group.classList.add('error');
@@ -458,6 +542,48 @@ function validateField(input) {
     input.form.dispatchEvent(event);
     
     return true;
+}
+
+function editFarmer(farmerId) {
+    const newStatus = prompt('Enter new status (1 for Active, 0 for Inactive):');
+    
+    if (newStatus !== null && (newStatus === '0' || newStatus === '1')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.style.display = 'none';
+
+        const farmerIdInput = document.createElement('input');
+        farmerIdInput.type = 'hidden';
+        farmerIdInput.name = 'farmer_id';
+        farmerIdInput.value = farmerId;
+
+        const statusInput = document.createElement('input');
+        statusInput.type = 'hidden';
+        statusInput.name = 'status';
+        statusInput.value = newStatus;
+
+        const submitInput = document.createElement('input');
+        submitInput.type = 'hidden';
+        submitInput.name = 'update_status';
+        submitInput.value = '1';
+
+        form.appendChild(farmerIdInput);
+        form.appendChild(statusInput);
+        form.appendChild(submitInput);
+
+        document.body.appendChild(form);
+        form.submit();
+    } else if (newStatus !== null) {
+        alert('Please enter either 0 or 1');
+    }
+}
+
+function deleteFarmer(farmerId) {
+    if (confirm('Are you sure you want to delete this farmer?')) {
+        // Implement delete functionality
+        console.log('Delete farmer:', farmerId);
+        // You can make an AJAX call to delete the farmer
+    }
 }
 </script>
 </body>

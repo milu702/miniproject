@@ -239,7 +239,7 @@ $total_soil_tests = 0;
                 <i class="fas fa-cog"></i>
                 <span class="menu-text">Settings</span>
             </a>
-            <a href="#" class="menu-item">
+            <a href="login.php" class="menu-item">
                 <i class="fas fa-sign-out-alt"></i>
                 <span class="menu-text">Logout</span>
             </a>
