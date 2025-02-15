@@ -543,6 +543,74 @@ function showError(input, message) {
     formGroup.querySelector('.error-message').textContent = message;
 }
 
+function setupFieldValidation() {
+    const fields = {
+        username: {
+            element: document.querySelector('input[name="username"]'),
+            validate: (value) => {
+                if (!value) return 'Username is required';
+                if (!value.match(/^[a-zA-Z0-9_]{3,20}$/)) {
+                    return 'Username must be 3-20 characters and contain only letters, numbers, and underscores';
+                }
+                return '';
+            }
+        },
+        email: {
+            element: document.querySelector('input[name="email"]'),
+            validate: (value) => {
+                if (!value) return 'Email is required';
+                if (!value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+                    return 'Please enter a valid email address';
+                }
+                return '';
+            }
+        },
+        password: {
+            element: document.querySelector('input[name="password"]'),
+            validate: (value) => {
+                if (!value) return 'Password is required';
+                if (value.length < 8) return 'Password must be at least 8 characters long';
+                return '';
+            }
+        },
+        confirm_password: {
+            element: document.querySelector('input[name="confirm_password"]'),
+            validate: (value) => {
+                if (!value) return 'Please confirm your password';
+                const password = document.querySelector('input[name="password"]').value;
+                if (value !== password) return 'Passwords do not match';
+                return '';
+            }
+        }
+    };
+
+    // Add blur event listeners to all fields
+    Object.entries(fields).forEach(([fieldName, field]) => {
+        field.element.addEventListener('blur', () => {
+            const error = field.validate(field.element.value);
+            const formGroup = field.element.closest('.form-group');
+            
+            if (error) {
+                formGroup.classList.add('error');
+                formGroup.querySelector('.error-message').textContent = error;
+            } else {
+                formGroup.classList.remove('error');
+                formGroup.querySelector('.error-message').textContent = '';
+            }
+        });
+
+        // Clear error on focus
+        field.element.addEventListener('focus', () => {
+            const formGroup = field.element.closest('.form-group');
+            formGroup.classList.remove('error');
+            formGroup.querySelector('.error-message').textContent = '';
+        });
+    });
+}
+
+// Call setupFieldValidation when the document loads
+document.addEventListener('DOMContentLoaded', setupFieldValidation);
+
 function editEmployee(employeeId) {
     const row = event.target.closest('tr');
     const username = row.cells[0].textContent;
