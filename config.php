@@ -29,6 +29,7 @@ class DatabaseConfig {
         $this->createCropsTable();
         $this->createCropGrowthDataTable();
         $this->createWeatherAlertsTable();
+        $this->createTasksTable();
     }
 
     private function createDatabase() {
@@ -143,6 +144,23 @@ class DatabaseConfig {
         }
     }
 
+    private function createTasksTable() {
+        $sql = "CREATE TABLE IF NOT EXISTS tasks (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            user_id INT NOT NULL,
+            title VARCHAR(255) NOT NULL,
+            description TEXT,
+            task_date DATETIME NOT NULL,
+            priority ENUM('low', 'medium', 'high') DEFAULT 'medium',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )";
+
+        if (!mysqli_query($this->conn, $sql)) {
+            $this->handleError("Error creating tasks table", mysqli_error($this->conn));
+        }
+    }
+
     private function handleError($message, $details = '') {
         // Logging or more advanced error handling can be added here
         die($message . ": " . $details);
@@ -170,4 +188,6 @@ try {
     // Handle any unexpected errors
     error_log("Database setup error: " . $e->getMessage());
 }
+
+define('OPENWEATHERMAP_API_KEY', ' https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={cc02c9dee7518466102e748f211bca05}');
 ?>

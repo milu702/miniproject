@@ -248,6 +248,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #155724;
             border: 1px solid #c3e6cb;
         }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .form-group input:invalid,
+        .form-group select:invalid {
+            border-color: var(--error-color);
+        }
     </style>
 </head>
 <body>
@@ -288,11 +300,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="alert alert-success"><?php echo $message; ?></div>
         <?php endif; ?>
 
-        <form method="POST" onsubmit="return validateForm()">
+        <form method="POST" onsubmit="return validateForm()" novalidate>
             <div class="form-grid">
                 <div class="form-group">
                     <label>Farmer</label>
-                    <select name="farmer_id" required>
+                    <select name="farmer_id" id="farmer_id" required>
                         <option value="">Select Farmer</option>
                         <?php foreach ($farmers as $farmer): ?>
                             <option value="<?php echo $farmer['id']; ?>">
@@ -300,22 +312,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </option>
                         <?php endforeach; ?>
                     </select>
+                    <span class="error-message">Please select a farmer</span>
                 </div>
                 <div class="form-group">
                     <label>pH Level</label>
-                    <input type="number" name="ph_level" step="0.1" required min="0" max="14">
+                    <input type="number" name="ph_level" id="ph_level" step="0.1" required min="0" max="14">
+                    <span class="error-message">Please enter a valid pH level (0-14)</span>
                 </div>
                 <div class="form-group">
                     <label>Nitrogen (N) %</label>
-                    <input type="number" name="nitrogen" step="0.01" required min="0">
+                    <input type="number" name="nitrogen" id="nitrogen" step="0.01" required min="0">
+                    <span class="error-message">Please enter a valid nitrogen percentage</span>
                 </div>
                 <div class="form-group">
                     <label>Phosphorus (P) %</label>
-                    <input type="number" name="phosphorus" step="0.01" required min="0">
+                    <input type="number" name="phosphorus" id="phosphorus" step="0.01" required min="0">
+                    <span class="error-message">Please enter a valid phosphorus percentage</span>
                 </div>
                 <div class="form-group">
                     <label>Potassium (K) %</label>
-                    <input type="number" name="potassium" step="0.01" required min="0">
+                    <input type="number" name="potassium" id="potassium" step="0.01" required min="0">
+                    <span class="error-message">Please enter a valid potassium percentage</span>
                 </div>
             </div>
             <button type="submit" name="add_soil_test">Add Soil Test</button>
@@ -346,9 +363,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         function validateForm() {
-            // Add your validation logic here
-            return true;
+            const fields = [
+                { id: 'farmer_id', message: 'Please select a farmer' },
+                { id: 'ph_level', message: 'Please enter a valid pH level (0-14)' },
+                { id: 'nitrogen', message: 'Please enter a valid nitrogen percentage' },
+                { id: 'phosphorus', message: 'Please enter a valid phosphorus percentage' },
+                { id: 'potassium', message: 'Please enter a valid potassium percentage' }
+            ];
+
+            let isValid = true;
+
+            // Hide all error messages first
+            document.querySelectorAll('.error-message').forEach(error => {
+                error.style.display = 'none';
+            });
+
+            // Validate each field
+            fields.forEach(field => {
+                const element = document.getElementById(field.id);
+                const errorElement = element.nextElementSibling;
+
+                if (!element.value) {
+                    errorElement.style.display = 'block';
+                    isValid = false;
+                } else if (field.id === 'ph_level') {
+                    const value = parseFloat(element.value);
+                    if (value < 0 || value > 14) {
+                        errorElement.style.display = 'block';
+                        isValid = false;
+                    }
+                } else if (['nitrogen', 'phosphorus', 'potassium'].includes(field.id)) {
+                    const value = parseFloat(element.value);
+                    if (value < 0) {
+                        errorElement.style.display = 'block';
+                        isValid = false;
+                    }
+                }
+            });
+
+            return isValid;
         }
+
+        // Add real-time validation
+        document.querySelectorAll('input, select').forEach(element => {
+            element.addEventListener('blur', function() {
+                const errorElement = this.nextElementSibling;
+                
+                if (!this.value) {
+                    errorElement.style.display = 'block';
+                } else {
+                    errorElement.style.display = 'none';
+                }
+
+                if (this.id === 'ph_level' && this.value) {
+                    const value = parseFloat(this.value);
+                    if (value < 0 || value > 14) {
+                        errorElement.style.display = 'block';
+                    }
+                }
+
+                if (['nitrogen', 'phosphorus', 'potassium'].includes(this.id) && this.value) {
+                    const value = parseFloat(this.value);
+                    if (value < 0) {
+                        errorElement.style.display = 'block';
+                    }
+                }
+            });
+        });
     </script>
 </body>
 </html> 

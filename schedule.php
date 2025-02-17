@@ -9,6 +9,14 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'farmer') {
 
 require_once 'config.php';
 
+// Add PDO connection
+try {
+    $pdo = new PDO("mysql:host=localhost;dbname=growguide", "root", "");
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch(PDOException $e) {
+    die("Connection failed: " . $e->getMessage());
+}
+
 // Get user data
 $user_id = $_SESSION['user_id'];
 $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : 'Farmer';
@@ -422,27 +430,32 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
                     center: 'title',
                     right: 'dayGridMonth,timeGridWeek,timeGridDay'
                 },
-                events: [
-                    // Sample events - replace with your actual events
-                    {
-                        title: 'Fertilizer Application',
-                        start: '2025-02-15'
-                    },
-                    {
-                        title: 'Pest Control',
-                        start: '2025-02-20'
-                    }
-                ],
+                events: 'get_tasks.php',
                 eventClick: function(info) {
-                    // Handle event click
-                    alert('Event: ' + info.event.title);
+                    alert('Task: ' + info.event.title + '\nDescription: ' + info.event.extendedProps.description);
                 },
                 dateClick: function(info) {
-                    // Handle date click
+                    // Add date validation when clicking on calendar
+                    const selectedDate = new Date(info.dateStr);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    if (selectedDate < today) {
+                        alert('Cannot create tasks for past dates. Please select today or a future date.');
+                        return;
+                    }
+                    
                     showAddTaskModal();
+                    // Pre-fill the date input with the selected date
+                    document.getElementById('taskDate').value = info.dateStr + 'T00:00';
                 }
             });
             calendar.render();
+
+            // Add min attribute to taskDate input to prevent selecting past dates
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            document.getElementById('taskDate').setAttribute('min', todayStr + 'T00:00');
         });
 
         // Modal functions
@@ -457,6 +470,15 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
         function handleAddTask(event) {
             event.preventDefault();
             
+            // Add date validation before submission
+            const selectedDate = new Date(document.getElementById('taskDate').value);
+            const now = new Date();
+
+            if (selectedDate < now) {
+                alert('Cannot create tasks for past dates. Please select a current or future date and time.');
+                return;
+            }
+
             const formData = new FormData();
             formData.append('title', document.getElementById('taskTitle').value);
             formData.append('date', document.getElementById('taskDate').value);

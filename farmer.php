@@ -574,6 +574,36 @@ $username = isset($farmerData['username']) ? htmlspecialchars($farmerData['usern
                     <p>Regular irrigation needed during dry spells</p>
                 </div>
             </div>
+
+            <!-- Add this where you want to display upcoming tasks -->
+            <div class="dashboard-card">
+                <h3><i class="fas fa-tasks"></i> Upcoming Tasks</h3>
+                <div class="task-list">
+                    <?php
+                    try {
+                        $stmt = $pdo->prepare("SELECT * FROM tasks WHERE user_id = ? AND task_date >= CURRENT_DATE ORDER BY task_date ASC LIMIT 5");
+                        $stmt->execute([$user_id]);
+                        $tasks = $stmt->fetchAll();
+
+                        if (count($tasks) > 0) {
+                            foreach ($tasks as $task) {
+                                echo '<div class="task-item">
+                                    <div class="task-content">
+                                        <div class="task-title">' . htmlspecialchars($task['title']) . '</div>
+                                        <div class="task-date">' . date('M d, Y H:i', strtotime($task['task_date'])) . '</div>
+                                    </div>
+                                </div>';
+                            }
+                        } else {
+                            echo '<p>No upcoming tasks</p>';
+                        }
+                    } catch (PDOException $e) {
+                        echo '<p>Error loading tasks</p>';
+                    }
+                    ?>
+                </div>
+                <a href="schedule.php" class="view-all-link">View All Tasks</a>
+            </div>
         </div>
     </div>
 </body>

@@ -43,6 +43,22 @@ if ($result) {
     }
     mysqli_free_result($result);
 }
+
+// Add this query to fetch recent soil tests
+$recent_soil_tests = [];
+$query = "SELECT st.*, u.username as farmer_name 
+          FROM soil_tests st 
+          JOIN users u ON st.farmer_id = u.id 
+          ORDER BY st.test_date DESC 
+          LIMIT 5"; // Show last 5 tests
+
+$result = mysqli_query($conn, $query);
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $recent_soil_tests[] = $row;
+    }
+    mysqli_free_result($result);
+}
 ?>
 
 <!DOCTYPE html>
@@ -272,6 +288,42 @@ if ($result) {
             margin: 5px 0;
             color: #666;
         }
+
+        .soil-tests-list {
+            margin-top: 15px;
+        }
+
+        .soil-test-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .farmer-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .test-date {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .test-values {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+        }
+
+        .test-values span {
+            background: #f5f5f5;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body>
@@ -303,18 +355,18 @@ if ($result) {
                 <i class="fas fa-flask"></i>
                 <span class="menu-text">Soil Tests</span>
             </a>
-            <a href="#" class="menu-item">
+            <a href="varieties.php" class="menu-item">
                 <i class="fas fa-seedling"></i>
                 <span class="menu-text">Varieties</span>
             </a>
         </div>
 
         <div class="bottom-section">
-            <a href="#" class="menu-item">
+            <a href="notifications.php" class="menu-item">
                 <i class="fas fa-bell"></i>
                 <span class="menu-text">Notifications</span>
             </a>
-            <a href="#" class="menu-item">
+            <a href="admin_setting.php" class="menu-item">
                 <i class="fas fa-cog"></i>
                 <span class="menu-text">Settings</span>
             </a>
@@ -401,6 +453,30 @@ if ($result) {
                     </div>
                 </div>
             <?php endforeach; ?>
+
+            <div class="dashboard-card">
+                <h3>Recent Soil Tests</h3>
+                <?php if (empty($recent_soil_tests)): ?>
+                    <p>No recent soil tests.</p>
+                <?php else: ?>
+                    <div class="soil-tests-list">
+                        <?php foreach ($recent_soil_tests as $test): ?>
+                            <div class="soil-test-item">
+                                <div class="farmer-info">
+                                    <strong><?php echo htmlspecialchars($test['farmer_name']); ?></strong>
+                                    <span class="test-date"><?php echo date('M j, Y', strtotime($test['test_date'])); ?></span>
+                                </div>
+                                <div class="test-values">
+                                    <span>pH: <?php echo $test['ph_level']; ?></span>
+                                    <span>N: <?php echo $test['nitrogen']; ?>%</span>
+                                    <span>P: <?php echo $test['phosphorus']; ?>%</span>
+                                    <span>K: <?php echo $test['potassium']; ?>%</span>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 

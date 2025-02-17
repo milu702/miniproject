@@ -29,41 +29,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = mysqli_real_escape_string($conn, $_POST['email']);
         $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
         
-        // Check if username or email already exists
-        $check_query = "SELECT id FROM users WHERE username = ? OR email = ?";
-        $check_stmt = mysqli_prepare($conn, $check_query);
-        
-        if ($check_stmt === false) {
-            $message = 'Error preparing statement: ' . mysqli_error($conn);
-        } else {
+        // Start transaction
+        mysqli_begin_transaction($conn);
+        try {
+            // Check if username or email already exists
+            $check_query = "SELECT id FROM users WHERE username = ? OR email = ?";
+            $check_stmt = mysqli_prepare($conn, $check_query);
+            
+            if ($check_stmt === false) {
+                throw new Exception('Error preparing statement: ' . mysqli_error($conn));
+            }
+            
             mysqli_stmt_bind_param($check_stmt, "ss", $username, $email);
             mysqli_stmt_execute($check_stmt);
             mysqli_stmt_store_result($check_stmt);
             
             if (mysqli_stmt_num_rows($check_stmt) > 0) {
-                $message = 'Username or email already exists!';
-            } else {
-                // Insert new farmer
-                $insert_query = "INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, 'farmer', 1)";
-                $insert_stmt = mysqli_prepare($conn, $insert_query);
-                
-                if ($insert_stmt === false) {
-                    $message = 'Error preparing insert statement: ' . mysqli_error($conn);
-                } else {
-                    mysqli_stmt_bind_param($insert_stmt, "sss", $username, $email, $password);
-                    
-                    if (mysqli_stmt_execute($insert_stmt)) {
-                        $message = 'Farmer added successfully!';
-                        // Clear any POST data to prevent duplicate submissions
-                        header("Location: " . $_SERVER['PHP_SELF']);
-                        exit();
-                    } else {
-                        $message = 'Error adding farmer: ' . mysqli_error($conn);
-                    }
-                    mysqli_stmt_close($insert_stmt);
-                }
+                throw new Exception('Username or email already exists!');
             }
-            mysqli_stmt_close($check_stmt);
+            
+            // Insert new farmer into users table
+            $insert_query = "INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, 'farmer', 1)";
+            $insert_stmt = mysqli_prepare($conn, $insert_query);
+            
+            if ($insert_stmt === false) {
+                throw new Exception('Error preparing insert statement: ' . mysqli_error($conn));
+            }
+            
+            mysqli_stmt_bind_param($insert_stmt, "sss", $username, $email, $password);
+            
+            if (!mysqli_stmt_execute($insert_stmt)) {
+                throw new Exception('Error adding farmer to users table: ' . mysqli_error($conn));
+            }
+            
+            $farmer_id = mysqli_insert_id($conn);
+            
+            // Insert into farmers table
+            $insert_farmer_query = "INSERT INTO farmers (user_id, created_at) VALUES (?, NOW())";
+            $insert_farmer_stmt = mysqli_prepare($conn, $insert_farmer_query);
+            
+            if ($insert_farmer_stmt === false) {
+                throw new Exception('Error preparing farmer insert statement: ' . mysqli_error($conn));
+            }
+            
+            mysqli_stmt_bind_param($insert_farmer_stmt, "i", $farmer_id);
+            
+            if (!mysqli_stmt_execute($insert_farmer_stmt)) {
+                throw new Exception('Error adding record to farmers table: ' . mysqli_error($conn));
+            }
+            
+            // If we get here, commit the transaction
+            mysqli_commit($conn);
+            $message = 'Farmer added successfully!';
+            
+            // Clear any POST data to prevent duplicate submissions
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit();
+            
+        } catch (Exception $e) {
+            mysqli_rollback($conn);
+            $message = $e->getMessage();
+        } finally {
+            if (isset($check_stmt)) mysqli_stmt_close($check_stmt);
+            if (isset($insert_stmt)) mysqli_stmt_close($insert_stmt);
+            if (isset($insert_farmer_stmt)) mysqli_stmt_close($insert_farmer_stmt);
         }
     }
 

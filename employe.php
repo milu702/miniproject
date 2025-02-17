@@ -78,8 +78,8 @@ $username = $_SESSION['username'];
 
     <div class="sidebar">
         <h2>GrowGuide</h2>
-        <a href="#" class="nav-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-        <a href="#" class="nav-item"><i class="fas fa-seedling"></i> Soil & Weather</a>
+        <a href="employee.php" class="nav-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        <a href="soil_weather.php" class="nav-item"><i class="fas fa-seedling"></i> Soil & Weather</a>
         <a href="#" class="nav-item"><i class="fas fa-flask"></i> Fertilizer Suggestions</a>
         <a href="#" class="nav-item"><i class="fas fa-users"></i> Farmer Management</a>
         <a href="#" class="nav-item"><i class="fas fa-chart-bar"></i> Reports & Analytics</a>

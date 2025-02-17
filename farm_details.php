@@ -11,20 +11,7 @@ require_once 'config.php';
 
 // Get user data
 $user_id = $_SESSION['user_id'];
-
-// Get farmer data
-$stmt = $conn->prepare("
-    SELECT f.*, u.username
-    FROM farmers f
-    JOIN users u ON f.user_id = u.id
-    WHERE f.user_id = ?
-");
-
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$farmerData = $stmt->get_result()->fetch_assoc();
-
-$username = isset($farmerData['username']) ? htmlspecialchars($farmerData['username']) : 'Farmer';
+$username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : 'Farmer';
 ?>
 
 <!DOCTYPE html>
@@ -32,7 +19,7 @@ $username = isset($farmerData['username']) ? htmlspecialchars($farmerData['usern
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GrowGuide - Farm Details</title>
+    <title>GrowGuide - Weather</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Base styles */
@@ -239,7 +226,7 @@ $username = isset($farmerData['username']) ? htmlspecialchars($farmerData['usern
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="farm.php" class="nav-item active">
+                <a href="farm.php" class="nav-item">
                     <i class="fas fa-map-marker-alt"></i>
                     <span>Farm Details</span>
                 </a>
@@ -251,7 +238,7 @@ $username = isset($farmerData['username']) ? htmlspecialchars($farmerData['usern
                     <i class="fas fa-calendar-alt"></i>
                     <span>Schedule</span>
                 </a>
-                <a href="weather.php" class="nav-item">
+                <a href="weather.php" class="nav-item active">
                     <i class="fas fa-cloud-sun"></i>
                     <span>Weather</span>
                 </a>
@@ -268,95 +255,86 @@ $username = isset($farmerData['username']) ? htmlspecialchars($farmerData['usern
 
         <!-- Main Content -->
         <div class="main-content">
-            <div class="farm-info-card">
-                <div class="farm-info-header">
-                    <h2><i class="fas fa-map-marker-alt"></i> Farm Details</h2>
-                    <span class="location-badge">
-                        <i class="fas fa-map-marker-alt"></i> 
-                        <?php echo htmlspecialchars($farmerData['farm_location']); ?>
-                    </span>
+            <div class="weather-card">
+                <div class="weather-header">
+                    <h2><i class="fas fa-cloud-sun"></i> Current Weather</h2>
                 </div>
-                <div class="weather-card">
-                    <div class="weather-header">
-                        <h2><i class="fas fa-cloud-sun"></i> Current Weather</h2>
-                    </div>
-                    <div class="weather-grid">
-                        <div class="weather-item">
-                            <div class="weather-detail">
-                                <i class="fas fa-temperature-high weather-icon"></i>
-                                <div>
-                                    <div class="weather-value">24°C</div>
-                                    <div class="weather-label">Temperature</div>
-                                </div>
-                            </div>
-                            <div class="weather-detail">
-                                <i class="fas fa-tint weather-icon"></i>
-                                <div>
-                                    <div class="weather-value">65%</div>
-                                    <div class="weather-label">Humidity</div>
-                                </div>
+                <div class="weather-grid">
+                    <div class="weather-item">
+                        <div class="weather-detail">
+                            <i class="fas fa-temperature-high weather-icon"></i>
+                            <div>
+                                <div class="weather-value">24°C</div>
+                                <div class="weather-label">Temperature</div>
                             </div>
                         </div>
-                        <div class="weather-item">
-                            <div class="weather-detail">
-                                <i class="fas fa-wind weather-icon"></i>
-                                <div>
-                                    <div class="weather-value">12 km/h</div>
-                                    <div class="weather-label">Wind Speed</div>
-                                </div>
+                        <div class="weather-detail">
+                            <i class="fas fa-tint weather-icon"></i>
+                            <div>
+                                <div class="weather-value">65%</div>
+                                <div class="weather-label">Humidity</div>
                             </div>
-                            <div class="weather-detail">
-                                <i class="fas fa-umbrella weather-icon"></i>
-                                <div>
-                                    <div class="weather-value">20%</div>
-                                    <div class="weather-label">Chance of Rain</div>
-                                </div>
+                        </div>
+                    </div>
+                    <div class="weather-item">
+                        <div class="weather-detail">
+                            <i class="fas fa-wind weather-icon"></i>
+                            <div>
+                                <div class="weather-value">12 km/h</div>
+                                <div class="weather-label">Wind Speed</div>
+                            </div>
+                        </div>
+                        <div class="weather-detail">
+                            <i class="fas fa-umbrella weather-icon"></i>
+                            <div>
+                                <div class="weather-value">20%</div>
+                                <div class="weather-label">Chance of Rain</div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="weather-card">
-                    <div class="weather-header">
-                        <h2><i class="fas fa-calendar-alt"></i> 5-Day Forecast</h2>
+            <div class="weather-card">
+                <div class="weather-header">
+                    <h2><i class="fas fa-calendar-alt"></i> 5-Day Forecast</h2>
+                </div>
+                <div class="forecast-container">
+                    <div class="forecast-item">
+                        <div class="forecast-day">Today</div>
+                        <i class="fas fa-sun weather-icon"></i>
+                        <div class="weather-value">24°C</div>
                     </div>
-                    <div class="forecast-container">
-                        <div class="forecast-item">
-                            <div class="forecast-day">Today</div>
-                            <i class="fas fa-sun weather-icon"></i>
-                            <div class="weather-value">24°C</div>
-                        </div>
-                        <div class="forecast-item">
-                            <div class="forecast-day">Tomorrow</div>
-                            <i class="fas fa-cloud-sun weather-icon"></i>
-                            <div class="weather-value">22°C</div>
-                        </div>
-                        <div class="forecast-item">
-                            <div class="forecast-day">Wednesday</div>
-                            <i class="fas fa-cloud weather-icon"></i>
-                            <div class="weather-value">20°C</div>
-                        </div>
-                        <div class="forecast-item">
-                            <div class="forecast-day">Thursday</div>
-                            <i class="fas fa-cloud-showers-heavy weather-icon"></i>
-                            <div class="weather-value">19°C</div>
-                        </div>
-                        <div class="forecast-item">
-                            <div class="forecast-day">Friday</div>
-                            <i class="fas fa-cloud-sun weather-icon"></i>
-                            <div class="weather-value">21°C</div>
-                        </div>
+                    <div class="forecast-item">
+                        <div class="forecast-day">Tomorrow</div>
+                        <i class="fas fa-cloud-sun weather-icon"></i>
+                        <div class="weather-value">22°C</div>
+                    </div>
+                    <div class="forecast-item">
+                        <div class="forecast-day">Wednesday</div>
+                        <i class="fas fa-cloud weather-icon"></i>
+                        <div class="weather-value">20°C</div>
+                    </div>
+                    <div class="forecast-item">
+                        <div class="forecast-day">Thursday</div>
+                        <i class="fas fa-cloud-showers-heavy weather-icon"></i>
+                        <div class="weather-value">19°C</div>
+                    </div>
+                    <div class="forecast-item">
+                        <div class="forecast-day">Friday</div>
+                        <i class="fas fa-cloud-sun weather-icon"></i>
+                        <div class="weather-value">21°C</div>
                     </div>
                 </div>
+            </div>
 
-                <div class="weather-card">
-                    <div class="weather-header">
-                        <h2><i class="fas fa-bell"></i> Weather Alerts</h2>
-                    </div>
-                    <button class="submit-btn" onclick="setupWeatherAlerts()">
-                        <i class="fas fa-plus"></i> Set Up Weather Alerts
-                    </button>
+            <div class="weather-card">
+                <div class="weather-header">
+                    <h2><i class="fas fa-bell"></i> Weather Alerts</h2>
                 </div>
+                <button class="submit-btn" onclick="setupWeatherAlerts()">
+                    <i class="fas fa-plus"></i> Set Up Weather Alerts
+                </button>
             </div>
         </div>
     </div>

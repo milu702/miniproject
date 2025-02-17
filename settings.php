@@ -13,13 +13,16 @@ require_once 'config.php';
 $user_id = $_SESSION['user_id'];
 $stmt = $conn->prepare("
     SELECT 
-        u.username,
-        u.email,
-        COALESCE(f.phone, '') as phone,
-        COALESCE(f.notification_preferences, '') as notification_preferences
+        u.*,  -- This will select all fields from users table
+        COALESCE(f.username, u.username) as farmer_name,
+        f.phone,
+        f.notification_preferences
+        
+        
+       
     FROM users u
     LEFT JOIN farmers f ON u.id = f.user_id
-    WHERE u.id = ?
+    WHERE u.id = ? AND u.role = 'farmer'
 ");
 
 if ($stmt === false) {
@@ -30,7 +33,7 @@ $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $userData = $stmt->get_result()->fetch_assoc();
 
-$username = isset($userData['username']) ? htmlspecialchars($userData['username']) : 'Farmer';
+$farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farmer_name']) : 'Farmer';
 ?>
 
 <!DOCTYPE html>
@@ -381,7 +384,7 @@ $username = isset($userData['username']) ? htmlspecialchars($userData['username'
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <h2><i class="fas fa-seedling"></i> <span>GrowGuide</span></h2>
+                <h2><i class="fas fa-seedling"></i> <span><?php echo $farmerName; ?></span></h2>
             </div>
             <nav class="nav-menu">
                 <a href="farmer.php" class="nav-item">
@@ -450,7 +453,7 @@ $username = isset($userData['username']) ? htmlspecialchars($userData['username'
                             <h3>Profile Information</h3>
                             <div class="input-group">
                                 <label for="name">Full Name *</label>
-                                <input type="text" id="name" name="name" value="<?php echo $username; ?>" required>
+                                <input type="text" id="name" name="name" value="<?php echo $farmerName; ?>" required>
                                 <span class="validation-message" id="nameError"></span>
                             </div>
                             <div class="input-group">
