@@ -7,7 +7,20 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'farmer') {
     exit();
 }
 
+// Include database configuration
 require_once 'config.php';
+
+// Check if database connection exists
+if (!$conn) {
+    die("Database connection failed");
+}
+if (isset($_SESSION['redirect_url'])) {
+    $redirect_url = $_SESSION['redirect_url'];
+    unset($_SESSION['redirect_url']); // Clear the stored URL
+    header("Location: " . $redirect_url);
+    exit();
+}
+
 
 // Get cardamom specific data
 $user_id = $_SESSION['user_id'];
@@ -367,9 +380,7 @@ $username = isset($farmerData['username']) ? htmlspecialchars($farmerData['usern
                     <a href="farmer.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'farmer.php' ? 'active' : ''; ?>">
                         <i class="fas fa-home"></i> Dashboard
                     </a>
-                    <a href="farm_details.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'farm_details.php' ? 'active' : ''; ?>">
-                        <i class="fas fa-map-marker-alt"></i> Farm Details
-                    </a>
+                    
                     <a href="analytics.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'analytics.php' ? 'active' : ''; ?>">
                         <i class="fas fa-chart-line"></i> Analytics
                     </a>
@@ -383,7 +394,7 @@ $username = isset($farmerData['username']) ? htmlspecialchars($farmerData['usern
                         <i class="fas fa-cog"></i> Settings
                     </a>
                 </div>
-                <a href="login.php" class="nav-item" style="margin-top: auto; color: #ff6b6b;">
+                <a href="logout.php" class="nav-item" style="margin-top: auto; color: #ff6b6b;">
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </a>
             </nav>

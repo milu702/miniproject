@@ -178,25 +178,97 @@ if ($result) {
             color: #2e7d32;
             margin-bottom: 5px;
         }
+
+        .admin-dashboard-link {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(46, 125, 50, 0.2);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .admin-dashboard-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(46, 125, 50, 0.3);
+            background: linear-gradient(135deg, #33873b 0%, #1e6823 100%);
+        }
+
+        .admin-dashboard-link i {
+            font-size: 20px;
+        }
+
+        .admin-dashboard-link .icon-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            transition: all 0.3s ease;
+        }
+
+        .admin-dashboard-link:hover .icon-container {
+            transform: rotate(360deg);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .admin-dashboard-link .text {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        @media (max-width: 768px) {
+            .admin-dashboard-link {
+                padding: 10px 16px;
+            }
+            
+            .admin-dashboard-link .text {
+                display: none;
+            }
+            
+            .admin-dashboard-link .icon-container {
+                width: 28px;
+                height: 28px;
+            }
+        }
+
+        /* Update the main-content style to use full width */
+        .main-content {
+            padding: 20px;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body>
-    <!-- Sidebar (same as admin.php) -->
-    <div class="sidebar" id="sidebar">
-        <!-- ... existing sidebar code ... -->
-        <a href="admin.php" class="sidebar-link">
-            <i class="fas fa-user-shield"></i>
-            <span>Admin</span>
-        </a>
-        <!-- ... existing code ... -->
-    </div>
-
     <!-- Main Content -->
-    <div class="main-content" id="main-content">
+    <div class="main-content" id="main-content" style="margin-left: 0;">
         <div class="notification-header">
             <h1>Notifications</h1>
             <button class="action-btn mark-read">Mark All as Read</button>
         </div>
+
+        <!-- Add the admin dashboard link -->
+        <a href="admin.php" class="admin-dashboard-link">
+            <div class="icon-container">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <span class="text">Admin Dashboard</span>
+        </a>
 
         <div class="notification-summary">
             <div class="summary-card">
@@ -254,9 +326,6 @@ if ($result) {
     </div>
 
     <script>
-        // ... existing toggleSidebar function ...
-
-        // Add notification interaction functionality
         document.querySelectorAll('.notification-card').forEach(card => {
             card.addEventListener('click', function() {
                 this.classList.remove('unread');

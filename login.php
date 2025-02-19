@@ -2,51 +2,100 @@
 session_start();
 require_once 'config.php';
 
+// Add these lines at the very top after session_start()
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+ini_set('error_log', 'debug.log');
+
+// Initialize error variable
 $error = '';
+
+// At the beginning of the file, after session_start()
+if (isset($_SESSION['login_success'])) {
+    unset($_SESSION['login_success']); // Clear the flag
+}
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $identifier = trim($_POST['identifier']); // Now just email
+    $identifier = trim($_POST['identifier']);
     $password = $_POST['password'];
     
-    if (empty($identifier) || empty($password)) {
-        $error = "Please fill in all fields";
-    } else {
-        // Check only email
-        $sql = "SELECT * FROM users WHERE email = ?";
+    try {
+        if (!$conn) {
+            throw new Exception("Database connection failed");
+        }
+        
+        // Modified query to check both email and status
+        $sql = "SELECT * FROM users WHERE email = ? AND status = 1";
         $stmt = $conn->prepare($sql);
+        
+        if (!$stmt) {
+            throw new Exception("Prepare failed: " . $conn->error);
+        }
+        
         $stmt->bind_param("s", $identifier);
-        $stmt->execute();
+        
+        if (!$stmt->execute()) {
+            throw new Exception("Execute failed: " . $stmt->error);
+        }
+        
         $result = $stmt->get_result();
         
-        if ($result->num_rows == 1) {
+        if ($result->num_rows === 1) {
             $user = $result->fetch_assoc();
+            
+            // Add debug logging
+            error_log("Login attempt - Email: " . $identifier . ", Role: " . $user['role']);
+            
             if (password_verify($password, $user['password'])) {
-                // Set session variables
+                // Set all necessary session variables
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['role'] = $user['role'];
                 $_SESSION['username'] = $user['username'];
+                $_SESSION['last_activity'] = time();
                 
-                // Redirect based on role
-                switch($user['role']) {
-                    case 'admin':
-                        header("Location: admin.php");
-                        exit();
-                    case 'employee':
-                        header("Location: employe.php");
-                        exit();
-                    case 'farmer':
-                        header("Location: farmer.php");
-                        exit();
-                    default:
-                        // Fallback for unknown roles
-                        header("Location: dashboard.php");
-                        exit();
+                // Store success message in session if needed
+                $_SESSION['login_success'] = true;
+                
+                // Debug logging for successful login
+                error_log("Login successful - User ID: " . $user['id'] . ", Role: " . $user['role']);
+                
+                // Specific handling for admin role with immediate redirect
+                if ($user['role'] === 'admin') {
+                    error_log("Redirecting admin to admin.php");
+                    header("Location: admin.php", true, 303);
+                    exit();
                 }
+                
+                // Handle other roles with 303 See Other status code
+                switch ($user['role']) {
+                    case 'farmer':
+                        header("Location: farmer.php", true, 303);
+                        break;
+                    case 'expert':
+                        header("Location: expert_dashboard.php", true, 303);
+                        break;
+                    case 'employee':
+                        header("Location: employe.php", true, 303);
+                        break;
+                    default:
+                        header("Location: index.html", true, 303);
+                        break;
+                }
+                exit();
             } else {
-                $error = "Invalid credentials";
+                error_log("Password verification failed for email: " . $identifier);
+                $error = "Invalid password";
             }
         } else {
-            $error = "Invalid credentials";
+            error_log("No user found with email: " . $identifier);
+            $error = "Email not found or account is inactive";
         }
+        
+        $stmt->close();
+    } catch (Exception $e) {
+        error_log("Login error: " . $e->getMessage());
+        $error = "An error occurred. Please try again.";
     }
 }
 ?>
@@ -195,6 +244,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             left: 20px;
             color: white;
             text-decoration: none;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 15px;
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 3;
+        }
+
+        .home-icon:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .home-icon i {
+            font-size: 18px;
         }
     </style>
 </head>

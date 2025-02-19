@@ -51,54 +51,238 @@
 
       <nav id="navmenu" class="navmenu">
         <ul>
-          <li><a href="index.html" class="active">Home</a></li>
-          <li><a href="about.html">About Us</a></li>
-          <li><a href="services.html">Our Services</a></li>
-          <li><a href="testimonials.html">Testimonials</a></li>
-        
+          <li><a href="index.html" class="active"><i class="bi bi-house-door"></i> Home</a></li>
+          <li><a href="about.html"><i class="bi bi-info-circle"></i> About Us</a></li>
+          <li><a href="services.html"><i class="bi bi-gear"></i> Our Services</a></li>
+          <li><a href="testimonials.html"><i class="bi bi-chat-quote"></i> Testimonials</a></li>
           <li class="dropdown">
-            <a href="#"><span>soil analysis</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
+            <a href="#"><i class="bi bi-moisture"></i> Soil Analysis <i class="bi bi-chevron-down"></i></a>
             <ul>
-              <li><a href="https://soiltestpro.com/custom-soil-sampling-coverage-area/">soil analysis website</a></li>
-              <li class="dropdown">
-                
-              </li>
-              <li><a href="https://soiltestpro.com/soil-testing-labs/">soil sampling</a></li>
-              <li><a href="#">soil sampling tips</a></li>
-              <li><a href="https://www.mountain-forecast.com/peaks/Cardamom-Hills/forecasts/2637">Weather</a></li>
+              <li><a href="https://soiltestpro.com/custom-soil-sampling-coverage-area/"><i class="bi bi-globe"></i> Soil Analysis Website</a></li>
+              <li><a href="https://soiltestpro.com/soil-testing-labs/"><i class="bi bi-flask"></i> Soil Sampling</a></li>
+              <li><a href="#"><i class="bi bi-lightbulb"></i> Soil Sampling Tips</a></li>
+              <li><a href="https://www.mountain-forecast.com/peaks/Cardamom-Hills/forecasts/2637"><i class="bi bi-cloud-sun"></i> Weather</a></li>
             </ul>
           </li>
-          <li><a href="contact.html">Contact</a></li>
-          <li class="nav-item dropdown">
-            <a href="#" class="profile-icon nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-person-fill fs-4"></i>
+          <li><a href="contact.html"><i class="bi bi-envelope"></i> Contact</a></li>
+          <li>
+            <a href="login.php" class="login-btn">
+              <i class="bi bi-person-circle"></i>
+              <span>Login</span>
             </a>
-            <ul class="dropdown-menu dropdown-menu-end">
-                
-                <li><a class="dropdown-item" href="login.php">Login</a></li>
-                <li><a class="dropdown-item" href="logout.php">Logout</a></li>
-            </ul>
           </li>
-          
         </ul>
         <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
       </nav>
       
       <style>
-      .profile-icon {
-          padding: 8px;
+      /* Update the existing navmenu styles */
+      .navmenu ul li a {
           display: flex;
           align-items: center;
+          gap: 8px;
+          padding: 10px 15px;
+          font-size: 16px;
+          font-weight: 500;
+          transition: all 0.3s ease;
+          color: #444444;
       }
       
-      .profile-icon i {
-          font-size: 1.8rem; /* Increased from 1.2rem */
+      .navmenu ul li a i {
+          font-size: 18px;
       }
       
-      /* Add hover effect */
-      .profile-icon:hover {
-          opacity: 0.8;
-          transition: opacity 0.3s ease;
+      .navmenu ul li a:hover {
+          color: #28a745;
+          transform: translateY(-2px);
+      }
+      
+      .navmenu ul li a.active {
+          color: #28a745;
+          position: relative;
+      }
+      
+      .navmenu ul li a.active:after {
+          content: '';
+          position: absolute;
+          bottom: -2px;
+          left: 15px;
+          right: 15px;
+          height: 2px;
+          background: #28a745;
+      }
+      
+      /* Dropdown styles */
+      .navmenu .dropdown ul {
+          display: block;
+          position: absolute;
+          left: 0;
+          top: calc(100% + 30px);
+          margin: 0;
+          padding: 15px 0;
+          z-index: 99;
+          opacity: 0;
+          visibility: hidden;
+          background: #fff;
+          box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+          border-radius: 8px;
+          transition: 0.3s;
+      }
+      
+      .navmenu .dropdown:hover > ul {
+          opacity: 1;
+          top: 100%;
+          visibility: visible;
+      }
+      
+      .navmenu .dropdown ul li {
+          min-width: 200px;
+      }
+      
+      .navmenu .dropdown ul a {
+          padding: 12px 20px;
+          font-size: 15px;
+      }
+      
+      .navmenu .dropdown ul a:hover {
+          background: rgba(40, 167, 69, 0.1);
+      }
+      
+      /* Login button styles */
+      .login-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 20px;
+          background-color: #28a745;
+          color: white !important;
+          border-radius: 50px;
+          transition: all 0.3s ease;
+          font-weight: 500;
+          margin-left: 15px;
+      }
+      
+      .login-btn i {
+          font-size: 20px;
+      }
+      
+      .login-btn:hover {
+          background-color: #218838;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+      }
+      
+      /* Mobile responsiveness */
+      @media (max-width: 991px) {
+          .navmenu ul {
+              display: none;
+              position: absolute;
+              top: 100%;
+              left: 0;
+              right: 0;
+              background: white;
+              box-shadow: 0 0 10px rgba(0,0,0,0.1);
+              padding: 20px 0;
+          }
+      
+          .navmenu ul.active {
+              display: block;
+          }
+      
+          .navmenu ul li {
+              display: block;
+          }
+      
+          .navmenu ul li a {
+              padding: 12px 20px;
+              font-size: 15px;
+          }
+      
+          .login-btn {
+              margin: 10px 20px;
+              justify-content: center;
+          }
+      
+          .navmenu .dropdown ul {
+              position: static;
+              display: none;
+              opacity: 1;
+              visibility: visible;
+              background: #f8f9fa;
+              box-shadow: none;
+              padding: 0 0 0 20px;
+          }
+      }
+      
+      /* Services animation */
+      .service-item {
+          transition: all 0.4s ease;
+          border-radius: 8px;
+          overflow: hidden;
+      }
+      
+      .service-item:hover {
+          transform: translateY(-10px);
+          box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+      }
+      
+      .service-item-icon {
+          transition: all 0.4s ease;
+      }
+      
+      .service-item:hover .service-item-icon {
+          transform: scale(1.1) rotate(5deg);
+      }
+      
+      /* Footer styling */
+      .footer {
+          background: #1a1a1a;
+          padding: 60px 0 30px;
+      }
+      
+      .footer-links h4 {
+          color: #fff;
+          font-size: 18px;
+          margin-bottom: 25px;
+          position: relative;
+      }
+      
+      .footer-links h4:after {
+          content: '';
+          position: absolute;
+          width: 30px;
+          height: 2px;
+          background: #28a745;
+          bottom: -8px;
+          left: 0;
+      }
+      
+      .footer-links ul li {
+          margin-bottom: 12px;
+      }
+      
+      .footer-links ul li a {
+          color: #999;
+          transition: all 0.3s ease;
+      }
+      
+      .footer-links ul li a:hover {
+          color: #28a745;
+          padding-left: 5px;
+      }
+      
+      .social-links a {
+          width: 36px;
+          height: 36px;
+          background: rgba(255,255,255,0.1);
+          border-radius: 50%;
+          margin: 0 8px;
+          transition: all 0.3s ease;
+      }
+      
+      .social-links a:hover {
+          background: #28a745;
+          transform: translateY(-3px);
       }
       </style>
     </div>
@@ -433,7 +617,7 @@
               <li>Stress Relief</li>
             </ul>
 
-            <p><a href="#" class="btn-cta">Get in touch</a></p>
+            <p><a href="signup.php" class="btn-cta">Get in touch</a></p>
           </div>
         </div>
       </div>
@@ -616,7 +800,7 @@
                   <p>
                     "Managing multiple farms has become so much simpler with GrowGuide. The system's 
                     recommendation engine is spot-on, and the admin tools give me a clear overview of everything. 
-                    It’s an efficient way to ensure we're applying the right fertilizers at the right times."
+                    It's an efficient way to ensure we're applying the right fertilizers at the right times."
                   </p>
                 </blockquote>
                 <p class="client-name">Claire Anderson</p>
@@ -692,25 +876,14 @@
           <div class="col-lg-2 col-md-3 footer-links">
             <h4>Useful Links</h4>
             <ul>
-              <li><a href="#">Home</a></li>
-              <li><a href="#">About us</a></li>
-              <li><a href="#">Services</a></li>
-              <li><a href="#">Terms of service</a></li>
-              <li><a href="#">Privacy policy</a></li>
+              <li><a href="index.html">Home</a></li>
+              <li><a href="about.html">About us</a></li>
+              <li><a href="services.html">Services</a></li>
+            
             </ul>
           </div>
 
-          <div class="col-lg-2 col-md-3 footer-links">
-            <h4>Our Services</h4>
-            <ul>
-              <li><a href="#">soil analysis</a></li>
-              <li><a href="#">Weather analysis</a></li>
-              <li><a href="#">fertilizer Recommendations</a></li>
-              <li><a href="#">Provide cardamom services</a></li>
-              <li><a href="#">cardamom recommendations</a></li>
-            </ul>
-          </div>
-
+          
           
 
           

@@ -9,6 +9,14 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'farmer') {
 
 require_once 'config.php';
 
+// Create database connection
+$conn = mysqli_connect(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
+
+// Add database connection check
+if (!$conn) {
+    die("Connection failed: " . mysqli_connect_error());
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user_id = $_SESSION['user_id'];
     

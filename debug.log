@@ -1,0 +1,437 @@
+[18-Feb-2025 13:31:36 Europe/Berlin] POST request received with data: Array
+(
+    [identifier] => milujiji702@gmail.com
+    [password] => Milujiji1234
+)
+
+[18-Feb-2025 13:31:36 Europe/Berlin] Login attempt for email: milujiji702@gmail.com
+[18-Feb-2025 13:31:36 Europe/Berlin] Query executed. Number of rows found: 1
+[18-Feb-2025 13:31:36 Europe/Berlin] Attempting password verification
+[18-Feb-2025 13:31:36 Europe/Berlin] Password verified successfully
+[18-Feb-2025 13:31:36 Europe/Berlin] Session variables set - User ID: 36, Role: admin
+[18-Feb-2025 13:34:01 Europe/Berlin] POST request received with data: Array
+(
+    [identifier] => milujiji702@gmail.com
+    [password] => Milujiji1234
+)
+
+[18-Feb-2025 13:34:01 Europe/Berlin] Login attempt for email: milujiji702@gmail.com
+[18-Feb-2025 13:34:01 Europe/Berlin] Query executed. Number of rows found: 1
+[18-Feb-2025 13:34:01 Europe/Berlin] Attempting password verification
+[18-Feb-2025 13:34:01 Europe/Berlin] Password verified successfully
+[18-Feb-2025 13:34:01 Europe/Berlin] Session variables set - User ID: 36, Role: admin
+[18-Feb-2025 13:35:35 Europe/Berlin] POST request received with data: Array
+(
+    [identifier] => milujiji702@gmail.com
+    [password] => Milujiji1234
+)
+
+[18-Feb-2025 13:35:35 Europe/Berlin] Login attempt for email: milujiji702@gmail.com
+[18-Feb-2025 13:35:35 Europe/Berlin] Query executed. Number of rows found: 1
+[18-Feb-2025 13:35:35 Europe/Berlin] Attempting password verification
+[18-Feb-2025 13:35:35 Europe/Berlin] Password verified successfully
+[18-Feb-2025 13:35:35 Europe/Berlin] Session variables set - User ID: 36, Role: admin
+[18-Feb-2025 13:36:58 Europe/Berlin] POST request received with data: Array
+(
+    [identifier] => milujiji702@gmail.com
+    [password] => Milujij1234
+)
+
+[18-Feb-2025 13:36:58 Europe/Berlin] Login attempt for email: milujiji702@gmail.com
+[18-Feb-2025 13:36:58 Europe/Berlin] Query executed. Number of rows found: 1
+[18-Feb-2025 13:36:58 Europe/Berlin] Attempting password verification
+[18-Feb-2025 13:36:58 Europe/Berlin] Stored hashed password: $2y$10$3eRfqmf1xOY8XGoZ8g8ZmeLdZl2puaEheeu6AOCwF/b1ab.Preukq
+[18-Feb-2025 13:36:58 Europe/Berlin] Provided password: Milujij1234
+[18-Feb-2025 13:36:58 Europe/Berlin] Password verification failed
+[18-Feb-2025 13:39:22 Europe/Berlin] POST request received with data: Array
+(
+    [identifier] => maria@gmail.com
+    [password] => Elizabeth91
+)
+
+[18-Feb-2025 13:39:22 Europe/Berlin] Login attempt for email: maria@gmail.com
+[18-Feb-2025 13:39:22 Europe/Berlin] Query executed. Number of rows found: 1
+[18-Feb-2025 13:39:22 Europe/Berlin] Attempting password verification
+[18-Feb-2025 13:39:22 Europe/Berlin] Stored hashed password: $2y$10$n2mnvRk3oXsaQHePE9VYce9QfXzDHXNqUpP2SBXA1dYtqfHPY0Q.C
+[18-Feb-2025 13:39:22 Europe/Berlin] Provided password: Elizabeth91
+[18-Feb-2025 13:39:22 Europe/Berlin] Password verified successfully
+[18-Feb-2025 13:39:22 Europe/Berlin] Session variables set - User ID: 69, Role: farmer
+[18-Feb-2025 13:40:04 Europe/Berlin] POST request received with data: Array
+(
+    [identifier] => milujiji702@gmail.com
+    [password] => Milujiji1234
+)
+
+[18-Feb-2025 13:40:04 Europe/Berlin] Login attempt for email: milujiji702@gmail.com
+[18-Feb-2025 13:40:04 Europe/Berlin] Query executed. Number of rows found: 1
+[18-Feb-2025 13:40:04 Europe/Berlin] Attempting password verification
+[18-Feb-2025 13:40:04 Europe/Berlin] Stored hashed password: $2y$10$3eRfqmf1xOY8XGoZ8g8ZmeLdZl2puaEheeu6AOCwF/b1ab.Preukq
+[18-Feb-2025 13:40:04 Europe/Berlin] Provided password: Milujiji1234
+[18-Feb-2025 13:40:04 Europe/Berlin] Password verified successfully
+[18-Feb-2025 13:40:04 Europe/Berlin] Session variables set - User ID: 36, Role: admin
+[18-Feb-2025 13:41:05 Europe/Berlin] Database connection successful
+[18-Feb-2025 13:41:05 Europe/Berlin] Tables like 'users': 1
+[18-Feb-2025 13:41:05 Europe/Berlin] Column: id - Type: int(11)
+[18-Feb-2025 13:41:05 Europe/Berlin] Column: username - Type: varchar(50)
+[18-Feb-2025 13:41:05 Europe/Berlin] Column: email - Type: varchar(100)
+[18-Feb-2025 13:41:05 Europe/Berlin] Column: password - Type: varchar(255)
+[18-Feb-2025 13:41:05 Europe/Berlin] Column: role - Type: enum('admin','employee','farmer')
+[18-Feb-2025 13:41:05 Europe/Berlin] Column: created_at - Type: timestamp
+[18-Feb-2025 13:41:05 Europe/Berlin] Column: status - Type: tinyint(1)
+[18-Feb-2025 13:41:05 Europe/Berlin] Column: first_name - Type: varchar(50)
+[18-Feb-2025 13:41:05 Europe/Berlin] Column: last_name - Type: varchar(50)
+[18-Feb-2025 13:41:05 Europe/Berlin] Column: phone - Type: varchar(15)
+[18-Feb-2025 13:41:26 Europe/Berlin] Database connection successful
+[18-Feb-2025 13:41:26 Europe/Berlin] Tables like 'users': 1
+[18-Feb-2025 13:41:26 Europe/Berlin] Column: id - Type: int(11)
+[18-Feb-2025 13:41:26 Europe/Berlin] Column: username - Type: varchar(50)
+[18-Feb-2025 13:41:26 Europe/Berlin] Column: email - Type: varchar(100)
+[18-Feb-2025 13:41:26 Europe/Berlin] Column: password - Type: varchar(255)
+[18-Feb-2025 13:41:26 Europe/Berlin] Column: role - Type: enum('admin','employee','farmer')
+[18-Feb-2025 13:41:26 Europe/Berlin] Column: created_at - Type: timestamp
+[18-Feb-2025 13:41:26 Europe/Berlin] Column: status - Type: tinyint(1)
+[18-Feb-2025 13:41:26 Europe/Berlin] Column: first_name - Type: varchar(50)
+[18-Feb-2025 13:41:26 Europe/Berlin] Column: last_name - Type: varchar(50)
+[18-Feb-2025 13:41:26 Europe/Berlin] Column: phone - Type: varchar(15)
+[18-Feb-2025 13:41:26 Europe/Berlin] POST request received
+[18-Feb-2025 13:41:26 Europe/Berlin] POST data: Array
+(
+    [identifier] => milujiji702@gmail.com
+    [password] => Milujiji1234
+)
+
+[18-Feb-2025 13:41:26 Europe/Berlin] Attempting login with email: milujiji702@gmail.com
+[18-Feb-2025 13:41:26 Europe/Berlin] Query complete. Found 1 matching users
+[18-Feb-2025 13:41:26 Europe/Berlin] User found. Checking password...
+[18-Feb-2025 13:41:26 Europe/Berlin] User data: Array
+(
+    [id] => 36
+    [username] => milu jiji
+    [email] => milujiji702@gmail.com
+    [password] => $2y$10$3eRfqmf1xOY8XGoZ8g8ZmeLdZl2puaEheeu6AOCwF/b1ab.Preukq
+    [role] => admin
+    [created_at] => 2025-02-05 14:09:46
+    [status] => 1
+    [first_name] => 
+    [last_name] => 
+    [phone] => 8330813606
+)
+
+[18-Feb-2025 13:41:26 Europe/Berlin] Password verified successfully
+[18-Feb-2025 13:41:26 Europe/Berlin] Session data set: Array
+(
+    [user_id] => 36
+    [role] => admin
+    [username] => milu jiji
+)
+
+[18-Feb-2025 13:41:26 Europe/Berlin] Redirecting to: admin.php
+[18-Feb-2025 13:41:26 Europe/Berlin] Database connection successful
+[18-Feb-2025 13:41:26 Europe/Berlin] Tables like 'users': 1
+[18-Feb-2025 13:41:26 Europe/Berlin] Column: id - Type: int(11)
+[18-Feb-2025 13:41:26 Europe/Berlin] Column: username - Type: varchar(50)
+[18-Feb-2025 13:41:26 Europe/Berlin] Column: email - Type: varchar(100)
+[18-Feb-2025 13:41:26 Europe/Berlin] Column: password - Type: varchar(255)
+[18-Feb-2025 13:41:26 Europe/Berlin] Column: role - Type: enum('admin','employee','farmer')
+[18-Feb-2025 13:41:26 Europe/Berlin] Column: created_at - Type: timestamp
+[18-Feb-2025 13:41:26 Europe/Berlin] Column: status - Type: tinyint(1)
+[18-Feb-2025 13:41:26 Europe/Berlin] Column: first_name - Type: varchar(50)
+[18-Feb-2025 13:41:26 Europe/Berlin] Column: last_name - Type: varchar(50)
+[18-Feb-2025 13:41:26 Europe/Berlin] Column: phone - Type: varchar(15)
+[18-Feb-2025 13:42:35 Europe/Berlin] Database connection successful
+[18-Feb-2025 13:42:35 Europe/Berlin] Tables like 'users': 1
+[18-Feb-2025 13:42:35 Europe/Berlin] Column: id - Type: int(11)
+[18-Feb-2025 13:42:35 Europe/Berlin] Column: username - Type: varchar(50)
+[18-Feb-2025 13:42:35 Europe/Berlin] Column: email - Type: varchar(100)
+[18-Feb-2025 13:42:35 Europe/Berlin] Column: password - Type: varchar(255)
+[18-Feb-2025 13:42:35 Europe/Berlin] Column: role - Type: enum('admin','employee','farmer')
+[18-Feb-2025 13:42:35 Europe/Berlin] Column: created_at - Type: timestamp
+[18-Feb-2025 13:42:35 Europe/Berlin] Column: status - Type: tinyint(1)
+[18-Feb-2025 13:42:35 Europe/Berlin] Column: first_name - Type: varchar(50)
+[18-Feb-2025 13:42:35 Europe/Berlin] Column: last_name - Type: varchar(50)
+[18-Feb-2025 13:42:35 Europe/Berlin] Column: phone - Type: varchar(15)
+[18-Feb-2025 13:42:50 Europe/Berlin] Database connection successful
+[18-Feb-2025 13:42:50 Europe/Berlin] Tables like 'users': 1
+[18-Feb-2025 13:42:50 Europe/Berlin] Column: id - Type: int(11)
+[18-Feb-2025 13:42:50 Europe/Berlin] Column: username - Type: varchar(50)
+[18-Feb-2025 13:42:50 Europe/Berlin] Column: email - Type: varchar(100)
+[18-Feb-2025 13:42:50 Europe/Berlin] Column: password - Type: varchar(255)
+[18-Feb-2025 13:42:50 Europe/Berlin] Column: role - Type: enum('admin','employee','farmer')
+[18-Feb-2025 13:42:50 Europe/Berlin] Column: created_at - Type: timestamp
+[18-Feb-2025 13:42:50 Europe/Berlin] Column: status - Type: tinyint(1)
+[18-Feb-2025 13:42:50 Europe/Berlin] Column: first_name - Type: varchar(50)
+[18-Feb-2025 13:42:50 Europe/Berlin] Column: last_name - Type: varchar(50)
+[18-Feb-2025 13:42:50 Europe/Berlin] Column: phone - Type: varchar(15)
+[18-Feb-2025 13:42:50 Europe/Berlin] POST request received
+[18-Feb-2025 13:42:50 Europe/Berlin] POST data: Array
+(
+    [identifier] => milujiji702@gmail.com
+    [password] => Admin12345
+)
+
+[18-Feb-2025 13:42:50 Europe/Berlin] Attempting login with email: milujiji702@gmail.com
+[18-Feb-2025 13:42:50 Europe/Berlin] Query complete. Found 1 matching users
+[18-Feb-2025 13:42:50 Europe/Berlin] User found. Checking password...
+[18-Feb-2025 13:42:50 Europe/Berlin] User data: Array
+(
+    [id] => 36
+    [username] => milu jiji
+    [email] => milujiji702@gmail.com
+    [password] => $2y$10$1oci6.Hc6E707PT5CRbSO.V1kCnubwBcNlSNSHJPjkV6f7F2AF/Ue
+    [role] => admin
+    [created_at] => 2025-02-05 14:09:46
+    [status] => 1
+    [first_name] => 
+    [last_name] => 
+    [phone] => 8330813606
+)
+
+[18-Feb-2025 13:42:50 Europe/Berlin] Password verified successfully
+[18-Feb-2025 13:42:50 Europe/Berlin] Session data set: Array
+(
+    [success_message] => Your password has been successfully updated!
+    [user_id] => 36
+    [role] => admin
+    [username] => milu jiji
+)
+
+[18-Feb-2025 13:42:50 Europe/Berlin] Redirecting to: admin.php
+[18-Feb-2025 13:42:50 Europe/Berlin] Database connection successful
+[18-Feb-2025 13:42:50 Europe/Berlin] Tables like 'users': 1
+[18-Feb-2025 13:42:50 Europe/Berlin] Column: id - Type: int(11)
+[18-Feb-2025 13:42:50 Europe/Berlin] Column: username - Type: varchar(50)
+[18-Feb-2025 13:42:50 Europe/Berlin] Column: email - Type: varchar(100)
+[18-Feb-2025 13:42:50 Europe/Berlin] Column: password - Type: varchar(255)
+[18-Feb-2025 13:42:50 Europe/Berlin] Column: role - Type: enum('admin','employee','farmer')
+[18-Feb-2025 13:42:50 Europe/Berlin] Column: created_at - Type: timestamp
+[18-Feb-2025 13:42:50 Europe/Berlin] Column: status - Type: tinyint(1)
+[18-Feb-2025 13:42:50 Europe/Berlin] Column: first_name - Type: varchar(50)
+[18-Feb-2025 13:42:50 Europe/Berlin] Column: last_name - Type: varchar(50)
+[18-Feb-2025 13:42:50 Europe/Berlin] Column: phone - Type: varchar(15)
+[18-Feb-2025 13:44:08 Europe/Berlin] Database connection successful
+[18-Feb-2025 13:44:08 Europe/Berlin] Tables like 'users': 1
+[18-Feb-2025 13:44:08 Europe/Berlin] Column: id - Type: int(11)
+[18-Feb-2025 13:44:08 Europe/Berlin] Column: username - Type: varchar(50)
+[18-Feb-2025 13:44:08 Europe/Berlin] Column: email - Type: varchar(100)
+[18-Feb-2025 13:44:08 Europe/Berlin] Column: password - Type: varchar(255)
+[18-Feb-2025 13:44:08 Europe/Berlin] Column: role - Type: enum('admin','employee','farmer')
+[18-Feb-2025 13:44:08 Europe/Berlin] Column: created_at - Type: timestamp
+[18-Feb-2025 13:44:08 Europe/Berlin] Column: status - Type: tinyint(1)
+[18-Feb-2025 13:44:08 Europe/Berlin] Column: first_name - Type: varchar(50)
+[18-Feb-2025 13:44:08 Europe/Berlin] Column: last_name - Type: varchar(50)
+[18-Feb-2025 13:44:08 Europe/Berlin] Column: phone - Type: varchar(15)
+[18-Feb-2025 13:44:16 Europe/Berlin] Database connection successful
+[18-Feb-2025 13:44:16 Europe/Berlin] Tables like 'users': 1
+[18-Feb-2025 13:44:16 Europe/Berlin] Column: id - Type: int(11)
+[18-Feb-2025 13:44:16 Europe/Berlin] Column: username - Type: varchar(50)
+[18-Feb-2025 13:44:16 Europe/Berlin] Column: email - Type: varchar(100)
+[18-Feb-2025 13:44:16 Europe/Berlin] Column: password - Type: varchar(255)
+[18-Feb-2025 13:44:16 Europe/Berlin] Column: role - Type: enum('admin','employee','farmer')
+[18-Feb-2025 13:44:16 Europe/Berlin] Column: created_at - Type: timestamp
+[18-Feb-2025 13:44:16 Europe/Berlin] Column: status - Type: tinyint(1)
+[18-Feb-2025 13:44:16 Europe/Berlin] Column: first_name - Type: varchar(50)
+[18-Feb-2025 13:44:16 Europe/Berlin] Column: last_name - Type: varchar(50)
+[18-Feb-2025 13:44:16 Europe/Berlin] Column: phone - Type: varchar(15)
+[18-Feb-2025 13:44:16 Europe/Berlin] POST request received
+[18-Feb-2025 13:44:16 Europe/Berlin] POST data: Array
+(
+    [identifier] => milujiji702@gmail.com
+    [password] => Admin12345
+)
+
+[18-Feb-2025 13:44:16 Europe/Berlin] Attempting login with email: milujiji702@gmail.com
+[18-Feb-2025 13:44:16 Europe/Berlin] Query complete. Found 1 matching users
+[18-Feb-2025 13:44:16 Europe/Berlin] User found. Checking password...
+[18-Feb-2025 13:44:16 Europe/Berlin] User data: Array
+(
+    [id] => 36
+    [username] => milu jiji
+    [email] => milujiji702@gmail.com
+    [password] => $2y$10$1oci6.Hc6E707PT5CRbSO.V1kCnubwBcNlSNSHJPjkV6f7F2AF/Ue
+    [role] => admin
+    [created_at] => 2025-02-05 14:09:46
+    [status] => 1
+    [first_name] => 
+    [last_name] => 
+    [phone] => 8330813606
+)
+
+[18-Feb-2025 13:44:16 Europe/Berlin] Password verified successfully
+[18-Feb-2025 13:44:16 Europe/Berlin] User role: admin
+[18-Feb-2025 13:44:16 Europe/Berlin] Session data: Array
+(
+    [user_id] => 36
+    [role] => admin
+    [username] => milu jiji
+)
+
+[18-Feb-2025 13:44:16 Europe/Berlin] Admin user detected - redirecting to admin.php
+[18-Feb-2025 13:44:16 Europe/Berlin] Database connection successful
+[18-Feb-2025 13:44:16 Europe/Berlin] Tables like 'users': 1
+[18-Feb-2025 13:44:16 Europe/Berlin] Column: id - Type: int(11)
+[18-Feb-2025 13:44:16 Europe/Berlin] Column: username - Type: varchar(50)
+[18-Feb-2025 13:44:16 Europe/Berlin] Column: email - Type: varchar(100)
+[18-Feb-2025 13:44:16 Europe/Berlin] Column: password - Type: varchar(255)
+[18-Feb-2025 13:44:16 Europe/Berlin] Column: role - Type: enum('admin','employee','farmer')
+[18-Feb-2025 13:44:16 Europe/Berlin] Column: created_at - Type: timestamp
+[18-Feb-2025 13:44:16 Europe/Berlin] Column: status - Type: tinyint(1)
+[18-Feb-2025 13:44:16 Europe/Berlin] Column: first_name - Type: varchar(50)
+[18-Feb-2025 13:44:16 Europe/Berlin] Column: last_name - Type: varchar(50)
+[18-Feb-2025 13:44:16 Europe/Berlin] Column: phone - Type: varchar(15)
+[18-Feb-2025 13:46:39 Europe/Berlin] Database connection successful
+[18-Feb-2025 13:46:39 Europe/Berlin] Tables like 'users': 1
+[18-Feb-2025 13:46:39 Europe/Berlin] Column: id - Type: int(11)
+[18-Feb-2025 13:46:39 Europe/Berlin] Column: username - Type: varchar(50)
+[18-Feb-2025 13:46:39 Europe/Berlin] Column: email - Type: varchar(100)
+[18-Feb-2025 13:46:39 Europe/Berlin] Column: password - Type: varchar(255)
+[18-Feb-2025 13:46:39 Europe/Berlin] Column: role - Type: enum('admin','employee','farmer')
+[18-Feb-2025 13:46:39 Europe/Berlin] Column: created_at - Type: timestamp
+[18-Feb-2025 13:46:39 Europe/Berlin] Column: status - Type: tinyint(1)
+[18-Feb-2025 13:46:39 Europe/Berlin] Column: first_name - Type: varchar(50)
+[18-Feb-2025 13:46:39 Europe/Berlin] Column: last_name - Type: varchar(50)
+[18-Feb-2025 13:46:39 Europe/Berlin] Column: phone - Type: varchar(15)
+[18-Feb-2025 13:46:57 Europe/Berlin] Database connection successful
+[18-Feb-2025 13:46:57 Europe/Berlin] Tables like 'users': 1
+[18-Feb-2025 13:46:57 Europe/Berlin] Column: id - Type: int(11)
+[18-Feb-2025 13:46:57 Europe/Berlin] Column: username - Type: varchar(50)
+[18-Feb-2025 13:46:57 Europe/Berlin] Column: email - Type: varchar(100)
+[18-Feb-2025 13:46:57 Europe/Berlin] Column: password - Type: varchar(255)
+[18-Feb-2025 13:46:57 Europe/Berlin] Column: role - Type: enum('admin','employee','farmer')
+[18-Feb-2025 13:46:57 Europe/Berlin] Column: created_at - Type: timestamp
+[18-Feb-2025 13:46:57 Europe/Berlin] Column: status - Type: tinyint(1)
+[18-Feb-2025 13:46:57 Europe/Berlin] Column: first_name - Type: varchar(50)
+[18-Feb-2025 13:46:57 Europe/Berlin] Column: last_name - Type: varchar(50)
+[18-Feb-2025 13:46:57 Europe/Berlin] Column: phone - Type: varchar(15)
+[18-Feb-2025 13:46:57 Europe/Berlin] Database connection successful
+[18-Feb-2025 13:46:57 Europe/Berlin] Tables like 'users': 1
+[18-Feb-2025 13:46:57 Europe/Berlin] Column: id - Type: int(11)
+[18-Feb-2025 13:46:57 Europe/Berlin] Column: username - Type: varchar(50)
+[18-Feb-2025 13:46:57 Europe/Berlin] Column: email - Type: varchar(100)
+[18-Feb-2025 13:46:57 Europe/Berlin] Column: password - Type: varchar(255)
+[18-Feb-2025 13:46:57 Europe/Berlin] Column: role - Type: enum('admin','employee','farmer')
+[18-Feb-2025 13:46:57 Europe/Berlin] Column: created_at - Type: timestamp
+[18-Feb-2025 13:46:57 Europe/Berlin] Column: status - Type: tinyint(1)
+[18-Feb-2025 13:46:57 Europe/Berlin] Column: first_name - Type: varchar(50)
+[18-Feb-2025 13:46:57 Europe/Berlin] Column: last_name - Type: varchar(50)
+[18-Feb-2025 13:46:57 Europe/Berlin] Column: phone - Type: varchar(15)
+[18-Feb-2025 13:47:06 Europe/Berlin] Database connection successful
+[18-Feb-2025 13:47:06 Europe/Berlin] Tables like 'users': 1
+[18-Feb-2025 13:47:06 Europe/Berlin] Column: id - Type: int(11)
+[18-Feb-2025 13:47:06 Europe/Berlin] Column: username - Type: varchar(50)
+[18-Feb-2025 13:47:06 Europe/Berlin] Column: email - Type: varchar(100)
+[18-Feb-2025 13:47:06 Europe/Berlin] Column: password - Type: varchar(255)
+[18-Feb-2025 13:47:06 Europe/Berlin] Column: role - Type: enum('admin','employee','farmer')
+[18-Feb-2025 13:47:06 Europe/Berlin] Column: created_at - Type: timestamp
+[18-Feb-2025 13:47:06 Europe/Berlin] Column: status - Type: tinyint(1)
+[18-Feb-2025 13:47:06 Europe/Berlin] Column: first_name - Type: varchar(50)
+[18-Feb-2025 13:47:06 Europe/Berlin] Column: last_name - Type: varchar(50)
+[18-Feb-2025 13:47:06 Europe/Berlin] Column: phone - Type: varchar(15)
+[18-Feb-2025 13:52:12 Europe/Berlin] Database connection successful
+[18-Feb-2025 13:52:12 Europe/Berlin] Tables like 'users': 1
+[18-Feb-2025 13:52:12 Europe/Berlin] Column: id - Type: int(11)
+[18-Feb-2025 13:52:12 Europe/Berlin] Column: username - Type: varchar(50)
+[18-Feb-2025 13:52:12 Europe/Berlin] Column: email - Type: varchar(100)
+[18-Feb-2025 13:52:12 Europe/Berlin] Column: password - Type: varchar(255)
+[18-Feb-2025 13:52:12 Europe/Berlin] Column: role - Type: enum('admin','employee','farmer')
+[18-Feb-2025 13:52:12 Europe/Berlin] Column: created_at - Type: timestamp
+[18-Feb-2025 13:52:12 Europe/Berlin] Column: status - Type: tinyint(1)
+[18-Feb-2025 13:52:12 Europe/Berlin] Column: first_name - Type: varchar(50)
+[18-Feb-2025 13:52:12 Europe/Berlin] Column: last_name - Type: varchar(50)
+[18-Feb-2025 13:52:12 Europe/Berlin] Column: phone - Type: varchar(15)
+[18-Feb-2025 13:52:29 Europe/Berlin] Database connection successful
+[18-Feb-2025 13:52:29 Europe/Berlin] Tables like 'users': 1
+[18-Feb-2025 13:52:29 Europe/Berlin] Column: id - Type: int(11)
+[18-Feb-2025 13:52:29 Europe/Berlin] Column: username - Type: varchar(50)
+[18-Feb-2025 13:52:29 Europe/Berlin] Column: email - Type: varchar(100)
+[18-Feb-2025 13:52:29 Europe/Berlin] Column: password - Type: varchar(255)
+[18-Feb-2025 13:52:29 Europe/Berlin] Column: role - Type: enum('admin','employee','farmer')
+[18-Feb-2025 13:52:29 Europe/Berlin] Column: created_at - Type: timestamp
+[18-Feb-2025 13:52:29 Europe/Berlin] Column: status - Type: tinyint(1)
+[18-Feb-2025 13:52:29 Europe/Berlin] Column: first_name - Type: varchar(50)
+[18-Feb-2025 13:52:29 Europe/Berlin] Column: last_name - Type: varchar(50)
+[18-Feb-2025 13:52:29 Europe/Berlin] Column: phone - Type: varchar(15)
+[18-Feb-2025 13:52:39 Europe/Berlin] Database connection successful
+[18-Feb-2025 13:52:39 Europe/Berlin] Tables like 'users': 1
+[18-Feb-2025 13:52:39 Europe/Berlin] Column: id - Type: int(11)
+[18-Feb-2025 13:52:39 Europe/Berlin] Column: username - Type: varchar(50)
+[18-Feb-2025 13:52:39 Europe/Berlin] Column: email - Type: varchar(100)
+[18-Feb-2025 13:52:39 Europe/Berlin] Column: password - Type: varchar(255)
+[18-Feb-2025 13:52:39 Europe/Berlin] Column: role - Type: enum('admin','employee','farmer')
+[18-Feb-2025 13:52:39 Europe/Berlin] Column: created_at - Type: timestamp
+[18-Feb-2025 13:52:39 Europe/Berlin] Column: status - Type: tinyint(1)
+[18-Feb-2025 13:52:39 Europe/Berlin] Column: first_name - Type: varchar(50)
+[18-Feb-2025 13:52:39 Europe/Berlin] Column: last_name - Type: varchar(50)
+[18-Feb-2025 13:52:39 Europe/Berlin] Column: phone - Type: varchar(15)
+[18-Feb-2025 13:52:51 Europe/Berlin] Database connection successful
+[18-Feb-2025 13:52:51 Europe/Berlin] Tables like 'users': 1
+[18-Feb-2025 13:52:51 Europe/Berlin] Column: id - Type: int(11)
+[18-Feb-2025 13:52:51 Europe/Berlin] Column: username - Type: varchar(50)
+[18-Feb-2025 13:52:51 Europe/Berlin] Column: email - Type: varchar(100)
+[18-Feb-2025 13:52:51 Europe/Berlin] Column: password - Type: varchar(255)
+[18-Feb-2025 13:52:51 Europe/Berlin] Column: role - Type: enum('admin','employee','farmer')
+[18-Feb-2025 13:52:51 Europe/Berlin] Column: created_at - Type: timestamp
+[18-Feb-2025 13:52:51 Europe/Berlin] Column: status - Type: tinyint(1)
+[18-Feb-2025 13:52:51 Europe/Berlin] Column: first_name - Type: varchar(50)
+[18-Feb-2025 13:52:51 Europe/Berlin] Column: last_name - Type: varchar(50)
+[18-Feb-2025 13:52:51 Europe/Berlin] Column: phone - Type: varchar(15)
+[18-Feb-2025 13:52:51 Europe/Berlin] PHP Warning:  Undefined variable $total_farmers in C:\xampp\htdocs\mini\admin.php on line 418
+[18-Feb-2025 13:52:51 Europe/Berlin] PHP Warning:  Undefined variable $total_land in C:\xampp\htdocs\mini\admin.php on line 423
+[18-Feb-2025 13:52:51 Europe/Berlin] PHP Warning:  Undefined variable $total_varieties in C:\xampp\htdocs\mini\admin.php on line 428
+[18-Feb-2025 13:52:51 Europe/Berlin] PHP Warning:  Undefined variable $total_employees in C:\xampp\htdocs\mini\admin.php on line 433
+[18-Feb-2025 13:52:51 Europe/Berlin] PHP Warning:  Undefined variable $total_soil_tests in C:\xampp\htdocs\mini\admin.php on line 438
+[18-Feb-2025 13:52:51 Europe/Berlin] PHP Warning:  Undefined variable $dashboard_data in C:\xampp\htdocs\mini\admin.php on line 460
+[18-Feb-2025 13:52:51 Europe/Berlin] PHP Warning:  foreach() argument must be of type array|object, null given in C:\xampp\htdocs\mini\admin.php on line 460
+[18-Feb-2025 13:55:13 Europe/Berlin] Login attempt - Email: milujiji702@gmail.com, Role: admin
+[18-Feb-2025 13:55:13 Europe/Berlin] Login successful - User ID: 36, Role: admin
+[18-Feb-2025 13:55:13 Europe/Berlin] Redirecting admin to admin.php
+[18-Feb-2025 13:56:50 Europe/Berlin] Login attempt - Email: milujiji702@gmail.com, Role: admin
+[18-Feb-2025 13:56:50 Europe/Berlin] Login successful - User ID: 36, Role: admin
+[18-Feb-2025 13:56:50 Europe/Berlin] Redirecting admin to admin.php
+[18-Feb-2025 15:45:00 Europe/Berlin] Login attempt - Email: milujiji702@gmail.com, Role: admin
+[18-Feb-2025 15:45:00 Europe/Berlin] Login successful - User ID: 36, Role: admin
+[18-Feb-2025 15:45:00 Europe/Berlin] Redirecting admin to admin.php
+[18-Feb-2025 15:54:10 Europe/Berlin] Login attempt - Email: milujiji702@gmail.com, Role: admin
+[18-Feb-2025 15:54:10 Europe/Berlin] Login successful - User ID: 36, Role: admin
+[18-Feb-2025 15:54:10 Europe/Berlin] Redirecting admin to admin.php
+[18-Feb-2025 17:03:44 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[18-Feb-2025 17:03:44 Europe/Berlin] Login successful - User ID: 66, Role: employee
+[18-Feb-2025 17:05:30 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[18-Feb-2025 17:05:30 Europe/Berlin] Login successful - User ID: 66, Role: employee
+[18-Feb-2025 17:06:04 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[18-Feb-2025 17:06:04 Europe/Berlin] Login successful - User ID: 66, Role: employee
+[18-Feb-2025 17:25:54 Europe/Berlin] No user found with email: krishnapriyarajesh2027@mca.ajce.in
+[18-Feb-2025 17:26:41 Europe/Berlin] No user found with email: unnijiji@gmail.com
+[18-Feb-2025 17:26:49 Europe/Berlin] No user found with email: unnijiji@gmail.com
+[18-Feb-2025 17:27:05 Europe/Berlin] No user found with email: unnijiji@gmail.com
+[18-Feb-2025 17:27:11 Europe/Berlin] No user found with email: unnijiji@gmail.com
+[18-Feb-2025 17:27:29 Europe/Berlin] Login attempt - Email: maria@gmail.com, Role: farmer
+[18-Feb-2025 17:27:29 Europe/Berlin] Password verification failed for email: maria@gmail.com
+[18-Feb-2025 17:27:40 Europe/Berlin] No user found with email: unnijiji@gmail.com
+[18-Feb-2025 17:28:07 Europe/Berlin] Login attempt - Email: annmariasusankurian2027@mca.ajce.in, Role: farmer
+[18-Feb-2025 17:28:07 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[18-Feb-2025 17:29:09 Europe/Berlin] Login attempt - Email: annmariasusankurian2027@mca.ajce.in, Role: farmer
+[18-Feb-2025 17:29:09 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[18-Feb-2025 19:59:41 Europe/Berlin] Login attempt - Email: annmariasusankurian2027@mca.ajce.in, Role: farmer
+[18-Feb-2025 19:59:41 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[18-Feb-2025 20:07:15 Europe/Berlin] Login attempt - Email: milujiji702@gmail.com, Role: admin
+[18-Feb-2025 20:07:15 Europe/Berlin] Password verification failed for email: milujiji702@gmail.com
+[18-Feb-2025 20:07:25 Europe/Berlin] Login attempt - Email: milujiji702@gmail.com, Role: admin
+[18-Feb-2025 20:07:25 Europe/Berlin] Login successful - User ID: 36, Role: admin
+[18-Feb-2025 20:07:25 Europe/Berlin] Redirecting admin to admin.php
+[18-Feb-2025 20:12:40 Europe/Berlin] Login attempt - Email: annmariasusankurian2027@mca.ajce.in, Role: farmer
+[18-Feb-2025 20:12:40 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[18-Feb-2025 20:18:49 Europe/Berlin] Login attempt - Email: annmariasusankurian2027@mca.ajce.in, Role: farmer
+[18-Feb-2025 20:18:49 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[18-Feb-2025 20:19:36 Europe/Berlin] Login attempt - Email: annmariasusankurian2027@mca.ajce.in, Role: farmer
+[18-Feb-2025 20:19:37 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[19-Feb-2025 03:22:20 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[19-Feb-2025 03:22:20 Europe/Berlin] Login successful - User ID: 66, Role: employee
+[19-Feb-2025 04:01:37 Europe/Berlin] Login attempt - Email: milujiji702@gmail.com, Role: admin
+[19-Feb-2025 04:01:37 Europe/Berlin] Login successful - User ID: 36, Role: admin
+[19-Feb-2025 04:01:37 Europe/Berlin] Redirecting admin to admin.php
+[19-Feb-2025 04:08:48 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[19-Feb-2025 04:08:48 Europe/Berlin] Login successful - User ID: 66, Role: employee
+[19-Feb-2025 04:13:50 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[19-Feb-2025 04:13:50 Europe/Berlin] Login successful - User ID: 66, Role: employee
+[19-Feb-2025 05:12:29 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[19-Feb-2025 05:12:29 Europe/Berlin] Login successful - User ID: 66, Role: employee

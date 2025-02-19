@@ -2,6 +2,20 @@
 session_start();
 require_once 'config.php';
 
+// Add authentication check at the top
+if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
+    // Store the current URL in the session before redirecting
+    $_SESSION['redirect_url'] = $_SERVER['REQUEST_URI'];
+    header("Location: login.php");
+    exit();
+}
+
+// Add these headers to prevent caching
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // Date in the past
+
 // Initialize database connection
 $dbConfig = new DatabaseConfig();
 $conn = $dbConfig->getConnection();
@@ -380,9 +394,85 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background-color: #f8d7da;
             color: #721c24;
         }
+     
+.admin-dashboard-link {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 50px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+    box-shadow: 0 4px 15px rgba(46, 125, 50, 0.2);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-dashboard-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(46, 125, 50, 0.3);
+    background: linear-gradient(135deg, #33873b 0%, #1e6823 100%);
+}
+
+.admin-dashboard-link i {
+    font-size: 20px;
+}
+
+.admin-dashboard-link .icon-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    transition: all 0.3s ease;
+}
+
+.admin-dashboard-link:hover .icon-container {
+    transform: rotate(360deg);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.admin-dashboard-link .text {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+@media (max-width: 768px) {
+    .admin-dashboard-link {
+        padding: 10px 16px;
+    }
+    
+    .admin-dashboard-link .text {
+        display: none;
+    }
+    
+    .admin-dashboard-link .icon-container {
+        width: 28px;
+        height: 28px;
+    }
+}
+
+
+
+
     </style>
 </head>
 <body>
+<a href="admin.php" class="admin-dashboard-link">
+    <div class="icon-container">
+        <i class="fas fa-user-shield"></i>
+    </div>
+    <span class="text">Admin Dashboard</span>
+</a>
 <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <i class="fas fa-seedling"></i>

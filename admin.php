@@ -1,6 +1,38 @@
 <?php
 session_start();
 
+// Modify the authentication check to be more specific
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    session_unset();     // Clear all session variables
+    session_destroy();   // Destroy the session
+    header("Location: login.php");
+    exit();
+}
+
+// Add session timeout check (e.g., 30 minutes)
+$timeout = 1800; // 30 minutes in seconds
+if (time() - $_SESSION['last_activity'] > $timeout) {
+    session_unset();
+    session_destroy();
+    header("Location: login.php");
+    exit();
+}
+$_SESSION['last_activity'] = time(); // Update last activity time stamp
+
+// After successful login, check if there's a stored URL to redirect to
+if (isset($_SESSION['redirect_url'])) {
+    $redirect_url = $_SESSION['redirect_url'];
+    unset($_SESSION['redirect_url']); // Clear the stored URL
+    header("Location: " . $redirect_url);
+    exit();
+}
+
+// Add these headers to prevent caching
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // Date in the past
+
 // Add database connection
 $conn = mysqli_connect("localhost", "root", "", "growguide");
 
@@ -370,7 +402,7 @@ if ($result) {
                 <i class="fas fa-cog"></i>
                 <span class="menu-text">Settings</span>
             </a>
-            <a href="login.php" class="menu-item">
+            <a href="logout.php" class="menu-item">
                 <i class="fas fa-sign-out-alt"></i>
                 <span class="menu-text">Logout</span>
             </a>
