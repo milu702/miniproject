@@ -455,81 +455,208 @@ function getPHStatus($ph) {
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
+
+        .welcome-banner {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(248, 249, 250, 0.95));
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            animation: slideDown 0.8s ease-out;
+        }
+
+        .welcome-message {
+            color: var(--primary-dark);
+            font-size: 2em;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .welcome-message i {
+            font-size: 1.2em;
+            animation: wave 2s infinite;
+            color: var(--primary-color);
+        }
+
+        .farmer-name {
+            color: var(--button-color);
+            font-weight: bold;
+            position: relative;
+            display: inline-block;
+            animation: highlight 3s infinite;
+        }
+
+        @keyframes wave {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(20deg); }
+            75% { transform: rotate(-15deg); }
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes highlight {
+            0%, 100% { color: var(--button-color); }
+            50% { color: var(--primary-dark); }
+        }
+
+        .soil-analysis {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .analysis-box, .recommendations {
+            margin-bottom: 20px;
+        }
+
+        .solution {
+            background: rgba(240, 240, 240, 0.8);
+            border: 1px solid var(--primary-color);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            transition: transform 0.3s;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
     <div class="content">
-    <div class="dashboard-container">
-        <div class="dashboard-content">
-            <a href="farmer.php" class="admin-dashboard-link">
-                <div class="icon-container">
-                    <i class="fas fa-user-shield"></i>
-                </div>
-                <span class="text">BACK TO DASHBOARD</span>
-            </a>
-            <h2>Soil Test Analysis</h2>
+        <div class="welcome-banner">
+            <h1 class="welcome-message">
+                <i class="fas fa-seedling"></i>
+                Welcome, <span class="farmer-name"><?php echo htmlspecialchars($farmers[0]['username']); ?></span>!
+                <i class="fas fa-hand-sparkles"></i>
+            </h1>
+        </div>
+        <div class="dashboard-container">
+            <div class="dashboard-content">
+                <a href="farmer.php" class="admin-dashboard-link">
+                    <div class="icon-container">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <span class="text">BACK TO DASHBOARD</span>
+                </a>
+                <h2>Soil Test Analysis</h2>
 
-        
-        
-        <?php if ($message): ?>
-            <div class="alert alert-success"><?php echo $message; ?></div>
-        <?php endif; ?>
+            
+            
+            <?php if ($message): ?>
+                <div class="alert alert-success"><?php echo $message; ?></div>
+            <?php endif; ?>
 
-        <form method="POST" onsubmit="return validateForm()" novalidate>
-            <div class="form-grid">
-                <input type="hidden" name="farmer_id" value="<?php echo $_SESSION['user_id']; ?>">
-                <div class="form-group">
-                    <i class="fas fa-vial"></i>
-                    <label>pH Level</label>
-                    <input type="number" name="ph_level" id="ph_level" step="0.1" required min="0" max="14">
-                    <span class="error-message">Please enter a valid pH level (0-14)</span>
+            <form method="POST" onsubmit="return validateForm()" novalidate>
+                <div class="form-grid">
+                    <input type="hidden" name="farmer_id" value="<?php echo $_SESSION['user_id']; ?>">
+                    <div class="form-group">
+                        <i class="fas fa-vial"></i>
+                        <label>pH Level</label>
+                        <input type="number" name="ph_level" id="ph_level" step="0.1" required min="0" max="14">
+                        <span class="error-message">Please enter a valid pH level (0-14)</span>
+                    </div>
+                    <div class="form-group">
+                        <i class="fas fa-leaf"></i>
+                        <label>Nitrogen (N) %</label>
+                        <input type="number" name="nitrogen_content" id="nitrogen_content" step="0.01" required min="0">
+                        <span class="error-message">Please enter a valid nitrogen percentage</span>
+                    </div>
+                    <div class="form-group">
+                        <i class="fas fa-seedling"></i>
+                        <label>Phosphorus (P) %</label>
+                        <input type="number" name="phosphorus_content" id="phosphorus_content" step="0.01" required min="0">
+                        <span class="error-message">Please enter a valid phosphorus percentage</span>
+                    </div>
+                    <div class="form-group">
+                        <i class="fas fa-flask"></i>
+                        <label>Potassium (K) %</label>
+                        <input type="number" name="potassium_content" id="potassium_content" step="0.01" required min="0">
+                        <span class="error-message">Please enter a valid potassium percentage</span>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <i class="fas fa-leaf"></i>
-                    <label>Nitrogen (N) %</label>
-                    <input type="number" name="nitrogen_content" id="nitrogen_content" step="0.01" required min="0">
-                    <span class="error-message">Please enter a valid nitrogen percentage</span>
+                <button type="submit" name="add_soil_test">Add Soil Test</button>
+            </form>
+
+            <div class="test-results">
+                <h3>Recent Soil Tests</h3>
+                <?php if (empty($soil_tests)): ?>
+                    <p>No soil tests found.</p>
+                <?php else: ?>
+                    <?php foreach ($soil_tests as $test): ?>
+                        <div class="test-card">
+                            <h4>
+                                <i class="fas fa-user-farmer" style="color: var(--primary-color);"></i>
+                                Farmer: <?php echo htmlspecialchars($test['farmer_name']); ?>
+                            </h4>
+                            <p>Test Date: <?php echo date('F j, Y', strtotime($test['test_date'])); ?></p>
+                            <p>pH Level: <?php echo $test['ph_level']; ?>
+                                <span class="value-indicator" style="background-color: <?php echo getPHColor($test['ph_level']); ?>">
+                                    <?php echo getPHStatus($test['ph_level']); ?>
+                                </span>
+                            </p>
+                            <p>NPK Values: <?php echo $test['nitrogen_content']; ?>% N, 
+                               <?php echo $test['phosphorus_content']; ?>% P, 
+                               <?php echo $test['potassium_content']; ?>% K</p>
+                            <p class="farmer-message" style="color: var(--success-color); font-weight: bold;">
+                                Keep up the great work, <?php echo htmlspecialchars($test['farmer_name']); ?>! 🌱
+                            </p>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+
+            <!-- New section for soil analysis and solutions -->
+            <div class="soil-analysis">
+                <h3>Soil Analysis & Recommendations</h3>
+                <div class="analysis-box">
+                    <h4>Ideal Soil Conditions for Cardamom</h4>
+                    <ul>
+                        <li><strong>pH Level:</strong> 5.5 - 6.5 (Slightly Acidic)</li>
+                        <li><strong>Nitrogen (N) %:</strong> 0.5% - 1.0%</li>
+                        <li><strong>Phosphorus (P) %:</strong> 0.05% - 0.2%</li>
+                        <li><strong>Potassium (K) %:</strong> 1.0% - 2.0%</li>
+                    </ul>
                 </div>
-                <div class="form-group">
-                    <i class="fas fa-seedling"></i>
-                    <label>Phosphorus (P) %</label>
-                    <input type="number" name="phosphorus_content" id="phosphorus_content" step="0.01" required min="0">
-                    <span class="error-message">Please enter a valid phosphorus percentage</span>
-                </div>
-                <div class="form-group">
-                    <i class="fas fa-flask"></i>
-                    <label>Potassium (K) %</label>
-                    <input type="number" name="potassium_content" id="potassium_content" step="0.01" required min="0">
-                    <span class="error-message">Please enter a valid potassium percentage</span>
+                <div class="recommendations">
+                    <h4>Solutions for Cardamom Plantation</h4>
+                    <div class="solution" style="animation: float 3s infinite;">
+                        <h5>pH Level Adjustment</h5>
+                        <p>Apply lime to raise pH if < 5.5.</p>
+                    </div>
+                    <div class="solution" style="animation: float 3s infinite;">
+                        <h5>Nitrogen Adjustment</h5>
+                        <p>Apply compost for low nitrogen.</p>
+                    </div>
+                    <div class="solution" style="animation: float 3s infinite;">
+                        <h5>Phosphorus Adjustment</h5>
+                        <p>Add bone meal for low phosphorus.</p>
+                    </div>
+                    <div class="solution" style="animation: float 3s infinite;">
+                        <h5>Potassium Adjustment</h5>
+                        <p>Apply wood ash for low potassium.</p>
+                    </div>
                 </div>
             </div>
-            <button type="submit" name="add_soil_test">Add Soil Test</button>
-        </form>
-
-        <div class="test-results">
-            <h3>Recent Soil Tests</h3>
-            <?php if (empty($soil_tests)): ?>
-                <p>No soil tests found.</p>
-            <?php else: ?>
-                <?php foreach ($soil_tests as $test): ?>
-                    <div class="test-card">
-                        <h4>Farmer: <?php echo htmlspecialchars($test['farmer_name']); ?></h4>
-                        <p>Test Date: <?php echo date('F j, Y', strtotime($test['test_date'])); ?></p>
-                        <p>pH Level: <?php echo $test['ph_level']; ?>
-                            <span class="value-indicator" style="background-color: <?php echo getPHColor($test['ph_level']); ?>">
-                                <?php echo getPHStatus($test['ph_level']); ?>
-                            </span>
-                        </p>
-                        <p>NPK Values: <?php echo $test['nitrogen_content']; ?>% N, 
-                           <?php echo $test['phosphorus_content']; ?>% P, 
-                           <?php echo $test['potassium_content']; ?>% K</p>
-                    </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
         </div>
-    </div>
 
-    
+        
+            </div>
         </div>
     </div>
 

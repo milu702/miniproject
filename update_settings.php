@@ -1,9 +1,10 @@
 <?php
+header('Content-Type: application/json');
 session_start();
 
 // Ensure user is logged in and has the 'farmer' role
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'farmer') {
-    header("Location: login.php");
+    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
     exit();
 }
 
@@ -97,6 +98,8 @@ try {
     $response['success'] = true;
     $response['message'] = "Settings updated successfully!";
 
+    // Return success response
+    echo json_encode($response);
 } catch (Exception $e) {
     // Rollback transaction on error
     $conn->rollback();
@@ -104,15 +107,7 @@ try {
     // Set error message
     $_SESSION['error'] = $e->getMessage();
     $response['message'] = $e->getMessage();
-}
 
-// Check if it's an AJAX request
-if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-    header('Content-Type: application/json');
+    // Return error response
     echo json_encode($response);
-    exit;
-}
-
-// Redirect back to settings page for normal form submission
-header("Location: settings.php");
-exit(); 
+} 

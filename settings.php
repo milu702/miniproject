@@ -131,9 +131,15 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
 
         .form-group {
             background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .form-group:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.12);
         }
 
         .form-group h3 {
@@ -143,8 +149,40 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
         }
 
         .input-group {
-            margin-bottom: 20px;
+            position: relative;
+            margin-bottom: 25px;
         }
+
+        .input-group i {
+            position: absolute;
+            left: 12px;
+            top: 40px;
+            color: #6B7280;
+            transition: color 0.3s ease;
+        }
+
+        .input-group input {
+            padding: 12px 40px;
+            background-color: #F3F4F6;
+            border: 2px solid transparent;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            border-color: #4299e1;
+            background-color: #fff;
+        }
+
+        .input-group input:focus + i {
+            color: #4299e1;
+        }
+
+        /* Field-specific colors */
+        .input-group.name-field i { color: #3B82F6; }
+        .input-group.email-field i { color: #10B981; }
+        .input-group.phone-field i { color: #F59E0B; }
+        .input-group.password-field i { color: #6366F1; }
 
         .input-group label {
             display: block;
@@ -153,18 +191,16 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
             font-weight: 500;
         }
 
-        .input-group input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            transition: all 0.3s ease;
+        .input-group input.error {
+            border-color: #dc3545;
+            background-color: #fff8f8;
         }
 
-        .input-group input:focus {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.1);
-            outline: none;
+        .validation-message {
+            color: #dc3545;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: block;
         }
 
         .notification-group {
@@ -322,26 +358,10 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
             padding: 20px;
         }
 
-        .input-group input.error {
-            border-color: #dc3545;
-            background-color: #fff8f8;
-        }
-
-        .input-group input.error:focus {
-            box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.25);
-        }
-
         .form-requirements {
             font-size: 0.8rem;
             color: #666;
             margin-top: 5px;
-        }
-
-        .validation-message {
-            color: #dc3545;
-            font-size: 0.8rem;
-            margin-top: 5px;
-            display: block;
         }
 
         .button-group {
@@ -351,31 +371,55 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
         }
 
         .update-btn {
-            background: var(--secondary-color);
-            color: black;
+            background: linear-gradient(135deg, #4299e1, #3B82F6);
+            color: white;
             border: none;
-            padding: 12px 25px;
+            padding: 12px 30px;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 500;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .update-btn:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                120deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            transition: 0.5s;
+        }
+
+        .update-btn:hover:before {
+            left: 100%;
         }
 
         .update-btn:hover {
-            background: var(--accent-color);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
         }
 
-        .input-group small {
-            color: #666;
-            font-size: 0.8rem;
-            margin-top: 5px;
-            display: block;
+        .update-btn:active {
+            transform: translateY(1px);
+        }
+
+        /* Loading animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-spin {
+            animation: spin 1s linear infinite;
         }
     </style>
 </head>
@@ -445,34 +489,39 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
                 <form action="update_settings.php" method="POST" class="data-form" id="settingsForm" onsubmit="return validateForm()">
                     <div class="form-grid">
                         <div class="form-group">
-                            <h3>Profile Information</h3>
-                            <div class="input-group">
+                            <h3><i class="fas fa-user-circle"></i> Profile Information</h3>
+                            <div class="input-group name-field">
                                 <label for="name">Full Name *</label>
                                 <input type="text" id="name" name="name" value="<?php echo $farmerName; ?>" required>
+                                <i class="fas fa-user"></i>
                                 <span class="validation-message" id="nameError"></span>
                             </div>
-                            <div class="input-group">
+                            <div class="input-group email-field">
                                 <label for="email">Email *</label>
                                 <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($userData['email'] ?? ''); ?>" required>
+                                <i class="fas fa-envelope"></i>
                                 <span class="validation-message" id="emailError"></span>
                             </div>
-                            <div class="input-group">
+                            <div class="input-group phone-field">
                                 <label for="phone">Phone</label>
                                 <input type="tel" id="phone" name="phone" value="<?php echo htmlspecialchars($userData['phone'] ?? ''); ?>" pattern="[0-9]{10}">
+                                <i class="fas fa-phone"></i>
                                 <span class="validation-message" id="phoneError"></span>
                                 <small class="form-requirements">Enter 10-digit phone number</small>
                             </div>
                         </div>
                         
                         <div class="form-group">
-                            <h3>Security</h3>
-                            <div class="input-group">
+                            <h3><i class="fas fa-shield-alt"></i> Security</h3>
+                            <div class="input-group password-field">
                                 <label for="current_password">Current Password</label>
                                 <input type="password" id="current_password" name="current_password">
+                                <i class="fas fa-lock"></i>
                             </div>
-                            <div class="input-group">
+                            <div class="input-group password-field">
                                 <label for="new_password">New Password</label>
                                 <input type="password" id="new_password" name="new_password">
+                                <i class="fas fa-key"></i>
                                 <div class="form-requirements">
                                     Password must be at least 8 characters long and contain:
                                     <ul>
@@ -483,9 +532,10 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
                                     </ul>
                                 </div>
                             </div>
-                            <div class="input-group">
+                            <div class="input-group password-field">
                                 <label for="confirm_password">Confirm New Password</label>
                                 <input type="password" id="confirm_password" name="confirm_password">
+                                <i class="fas fa-check-circle"></i>
                             </div>
                         </div>
                     </div>
@@ -638,10 +688,15 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
 
     function updateDashboard() {
         if (validateForm()) {
-            // Show loading state
             const updateBtn = document.querySelector('.update-btn');
             const originalBtnText = updateBtn.innerHTML;
-            updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+            
+            // Enhanced loading state
+            updateBtn.innerHTML = `
+                <i class="fas fa-spinner loading-spin"></i>
+                <span>Updating...</span>
+            `;
+            updateBtn.style.background = 'linear-gradient(135deg, #3B82F6, #2563EB)';
             updateBtn.disabled = true;
 
             // Save form data

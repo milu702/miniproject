@@ -292,6 +292,25 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
         }
 
         /* Include all sidebar and nav styles from settings.php */
+
+        /* Add these priority-based styles */
+        @keyframes importantPulse {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+
+        .priority-high {
+            border-left: 4px solid #dc3545 !important;
+            background-color: rgba(220, 53, 69, 0.1) !important;
+            animation: importantPulse 2s infinite;
+        }
+
+        .priority-medium {
+            border-left: 4px solid #28a745 !important;
+            background-color: rgba(40, 167, 69, 0.1) !important;
+        }
     </style>
 </head>
 <body>
@@ -351,7 +370,18 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
                         $tasks = $stmt->fetchAll();
 
                         foreach ($tasks as $task) {
-                            echo '<div class="task-item" data-task-id="' . $task['id'] . '">
+                            // Add priority-based classes
+                            $priorityClass = '';
+                            switch($task['priority']) {
+                                case 'high':
+                                    $priorityClass = 'priority-high';
+                                    break;
+                                case 'medium':
+                                    $priorityClass = 'priority-medium';
+                                    break;
+                            }
+                            
+                            echo '<div class="task-item ' . $priorityClass . '" data-task-id="' . $task['id'] . '">
                                 <input type="checkbox" class="task-checkbox">
                                 <div class="task-content">
                                     <div class="task-title">' . htmlspecialchars($task['title']) . '</div>
@@ -414,10 +444,12 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/main.min.js"></script>
     <script>
+        let calendar; // Declare calendar variable in global scope
+
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize FullCalendar
             var calendarEl = document.getElementById('calendar');
-            var calendar = new FullCalendar.Calendar(calendarEl, {
+            calendar = new FullCalendar.Calendar(calendarEl, {  // Remove 'var' to use global calendar
                 initialView: 'dayGridMonth',
                 headerToolbar: {
                     left: 'prev,next today',
@@ -493,10 +525,15 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
                         description: document.getElementById('taskDescription').value
                     });
 
+                    // Add priority-based class
+                    const priority = document.getElementById('taskPriority').value;
+                    const priorityClass = priority === 'high' ? 'priority-high' : 
+                                        priority === 'medium' ? 'priority-medium' : '';
+
                     // Add task to task list
                     const taskList = document.getElementById('taskList');
                     const taskItem = document.createElement('div');
-                    taskItem.className = 'task-item';
+                    taskItem.className = `task-item ${priorityClass}`;
                     taskItem.dataset.taskId = data.task_id;
                     taskItem.innerHTML = `
                         <input type="checkbox" class="task-checkbox">
@@ -531,9 +568,9 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
                 fetch('delete_task.php', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded',  // Changed content type
                     },
-                    body: JSON.stringify({ task_id: taskId })
+                    body: 'task_id=' + taskId  // Changed body format
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -543,11 +580,9 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
                         if (taskElement) {
                             taskElement.remove();
                         }
-                        // Remove event from calendar
-                        const event = calendar.getEventById(taskId);
-                        if (event) {
-                            event.remove();
-                        }
+                        
+                        // Refresh the calendar to show updated events
+                        calendar.refetchEvents();
                     } else {
                         alert('Error deleting task: ' + data.message);
                     }
