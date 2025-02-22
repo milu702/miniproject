@@ -21,6 +21,8 @@ if (isset($_SESSION['redirect_url'])) {
     exit();
 }
 
+// After database connection checks, add this code
+$weather_api_key = "cc02c9dee7518466102e748f211bca05";
 
 // Get cardamom specific data
 $user_id = $_SESSION['user_id'];
@@ -47,7 +49,7 @@ $stmt = $conn->prepare("
     LEFT JOIN farmer_profiles p ON f.farmer_id = p.farmer_id
     LEFT JOIN users u ON f.user_id = u.id
     WHERE f.user_id = ?
-    GROUP BY f.farmer_id, f.farm_size, f.farm_location, p.soil_type, p.soil_ph, p.soil_moisture"
+    GROUP BY f.farmer_id, u.username, f.farm_size, f.farm_location, p.soil_type, p.soil_ph, p.soil_moisture"
 );
 
 if ($stmt === false) {
@@ -75,7 +77,68 @@ $stmt->bind_param("i", $farmerData['farmer_id']);
 $stmt->execute();
 $recentCrops = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-$username = isset($farmerData['username']) ? htmlspecialchars($farmerData['username']) : 'Farmer';
+$username = isset($farmerData['username']) && !empty($farmerData['username']) 
+    ? htmlspecialchars($farmerData['username']) 
+    : (isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : 'Farmer');
+
+// Get farmer's location from database
+$location_stmt = $conn->prepare("
+    SELECT latitude, longitude, farm_location 
+    FROM farmers 
+    WHERE user_id = ?
+");
+$location_stmt->bind_param("i", $user_id);
+$location_stmt->execute();
+$location_result = $location_stmt->get_result()->fetch_assoc();
+
+$weather_data = null;
+if ($location_result && $location_result['latitude'] && $location_result['longitude']) {
+    $lat = $location_result['latitude'];
+    $lon = $location_result['longitude'];
+    $weather_url = "https://api.openweathermap.org/data/2.5/weather?lat={$lat}&lon={$lon}&units=metric&appid={$weather_api_key}";
+    
+    $weather_response = file_get_contents($weather_url);
+    if ($weather_response) {
+        $weather_data = json_decode($weather_response, true);
+    }
+}
+
+// Add this after the database connection checks
+function getWeatherData($location) {
+    $api_key = "cc02c9dee7518466102e748f211bca05";
+    $url = "https://api.openweathermap.org/data/2.5/weather?q=" . urlencode($location) . "&units=metric&appid=" . $api_key;
+    
+    $response = @file_get_contents($url);
+    if ($response) {
+        return json_decode($response, true);
+    }
+    return null;
+}
+
+// Handle location form submission
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_location'])) {
+    $new_location = $_POST['farm_location'];
+    
+    // Verify the location exists by checking weather data
+    $weather_check = getWeatherData($new_location);
+    
+    if ($weather_check) {
+        // Update location in database
+        $update_stmt = $conn->prepare("UPDATE farmers SET farm_location = ? WHERE user_id = ?");
+        $update_stmt->bind_param("si", $new_location, $_SESSION['user_id']);
+        
+        if ($update_stmt->execute()) {
+            $_SESSION['success'] = "Location updated successfully!";
+        } else {
+            $_SESSION['error'] = "Error updating location.";
+        }
+    } else {
+        $_SESSION['error'] = "Invalid location. Please enter a valid city name.";
+    }
+    
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -360,6 +423,382 @@ $username = isset($farmerData['username']) ? htmlspecialchars($farmerData['usern
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+
+        .welcome-section {
+            background: linear-gradient(135deg, #2d6a4f, #40916c);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .welcome-section h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .welcome-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .welcome-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+            text-align: center;
+        }
+
+        .welcome-card i {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            color: var(--accent-color);
+        }
+
+        .welcome-card h3 {
+            font-size: 1.3em;
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        .welcome-card p {
+            font-size: 0.95em;
+            line-height: 1.5;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .quick-guide {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .guide-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .guide-item {
+            text-align: center;
+            padding: 20px;
+            background: var(--bg-color);
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .guide-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .guide-item i {
+            font-size: 2em;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .guide-item h4 {
+            color: var(--text-color);
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .guide-item p {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .fas.fa-hand-wave {
+            animation: wave 1s infinite;
+        }
+
+        @keyframes wave {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(20deg); }
+            50% { transform: rotate(0deg); }
+            75% { transform: rotate(-20deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        .horizontal-layout {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .cardamom-section {
+            flex: 2;
+        }
+
+        .tasks-section {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .cardamom-types {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+
+        .cardamom-card {
+            min-width: 300px;
+            flex: 1;
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .task-item {
+            padding: 15px;
+            background: var(--bg-color);
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .task-title {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .task-date {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .location-weather-section {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .location-card {
+            padding: 20px;
+        }
+
+        .weather-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--bg-color);
+            border-radius: 10px;
+        }
+
+        .weather-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .weather-details p {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1em;
+        }
+
+        .weather-details i {
+            color: var(--primary-color);
+        }
+
+        .location-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1em;
+        }
+
+        .location-btn:hover {
+            background: var(--secondary-color);
+        }
+
+        .location-form {
+            margin: 20px 0;
+            padding: 20px;
+            background: var(--bg-color);
+            border-radius: 10px;
+        }
+
+        .location-form .input-group {
+            margin-bottom: 15px;
+        }
+
+        .location-form input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .current-location {
+            margin: 15px 0;
+            padding: 10px;
+            background: #e8f5e9;
+            border-radius: 5px;
+        }
+
+        .weather-info {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .alert-soil-test {
+            background: linear-gradient(135deg, #2d6a4f, #40916c);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        .soil-test-icon {
+            background: rgba(255, 255, 255, 0.2);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .soil-test-icon i {
+            font-size: 24px;
+            color: white;
+        }
+
+        .soil-test-message {
+            flex: 1;
+        }
+
+        .soil-test-message strong {
+            font-size: 1.2em;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .soil-test-message p {
+            margin: 0;
+        }
+
+        .soil-test-message a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-left: 10px;
+            transition: background 0.3s ease;
+        }
+
+        .soil-test-message a:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .nav-menu-bottom {
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: auto;
+        }
+
+        .logout-btn {
+            color: #ff6b6b !important;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            width: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .logout-btn:hover {
+            background-color: #ff6b6b !important;
+            color: white !important;
+        }
+
+        .weather-banner {
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .weather-banner-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideText 20s linear infinite;
+        }
+
+        .weather-text {
+            white-space: nowrap;
+            margin-right: 20px;
+        }
+
+        .weather-link {
+            color: white;
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            transition: background 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .weather-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        @keyframes slideText {
+            0% {
+                transform: translateX(100%);
+            }
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+
+        .weather-banner:hover .weather-banner-content {
+            animation-play-state: paused;
+        }
     </style>
 </head>
 <body>
@@ -381,6 +820,10 @@ $username = isset($farmerData['username']) ? htmlspecialchars($farmerData['usern
                         <i class="fas fa-home"></i> Dashboard
                     </a>
                     
+                    <a href="soil_test.php?farmer_id=<?php echo $farmerData['farmer_id']; ?>" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'soil_test.php' ? 'active' : ''; ?>">
+                        <i class="fas fa-flask"></i> Soil Test
+                    </a>
+                    
                     <a href="analytics.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'analytics.php' ? 'active' : ''; ?>">
                         <i class="fas fa-chart-line"></i> Analytics
                     </a>
@@ -394,14 +837,41 @@ $username = isset($farmerData['username']) ? htmlspecialchars($farmerData['usern
                         <i class="fas fa-cog"></i> Settings
                     </a>
                 </div>
-                <a href="logout.php" class="nav-item" style="margin-top: auto; color: #ff6b6b;">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
+                <div class="nav-menu-bottom">
+                    <a href="logout.php" class="nav-item logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
             </nav>
             
         </div>
 
         <div class="main-content">
+            <div class="weather-banner">
+                <div class="weather-banner-content">
+                    <span class="weather-text">
+                        <?php 
+                        if ($weather_data) {
+                            echo "Current weather in " . htmlspecialchars($location_result['farm_location']) . ": " . 
+                                 round($weather_data['main']['temp']) . "°C, " . 
+                                 ucfirst($weather_data['weather'][0]['description']);
+                        }
+                        ?>
+                    </span>
+                    <a href="weather.php" class="weather-link">Check detailed weather forecast →</a>
+                </div>
+            </div>
+
+            <div class="alert alert-soil-test">
+                <div class="soil-test-icon">
+                    <i class="fas fa-flask"></i>
+                </div>
+                <div class="soil-test-message">
+                    <strong>Time to Test Your Soil!</strong>
+                    <p>Ensure optimal cardamom growth with regular soil testing. <a href="soil_test.php">Test Now <i class="fas fa-arrow-right"></i></a></p>
+                </div>
+            </div>
+
             <?php if (isset($_SESSION['success'])): ?>
                 <div class="alert alert-success">
                     <?php 
@@ -420,146 +890,124 @@ $username = isset($farmerData['username']) ? htmlspecialchars($farmerData['usern
                 </div>
             <?php endif; ?>
 
-            <div class="farm-info-card">
-                <div class="farm-info-header">
-                    <h2><i class="fas fa-tractor"></i> Farm Overview</h2>
-                    <span class="location-badge">
-                        <i class="fas fa-map-marker-alt"></i> 
-                        <?php echo htmlspecialchars($farmerData['farm_location']); ?>
-                    </span>
-                </div>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <i class="fas fa-ruler-combined"></i>
-                        <h3>Farm Size</h3>
-                        <div class="stat-value"><?php echo number_format($farmerData['farm_size'], 2); ?> ha</div>
+            <!-- Add Welcome Section -->
+            <div class="welcome-section">
+                <h1><i class="fas fa-hand-wave"></i> Welcome, <?php echo $username; ?>!</h1>
+                <div class="welcome-cards">
+                    <div class="welcome-card">
+                        <i class="fas fa-leaf"></i>
+                        <h3>About GrowGuide</h3>
+                        <p>Your intelligent companion for cardamom farming. We provide personalized recommendations and insights to help you maximize your yield.</p>
                     </div>
-                    <div class="stat-card">
-                        <i class="fas fa-chart-area"></i>
-                        <h3>Total Cardamom Area</h3>
-                        <div class="stat-value"><?php echo number_format($farmerData['total_cardamom_area'], 2); ?> ha</div>
+                    <div class="welcome-card">
+                        <i class="fas fa-lightbulb"></i>
+                        <h3>Getting Started</h3>
+                        <p>Update your farm data regularly and check the dashboard for real-time insights. Use the navigation menu to access different features.</p>
                     </div>
-                    <div class="stat-card">
-                        <i class="fas fa-layer-group"></i>
-                        <h3>Cardamom Plots</h3>
-                        <div class="stat-value"><?php echo $farmerData['total_cardamom_plots']; ?></div>
-                    </div>
-                    <div class="stat-card">
-                        <i class="fas fa-dollar-sign"></i>
-                        <h3>Total Revenue</h3>
-                        <div class="stat-value">$<?php echo number_format($farmerData['total_revenue'], 2); ?></div>
+                    <div class="welcome-card">
+                        <i class="fas fa-chart-line"></i>
+                        <h3>Track Progress</h3>
+                        <p>Monitor your farm's performance, soil conditions, and weather data. Set tasks and get timely reminders for important activities.</p>
                     </div>
                 </div>
             </div>
 
-            <div class="farm-info-card">
-                <div class="farm-info-header">
-                    <h2><i class="fas fa-flask"></i> Soil & Weather Data</h2>
-                </div>
-                <form action="update_farm_data.php" method="POST" class="data-form">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <h3>Soil Data</h3>
-                            <div class="input-group">
-                                <label for="soil_type">Soil Type:</label>
-                                <select name="soil_type" id="soil_type" required>
-                                    <option value="">Select soil type</option>
-                                    <?php
-                                    $soil_types = [
-                                        'loamy' => 'Loamy',
-                                        'clay' => 'Clay',
-                                        'sandy' => 'Sandy',
-                                        'silt' => 'Silt',
-                                        'sandy_loam' => 'Sandy Loam',
-                                        'clay_loam' => 'Clay Loam',
-                                        'silty_loam' => 'Silty Loam',
-                                        'forest_loam' => 'Forest Loam',
-                                        'organic' => 'Organic Rich',
-                                        'laterite' => 'Laterite'
-                                    ];
-                                    
-                                    foreach ($soil_types as $value => $label) {
-                                        $selected = (isset($farmerData['soil_type']) && strtolower($farmerData['soil_type']) === $value) ? 'selected' : '';
-                                        echo "<option value=\"" . htmlspecialchars($value) . "\" {$selected}>" . htmlspecialchars($label) . "</option>";
-                                    }
-                                    ?>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label for="soil_ph">Soil pH:</label>
-                                <input type="number" name="soil_ph" id="soil_ph" step="0.1" min="0" max="14" 
-                                    value="<?php echo htmlspecialchars($farmerData['soil_ph']); ?>" required>
-                            </div>
-                            <div class="input-group">
-                                <label for="soil_moisture">Soil Moisture (%):</label>
-                                <input type="number" name="soil_moisture" id="soil_moisture" step="0.1" min="0" max="100" 
-                                    value="<?php echo htmlspecialchars($farmerData['soil_moisture']); ?>" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <h3>Weather Data</h3>
-                            <div class="input-group">
-                                <label for="temperature">Temperature (°C):</label>
-                                <input type="number" name="temperature" id="temperature" 
-                                    step="0.1" min="-20" max="50" 
-                                    value="<?php echo !empty($farmerData['temperature']) ? htmlspecialchars($farmerData['temperature']) : '0'; ?>" 
-                                    required>
-                            </div>
-                            <div class="input-group">
-                                <label for="humidity">Humidity (%):</label>
-                                <input type="number" name="humidity" id="humidity" 
-                                    step="1" min="0" max="100" 
-                                    value="<?php echo !empty($farmerData['humidity']) ? htmlspecialchars($farmerData['humidity']) : '0'; ?>" 
-                                    required>
-                            </div>
-                            <div class="input-group">
-                                <label for="rainfall">Rainfall (mm):</label>
-                                <input type="number" name="rainfall" id="rainfall" 
-                                    step="0.1" min="0" max="5000" 
-                                    value="<?php echo isset($farmerData['rainfall']) ? htmlspecialchars($farmerData['rainfall']) : ''; ?>" 
-                                    required>
-                            </div>
-                        </div>
+            <!-- Add Quick Guide Section -->
+            <div class="quick-guide">
+                <h2><i class="fas fa-book-reader"></i> Quick Guide</h2>
+                <div class="guide-grid">
+                    <div class="guide-item">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <h4>Dashboard</h4>
+                        <p>Overview of your farm metrics and current status</p>
                     </div>
-                    <button type="submit" class="submit-btn">Update Data</button>
-                </form>
+                    <div class="guide-item">
+                        <i class="fas fa-flask"></i>
+                        <h4>Soil Analysis</h4>
+                        <p>Track and update soil conditions</p>
+                    </div>
+                    <div class="guide-item">
+                        <i class="fas fa-calendar-check"></i>
+                        <h4>Schedule</h4>
+                        <p>Plan and manage farming activities</p>
+                    </div>
+                    <div class="guide-item">
+                        <i class="fas fa-cloud-sun"></i>
+                        <h4>Weather</h4>
+                        <p>Real-time weather updates and forecasts</p>
+                    </div>
+                </div>
             </div>
 
-            <div class="cardamom-types">
-                <div class="cardamom-card">
-                    <h3>Malabar Cardamom</h3>
-                    <img src="images/malabar-cardamom.jpg" alt="Malabar Cardamom">
-                    <p><strong>Characteristics:</strong></p>
-                    <ul>
-                        <li>Large, dark green pods</li>
-                        <li>Strong aromatic flavor</li>
-                        <li>Best for culinary use</li>
-                        <li>Harvest period: 120-150 days</li>
-                    </ul>
+            <!-- Modified layout for cardamom types and tasks -->
+            <div class="horizontal-layout">
+                <div class="cardamom-section">
+                    <h2><i class="fas fa-leaf"></i> Cardamom Varieties</h2>
+                    <div class="cardamom-types">
+                        <div class="cardamom-card">
+                            <h3>Malabar Cardamom</h3>
+                            <img src="img/harvast.jpeg" alt="Malabar Cardamom">
+                            <p><strong>Characteristics:</strong></p>
+                            <ul>
+                                <li>Large, dark green pods</li>
+                                <li>Strong aromatic flavor</li>
+                                <li>Best for culinary use</li>
+                                <li>Harvest period: 120-150 days</li>
+                            </ul>
+                        </div>
+
+                        <div class="cardamom-card">
+                            <h3>Mysore Cardamom</h3>
+                            <img src="img/pla.jpg" alt="Mysore Cardamom">
+                            <p><strong>Characteristics:</strong></p>
+                            <ul>
+                                <li>Medium-sized, light green pods</li>
+                                <li>Mild, sweet flavor</li>
+                                <li>High oil content</li>
+                                <li>Harvest period: 100-120 days</li>
+                            </ul>
+                        </div>
+
+                        <div class="cardamom-card">
+                            <h3>Vazhukka Cardamom</h3>
+                            <img src="img/card45.jpg" alt="Vazhukka Cardamom">
+                            <p><strong>Characteristics:</strong></p>
+                            <ul>
+                                <li>Small, light green pods</li>
+                                <li>Intense aroma</li>
+                                <li>Disease resistant</li>
+                                <li>Harvest period: 90-110 days</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="cardamom-card">
-                    <h3>Mysore Cardamom</h3>
-                    <img src="images/mysore-cardamom.jpg" alt="Mysore Cardamom">
-                    <p><strong>Characteristics:</strong></p>
-                    <ul>
-                        <li>Medium-sized, light green pods</li>
-                        <li>Mild, sweet flavor</li>
-                        <li>High oil content</li>
-                        <li>Harvest period: 100-120 days</li>
-                    </ul>
-                </div>
+                <div class="tasks-section">
+                    <h2><i class="fas fa-tasks"></i> Upcoming Tasks</h2>
+                    <div class="task-list">
+                        <?php
+                        try {
+                            $stmt = $pdo->prepare("SELECT * FROM tasks WHERE user_id = ? AND task_date >= CURRENT_DATE ORDER BY task_date ASC LIMIT 5");
+                            $stmt->execute([$user_id]);
+                            $tasks = $stmt->fetchAll();
 
-                <div class="cardamom-card">
-                    <h3>Vazhukka Cardamom</h3>
-                    <img src="images/vazhukka-cardamom.jpg" alt="Vazhukka Cardamom">
-                    <p><strong>Characteristics:</strong></p>
-                    <ul>
-                        <li>Small, light green pods</li>
-                        <li>Intense aroma</li>
-                        <li>Disease resistant</li>
-                        <li>Harvest period: 90-110 days</li>
-                    </ul>
+                            if (count($tasks) > 0) {
+                                foreach ($tasks as $task) {
+                                    echo '<div class="task-item">
+                                        <div class="task-content">
+                                            <div class="task-title">' . htmlspecialchars($task['title']) . '</div>
+                                            <div class="task-date">' . date('M d, Y H:i', strtotime($task['task_date'])) . '</div>
+                                        </div>
+                                    </div>';
+                                }
+                            } else {
+                                echo '<p>No upcoming tasks</p>';
+                            }
+                        } catch (PDOException $e) {
+                            echo '<p>Error loading tasks</p>';
+                        }
+                        ?>
+                    </div>
                 </div>
             </div>
 
@@ -586,34 +1034,43 @@ $username = isset($farmerData['username']) ? htmlspecialchars($farmerData['usern
                 </div>
             </div>
 
-            <!-- Add this where you want to display upcoming tasks -->
-            <div class="dashboard-card">
-                <h3><i class="fas fa-tasks"></i> Upcoming Tasks</h3>
-                <div class="task-list">
-                    <?php
-                    try {
-                        $stmt = $pdo->prepare("SELECT * FROM tasks WHERE user_id = ? AND task_date >= CURRENT_DATE ORDER BY task_date ASC LIMIT 5");
-                        $stmt->execute([$user_id]);
-                        $tasks = $stmt->fetchAll();
+            <div class="location-weather-section">
+                <div class="location-card">
+                    <h2><i class="fas fa-map-marker-alt"></i> Farm Location</h2>
+                    
+                    <form method="POST" class="location-form">
+                        <div class="input-group">
+                            <label for="farm_location">Farm Location:</label>
+                            <input type="text" 
+                                   id="farm_location" 
+                                   name="farm_location" 
+                                   value="<?php echo isset($location_result['farm_location']) ? htmlspecialchars($location_result['farm_location']) : ''; ?>" 
+                                   placeholder="Enter city name"
+                                   required>
+                        </div>
+                        <button type="submit" name="update_location" class="location-btn">
+                            <i class="fas fa-save"></i> Update Location
+                        </button>
+                    </form>
 
-                        if (count($tasks) > 0) {
-                            foreach ($tasks as $task) {
-                                echo '<div class="task-item">
-                                    <div class="task-content">
-                                        <div class="task-title">' . htmlspecialchars($task['title']) . '</div>
-                                        <div class="task-date">' . date('M d, Y H:i', strtotime($task['task_date'])) . '</div>
-                                    </div>
-                                </div>';
-                            }
-                        } else {
-                            echo '<p>No upcoming tasks</p>';
-                        }
-                    } catch (PDOException $e) {
-                        echo '<p>Error loading tasks</p>';
-                    }
-                    ?>
+                    <?php if ($location_result && $location_result['farm_location']): ?>
+                        <div class="current-location">
+                            <p><strong>Current Location:</strong> <?php echo htmlspecialchars($location_result['farm_location']); ?></p>
+                        </div>
+                        
+                        <?php if ($weather_data): ?>
+                            <div class="weather-info">
+                                <h3>Current Weather</h3>
+                                <div class="weather-details">
+                                    <p><i class="fas fa-temperature-high"></i> Temperature: <?php echo round($weather_data['main']['temp']); ?>°C</p>
+                                    <p><i class="fas fa-tint"></i> Humidity: <?php echo $weather_data['main']['humidity']; ?>%</p>
+                                    <p><i class="fas fa-wind"></i> Wind: <?php echo $weather_data['wind']['speed']; ?> m/s</p>
+                                    <p><i class="fas fa-cloud"></i> Weather: <?php echo ucfirst($weather_data['weather'][0]['description']); ?></p>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    <?php endif; ?>
                 </div>
-                <a href="schedule.php" class="view-all-link">View All Tasks</a>
             </div>
         </div>
     </div>

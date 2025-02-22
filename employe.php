@@ -88,7 +88,7 @@ if (!empty($search)) {
     $recent_farmers_query .= " AND u.username LIKE '%$search%'";
 }
 
-$recent_farmers_query .= " GROUP BY u.id ORDER BY u.created_at DESC LIMIT 5";
+$recent_farmers_query .= " GROUP BY u.id ORDER BY u.created_at DESC LIMIT 4";
 
 $recent_farmers = mysqli_query($conn, $recent_farmers_query);
 if (!$recent_farmers) {
@@ -182,167 +182,7 @@ mysqli_close($conn);
             margin: 0;
         }
     }
-    </style>
-</head>
-<body>
-    <div class="dashboard-container">
-        <!-- Updated logout button -->
-        <div class="logout-container">
-            <a href="logout.php" class="logout-btn">
-                <i class="fas fa-power-off"></i>
-                <span>Sign Out</span>
-            </a>
-        </div>
-        
-        <!-- Search Form -->
-        <div class="search-container">
-            <form action="" method="GET" class="search-form">
-                <input type="text" name="search" placeholder="Search farmers..." 
-                       value="<?php echo htmlspecialchars($search); ?>" class="search-input">
-                <button type="submit" class="search-btn">
-                    <i class="fas fa-search"></i>
-                </button>
-            </form>
-        </div>
-        
-        <!-- Statistics Cards -->
-        <div class="stats-container">
-            <div class="stat-card">
-                <i class="fas fa-tractor"></i>
-                <h3><?php echo $stats['total_farmers']; ?></h3>
-                <p>Total Farmers</p>
-            </div>
-            
-            <div class="stat-card">
-                <i class="fas fa-leaf"></i>
-                <h3><?php echo $stats['total_varieties']; ?></h3>
-                <p>Cardamom Varieties</p>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-id-badge"></i>
-                <h3><?php echo $stats['total_employees']; ?></h3>
-                <p>Total Employees</p>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-vial"></i>
-                <h3><?php echo $stats['total_tests']; ?></h3>
-                <p>Total Soil Tests</p>
-            </div>
-        </div>
 
-        <!-- Add Recent Farmers Section with detailed cards -->
-        <div class="section">
-            <h2><i class="fas fa-users-gear"></i> Recent Farmers</h2>
-            <div class="farmers-grid">
-                <?php if (!empty($search)): ?>
-                    <div class="search-results">
-                        <h3>Search Results for: "<?php echo htmlspecialchars($search); ?>"</h3>
-                    </div>
-                <?php endif; ?>
-                
-                <?php if (mysqli_num_rows($recent_farmers) > 0): ?>
-                    <?php while ($farmer = mysqli_fetch_assoc($recent_farmers)): ?>
-                        <div class="farmer-card">
-                            <div class="farmer-header">
-                                <i class="fas fa-user-circle"></i>
-                                <h3><?php echo htmlspecialchars($farmer['username']); ?></h3>
-                            </div>
-                            <div class="farmer-details">
-                                <p><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($farmer['location'] ?? 'N/A'); ?></p>
-                                <p><i class="fas fa-phone"></i> <?php echo htmlspecialchars($farmer['phone'] ?? 'N/A'); ?></p>
-                                <p><i class="fas fa-ruler-combined"></i> Land: <?php echo htmlspecialchars($farmer['land_area'] ?? '0'); ?> hectares</p>
-                                <div class="farmer-stats">
-                                    <span><i class="fas fa-flask"></i> <?php echo $farmer['total_soil_tests']; ?> Tests</span>
-                                    <span><i class="fas fa-clipboard-list"></i> <?php echo $farmer['total_recommendations']; ?> Recommendations</span>
-                                </div>
-                            </div>
-                            <div class="farmer-actions">
-                                <a href="view_farmer.php?id=<?php echo $farmer['id']; ?>" class="btn-view">View Profile</a>
-                                <a href="employe_soiltest.php?farmer_id=<?php echo $farmer['id']; ?>" class="btn-test">New Test</a>
-                            </div>
-                        </div>
-                    <?php endwhile; ?>
-                <?php else: ?>
-                    <div class="no-results">
-                        <?php if (!empty($search)): ?>
-                            <p><i class="fas fa-exclamation-circle"></i> No farmers found matching "<?php echo htmlspecialchars($search); ?>"</p>
-                        <?php else: ?>
-                            <p>No farmers found.</p>
-                        <?php endif; ?>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-
-        <!-- Recent Soil Tests Section -->
-        <div class="section">
-            <h2>Recent Soil Tests</h2>
-            <?php if (mysqli_num_rows($recent_tests) > 0): ?>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Farmer</th>
-                                <th>Test Date</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php while ($test = mysqli_fetch_assoc($recent_tests)): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($test['farmer_name']); ?></td>
-                                    <td><?php echo date('Y-m-d', strtotime($test['test_date'])); ?></td>
-                                    <td><?php echo ucfirst($test['status']); ?></td>
-                                    <td>
-                                        <a href="view_test.php?id=<?php echo $test['id']; ?>" class="btn-view">View</a>
-                                    </td>
-                                </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php else: ?>
-                <p>No recent soil tests found.</p>
-            <?php endif; ?>
-        </div>
-
-        <!-- Recent Fertilizer Recommendations Section -->
-        <div class="section">
-            <h2>Recent Fertilizer Recommendations</h2>
-            <?php if (mysqli_num_rows($recent_recommendations) > 0): ?>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Farmer</th>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php while ($rec = mysqli_fetch_assoc($recent_recommendations)): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($rec['farmer_name']); ?></td>
-                                    <td><?php echo date('Y-m-d', strtotime($rec['recommendation_date'])); ?></td>
-                                    <td><?php echo ucfirst($rec['status']); ?></td>
-                                    <td>
-                                        <a href="view_recommendation.php?id=<?php echo $rec['id']; ?>" class="btn-view">View</a>
-                                    </td>
-                                </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php else: ?>
-                <p>No recent fertilizer recommendations found.</p>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <!-- Add this CSS to your style.css file -->
-    <style>
     .stats-container {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -376,14 +216,14 @@ mysqli_close($conn);
 
     .farmers-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
         margin-top: 1rem;
     }
 
     .farmer-card {
         background: white;
-        border-radius: 10px;
+        border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         overflow: hidden;
     }
@@ -391,39 +231,41 @@ mysqli_close($conn);
     .farmer-header {
         background: linear-gradient(135deg, #28a745, #218838);
         color: white;
-        padding: 1rem;
+        padding: 0.75rem;
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 0.75rem;
     }
 
     .farmer-header i {
-        font-size: 2rem;
+        font-size: 1.5rem;
     }
 
     .farmer-details {
-        padding: 1rem;
+        padding: 0.75rem;
     }
 
     .farmer-details p {
-        margin: 0.5rem 0;
+        margin: 0.25rem 0;
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        font-size: 0.9rem;
     }
 
     .farmer-stats {
         display: flex;
         justify-content: space-between;
-        margin-top: 1rem;
-        padding-top: 1rem;
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
         border-top: 1px solid #eee;
+        font-size: 0.9rem;
     }
 
     .farmer-actions {
-        padding: 1rem;
+        padding: 0.75rem;
         display: flex;
-        gap: 1rem;
+        gap: 0.75rem;
     }
 
     .btn-view, .btn-test {
@@ -532,5 +374,162 @@ mysqli_close($conn);
         font-size: 1.3rem;
     }
     </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Updated logout button -->
+        <div class="logout-container">
+            <a href="logout.php" class="logout-btn">
+                <i class="fas fa-power-off"></i>
+                <span>Sign Out</span>
+            </a>
+        </div>
+        
+        <!-- Search Form -->
+        <div class="search-container">
+            <form action="" method="GET" class="search-form">
+                <input type="text" name="search" placeholder="Search farmers..." 
+                       value="<?php echo htmlspecialchars($search); ?>" class="search-input">
+                <button type="submit" class="search-btn">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+        </div>
+        
+        <!-- Statistics Cards -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <i class="fas fa-tractor"></i>
+                <h3><?php echo $stats['total_farmers']; ?></h3>
+                <p>Total Farmers</p>
+            </div>
+            
+            <div class="stat-card">
+                <i class="fas fa-leaf"></i>
+                <h3><?php echo $stats['total_varieties']; ?></h3>
+                <p>Cardamom Varieties</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-id-badge"></i>
+                <h3><?php echo $stats['total_employees']; ?></h3>
+                <p>Total Employees</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-vial"></i>
+                <h3><?php echo $stats['total_tests']; ?></h3>
+                <p>Total Soil Tests</p>
+            </div>
+        </div>
+
+        <!-- Add Recent Farmers Section with detailed cards -->
+        <div class="section">
+            <h2><i class="fas fa-users-gear"></i> Recent Farmers</h2>
+            <div class="farmers-grid">
+                <?php if (!empty($search)): ?>
+                    <div class="search-results">
+                        <h3>Search Results for: "<?php echo htmlspecialchars($search); ?>"</h3>
+                    </div>
+                <?php endif; ?>
+                
+                <?php if (mysqli_num_rows($recent_farmers) > 0): ?>
+                    <?php while ($farmer = mysqli_fetch_assoc($recent_farmers)): ?>
+                        <div class="farmer-card">
+                            <div class="farmer-header">
+                                <i class="fas fa-user-circle"></i>
+                                <h3><?php echo htmlspecialchars($farmer['username']); ?></h3>
+                            </div>
+                            <div class="farmer-details">
+                                <p><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($farmer['location'] ?? 'N/A'); ?></p>
+                                <p><i class="fas fa-phone"></i> <?php echo htmlspecialchars($farmer['phone'] ?? 'N/A'); ?></p>
+                                <p><i class="fas fa-ruler-combined"></i> Land: <?php echo htmlspecialchars($farmer['land_area'] ?? '0'); ?> hectares</p>
+                                <div class="farmer-stats">
+                                    <span><i class="fas fa-flask"></i> <?php echo $farmer['total_soil_tests']; ?> Tests</span>
+                                    <span><i class="fas fa-clipboard-list"></i> <?php echo $farmer['total_recommendations']; ?> Recommendations</span>
+                                </div>
+                            </div>
+                            <div class="farmer-actions">
+                                <a href="view_farmer.php?id=<?php echo $farmer['id']; ?>" class="btn-view">View Profile</a>
+                               
+                            </div>
+                        </div>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <div class="no-results">
+                        <?php if (!empty($search)): ?>
+                            <p><i class="fas fa-exclamation-circle"></i> No farmers found matching "<?php echo htmlspecialchars($search); ?>"</p>
+                        <?php else: ?>
+                            <p>No farmers found.</p>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Recent Soil Tests Section -->
+        <div class="section">
+            <h2>Recent Soil Tests</h2>
+            <?php if (mysqli_num_rows($recent_tests) > 0): ?>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Farmer</th>
+                                <th>Test Date</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php while ($test = mysqli_fetch_assoc($recent_tests)): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($test['farmer_name']); ?></td>
+                                    <td><?php echo date('Y-m-d', strtotime($test['test_date'])); ?></td>
+                                    <td><?php echo ucfirst($test['status']); ?></td>
+                                    <td>
+                                        <a href="view_test.php?id=<?php echo $test['id']; ?>" class="btn-view">View</a>
+                                    </td>
+                                </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else: ?>
+                <p>No recent soil tests found.</p>
+            <?php endif; ?>
+        </div>
+
+        <!-- Recent Fertilizer Recommendations Section -->
+        <div class="section">
+            <h2>Recent Fertilizer Recommendations</h2>
+            <?php if (mysqli_num_rows($recent_recommendations) > 0): ?>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Farmer</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php while ($rec = mysqli_fetch_assoc($recent_recommendations)): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($rec['farmer_name']); ?></td>
+                                    <td><?php echo date('Y-m-d', strtotime($rec['recommendation_date'])); ?></td>
+                                    <td><?php echo ucfirst($rec['status']); ?></td>
+                                    <td>
+                                        <a href="view_recommendation.php?id=<?php echo $rec['id']; ?>" class="btn-view">View</a>
+                                    </td>
+                                </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else: ?>
+                <p>No recent fertilizer recommendations found.</p>
+            <?php endif; ?>
+        </div>
+    </div>
 </body>
 </html>

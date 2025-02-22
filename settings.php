@@ -391,9 +391,7 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="farm.php" class="nav-item">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span>Farm Details</span>
+                
                 </a>
                 <a href="analytics.php" class="nav-item">
                     <i class="fas fa-chart-line"></i>
@@ -407,10 +405,7 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
                     <i class="fas fa-cloud-sun"></i>
                     <span>Weather</span>
                 </a>
-                <a href="inventory.php" class="nav-item">
-                    <i class="fas fa-warehouse"></i>
-                    <span>Inventory</span>
-                </a>
+               
                 <a href="settings.php" class="nav-item active">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>

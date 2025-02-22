@@ -78,8 +78,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         body {
-            background: url('log.jpeg') no-repeat center center/cover;
-        
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -104,12 +102,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             font-weight: 700;
         }
 
-        .task { color:rgb(65, 240, 49); }
-        .mate { color:rgb(63, 241, 78); }
+        .task { color:rgb(48, 179, 15); }
+        .mate { color:rgb(22, 202, 37); }
 
         h2 {
             text-align: center;
-            color:rgb(6, 88, 17);
+            color:rgb(5, 53, 4);
             margin-bottom: 2rem;
         }
 
@@ -120,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         .form-group label {
             display: block;
             margin-bottom: 0.5rem;
-            color:rgb(171, 219, 174);
+            color:rgb(25, 218, 35);
             font-size: 0.9rem;
         }
 
@@ -134,21 +132,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             height: 3rem;
             text-align: center;
             font-size: 1.5rem;
-            border: 2px solidrgb(45, 223, 10);
+            border: 2px solid #e2e8f0;
             border-radius: 10px;
             transition: all 0.3s ease;
         }
 
         .otp-inputs input:focus {
             outline: none;
-            border-color:rgb(27, 180, 22);
-            box-shadow: 0 0 0 3px rgba(29, 128, 10, 0.1);
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         .login-btn {
             width: 100%;
             padding: 1rem;
-            background:rgb(19, 207, 12);
+            background: #2563eb;
             color: white;
             border: none;
             border-radius: 10px;
@@ -159,9 +157,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         .login-btn:hover {
-            background:rgb(51, 216, 29);
+            background: #1d4ed8;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(67, 219, 21, 0.2);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
         }
 
         .resend-text {
@@ -171,14 +169,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         .resend-text a {
-            color:rgb(58, 177, 11);
+            color: #2563eb;
             text-decoration: none;
             font-weight: 500;
             transition: color 0.3s ease;
         }
 
         .resend-text a:hover {
-            color:rgb(51, 223, 16);
+            color: #1d4ed8;
         }
         .error-message {
             background-color: #fee2e2;

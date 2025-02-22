@@ -474,9 +474,9 @@ if ($result) {
                                 <p>pH Level: <?php echo number_format($data['latest_ph'], 1); ?></p>
                                 <p>NPK Values:</p>
                                 <ul>
-                                    <li>Nitrogen: <?php echo number_format($data['latest_n'], 2); ?>%</li>
-                                    <li>Phosphorus: <?php echo number_format($data['latest_p'], 2); ?>%</li>
-                                    <li>Potassium: <?php echo number_format($data['latest_k'], 2); ?>%</li>
+                                    <li>N: <?php echo number_format($data['latest_n'], 2) . '%'; ?></li>
+                                    <li>P: <?php echo number_format($data['latest_p'], 2) . '%'; ?></li>
+                                    <li>K: <?php echo number_format($data['latest_k'], 2) . '%'; ?></li>
                                 </ul>
                             </div>
                         <?php else: ?>
@@ -499,10 +499,10 @@ if ($result) {
                                     <span class="test-date"><?php echo date('M j, Y', strtotime($test['test_date'])); ?></span>
                                 </div>
                                 <div class="test-values">
-                                    <span>pH: <?php echo $test['ph_level']; ?></span>
-                                    <span>N: <?php echo $test['nitrogen']; ?>%</span>
-                                    <span>P: <?php echo $test['phosphorus']; ?>%</span>
-                                    <span>K: <?php echo $test['potassium']; ?>%</span>
+                                    <span>pH: <?php echo htmlspecialchars($test['ph_level'] ?? 'N/A'); ?></span>
+                                    <span>N: <?php echo htmlspecialchars($test['nitrogen'] ?? 'N/A') . '%'; ?></span>
+                                    <span>P: <?php echo htmlspecialchars($test['phosphorus'] ?? 'N/A') . '%'; ?></span>
+                                    <span>K: <?php echo htmlspecialchars($test['potassium'] ?? 'N/A') . '%'; ?></span>
                                 </div>
                             </div>
                         <?php endforeach; ?>

@@ -194,10 +194,7 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="farm_details.php" class="nav-item">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span>Farm Details</span>
-                </a>
+                
                 <a href="analytics.php" class="nav-item active">
                     <i class="fas fa-chart-line"></i>
                     <span>Analytics</span>
