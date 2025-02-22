@@ -45,11 +45,16 @@ if (!$conn) {
 $current_page = basename($_SERVER['PHP_SELF']);
 
 // Sample data - you can replace with database queries
-$total_farmers = 3;
+$total_farmers = 3; // Update this with the actual count from the database
 $total_land = 0.00;
 $total_varieties = 0;
 $total_employees = 1;
 $total_soil_tests = 0;
+
+// Add this query to count farmers
+$farmers_count_query = "SELECT COUNT(*) as total_farmers FROM users WHERE role = 'farmer' AND status = 1";
+$farmers_count_result = mysqli_query($conn, $farmers_count_query);
+$total_farmers = mysqli_fetch_assoc($farmers_count_result)['total_farmers'];
 
 // Get dashboard data with soil tests
 $dashboard_data = [];
@@ -91,6 +96,20 @@ if ($result) {
     }
     mysqli_free_result($result);
 }
+
+// Add this query near the top PHP section where other queries are
+$farmers_query = "SELECT id, username, email, phone, status, created_at 
+                 FROM users 
+                 WHERE role = 'farmer' 
+                 ORDER BY created_at DESC";
+$farmers_result = mysqli_query($conn, $farmers_query);
+$farmers_list = [];
+if ($farmers_result) {
+    while ($row = mysqli_fetch_assoc($farmers_result)) {
+        $farmers_list[] = $row;
+    }
+    mysqli_free_result($farmers_result);
+}
 ?>
 
 <!DOCTYPE html>
@@ -115,7 +134,7 @@ if ($result) {
 
         /* Sidebar Styles */
         .sidebar {
-            width: 250px;
+            width: 280px;
             height: 100vh;
             background-color: #2e7d32;
             color: white;
@@ -124,20 +143,25 @@ if ($result) {
         }
 
         .sidebar.collapsed {
-            width: 70px;
+            width: 80px;
         }
 
         .logo-section {
-            padding: 20px;
+            padding: 25px;
             border-bottom: 1px solid #43a047;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
         }
 
         .logo-section h1 {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             white-space: nowrap;
+        }
+
+        .logo-section i {
+            font-size: 1.8rem;
+            animation: pulse 2s infinite;
         }
 
         .toggle-btn {
@@ -157,34 +181,48 @@ if ($result) {
         }
 
         .menu-section {
-            padding: 20px 0;
+            padding: 25px 0;
         }
 
         .menu-item {
-            padding: 12px 20px;
+            padding: 16px 25px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 15px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: all 0.3s;
             text-decoration: none;
             color: white;
+            border-radius: 0 25px 25px 0;
+            margin: 8px 0;
+            position: relative;
+            overflow: hidden;
         }
 
         .menu-item:hover {
             background-color: #43a047;
+            padding-left: 35px;
         }
 
         .menu-item.active {
             background-color: #43a047;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
         .menu-item i {
-            width: 20px;
+            width: 24px;
+            height: 24px;
+            font-size: 1.4rem;
             text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .menu-item:hover i {
+            transform: scale(1.2) rotate(5deg);
         }
 
         .menu-text {
+            font-size: 1.1rem;
             white-space: nowrap;
             opacity: 1;
             transition: opacity 0.3s;
@@ -201,19 +239,23 @@ if ($result) {
             width: 100%;
             border-top: 1px solid #43a047;
             padding: 20px 0;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .bottom-section .menu-item {
+            margin: 5px 0;
         }
 
         /* Main Content Styles */
         .main-content {
-            margin-left: 250px;
-            padding: 20px;
-            width: calc(100% - 250px);
+            margin-left: 280px;
+            width: calc(100% - 280px);
             transition: all 0.3s ease;
         }
 
         .main-content.expanded {
-            margin-left: 70px;
-            width: calc(100% - 70px);
+            margin-left: 80px;
+            width: calc(100% - 80px);
         }
 
         .welcome-header {
@@ -356,13 +398,191 @@ if ($result) {
             border-radius: 4px;
             font-size: 0.9em;
         }
+
+        /* Add animations */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .farmers-list-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 1200px;
+            max-height: 80vh;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .farmers-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+            transition: color 0.3s;
+        }
+
+        .close-btn:hover {
+            color: #2e7d32;
+        }
+
+        .farmers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .farmer-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .farmer-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .farmer-icon {
+            font-size: 2.5rem;
+            color: #2e7d32;
+        }
+
+        .farmer-details h3 {
+            margin: 0 0 10px 0;
+            color: #2e7d32;
+        }
+
+        .farmer-details p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        .farmer-details i {
+            width: 20px;
+            color: #2e7d32;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            margin-top: 10px;
+        }
+
+        .status-badge.active {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-badge.inactive {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .slide-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideIn 0.5s forwards;
+        }
+
+        @keyframes slideIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Add styles for animated boxes */
+        .stat-card, .dashboard-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            position: relative; /* Allow positioning of icon */
+        }
+
+        .stat-card:hover, .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-card i, .dashboard-card i {
+            position: absolute; /* Position icon */
+            top: 10px; /* Adjust as needed */
+            left: 10px; /* Adjust as needed */
+            transition: transform 0.3s ease; /* Add transition for icon movement */
+        }
+
+        .stat-card:hover i, .dashboard-card:hover i {
+            transform: translateY(-5px); /* Move icon on hover */
+        }
+
+        /* Add these new button styles */
+        .sidebar-btn {
+            margin: 10px 20px;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .sidebar-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .sidebar-btn i {
+            font-size: 1.2rem;
+        }
+
+        /* Add animations */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body>
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <button class="toggle-btn" onclick="toggleSidebar()">
-            <i class="fas fa-chevron-left" id="toggle-icon"></i>
+            <i class="fas fa-angle-left" id="toggle-icon"></i>
         </button>
 
         <div class="logo-section">
@@ -371,38 +591,34 @@ if ($result) {
         </div>
 
         <div class="menu-section">
-            <a href="admin.php" class="menu-item active">
+            <a href="admin.php" class="sidebar-btn active">
                 <i class="fas fa-th-large"></i>
                 <span class="menu-text">Dashboard</span>
             </a>
-            <a href="farmers.php" class="menu-item">
+            <a href="farmers.php" class="sidebar-btn">
                 <i class="fas fa-users"></i>
                 <span class="menu-text">Farmers</span>
             </a>
-            <a href="ad_employee.php" class="menu-item">
+            <a href="ad_employee.php" class="sidebar-btn">
                 <i class="fas fa-user-tie"></i>
                 <span class="menu-text">Employees</span>
             </a>
-            <a href="soil_test.php" class="menu-item">
-                <i class="fas fa-flask"></i>
-                <span class="menu-text">Soil Tests</span>
-            </a>
-            <a href="varieties.php" class="menu-item">
+            <a href="varieties.php" class="sidebar-btn">
                 <i class="fas fa-seedling"></i>
                 <span class="menu-text">Varieties</span>
             </a>
         </div>
 
         <div class="bottom-section">
-            <a href="notifications.php" class="menu-item">
+            <a href="notifications.php" class="sidebar-btn">
                 <i class="fas fa-bell"></i>
                 <span class="menu-text">Notifications</span>
             </a>
-            <a href="admin_setting.php" class="menu-item">
+            <a href="admin_setting.php" class="sidebar-btn">
                 <i class="fas fa-cog"></i>
                 <span class="menu-text">Settings</span>
             </a>
-            <a href="logout.php" class="menu-item">
+            <a href="logout.php" class="sidebar-btn">
                 <i class="fas fa-sign-out-alt"></i>
                 <span class="menu-text">Logout</span>
             </a>
@@ -410,45 +626,89 @@ if ($result) {
     </div>
 
     <!-- Main Content -->
-    <div class="main-content" id="main-content">
+    <div class="main-content fade-in" id="main-content">
         <div class="welcome-header">
-            <div class="user-welcome">Welcome, milu jiji</div>
+            <div class="user-welcome">
+                WELCOME, MILU JIJI! <i class="fas fa-star"></i> 
+                YOU HAVE <strong><i class="fas fa-users"></i> <?php echo $total_farmers; ?></strong> FARMERS, 
+                <strong><i class="fas fa-seedling"></i> <?php echo "7"; ?></strong> VARIETIES, 
+                AND <strong><i class="fas fa-user-tie"></i> <?php echo $total_employees; ?></strong> EMPLOYEES. 
+                <i class="fas fa-check-circle"></i>
+            </div>
             <div class="icon-container">
                 <i class="fas fa-user-circle"></i>
             </div>
         </div>
 
-        <div class="stats-grid">
-            <div class="stat-card">
+        <div class="stats-grid fade-in">
+            <div class="stat-card animated-box">
                 <h3><?php echo $total_farmers; ?></h3>
                 <p>Total Farmers</p>
                 <i class="fas fa-users"></i>
             </div>
-            <div class="stat-card">
-                <h3><?php echo $total_land; ?></h3>
-                <p>Total Land Area (hectares)</p>
-                <i class="fas fa-chart-area"></i>
-            </div>
-            <div class="stat-card">
-                <h3><?php echo $total_varieties; ?></h3>
+            
+            <div class="stat-card animated-box">
+                <h3><?php echo "7"; ?></h3>
                 <p>Cardamom Varieties</p>
                 <i class="fas fa-seedling"></i>
             </div>
-            <div class="stat-card">
+            <div class="stat-card animated-box">
                 <h3><?php echo $total_employees; ?></h3>
                 <p>Total Employees</p>
                 <i class="fas fa-user-tie"></i>
             </div>
-            <div class="stat-card">
+            <div class="stat-card animated-box">
                 <h3><?php echo $total_soil_tests; ?></h3>
                 <p>Total Soil Tests</p>
                 <i class="fas fa-flask"></i>
             </div>
         </div>
 
+        <div id="farmers-list" class="farmers-list-container" style="display: none;">
+            <div class="farmers-list-header">
+                <h2>Farmers List</h2>
+                <button onclick="toggleFarmersList()" class="close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="farmers-grid">
+                <?php foreach ($farmers_list as $farmer): ?>
+                    <div class="farmer-card slide-in">
+                        <div class="farmer-icon">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div class="farmer-details">
+                            <h3><?php echo htmlspecialchars($farmer['username']); ?></h3>
+                            <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($farmer['email']); ?></p>
+                            <p><i class="fas fa-phone"></i> <?php echo htmlspecialchars($farmer['phone']); ?></p>
+                            <p><i class="fas fa-calendar-alt"></i> Joined: <?php echo date('M d, Y', strtotime($farmer['created_at'])); ?></p>
+                            <span class="status-badge <?php echo $farmer['status'] ? 'active' : 'inactive'; ?>">
+                                <?php echo $farmer['status'] ? 'Active' : 'Inactive'; ?>
+                            </span>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
         <div class="recent-section">
-            <h2>Recent Soil Tests</h2>
-            <p>No recent soil tests found.</p>
+            <h2>Most Recent Soil Test</h2>
+            <?php if (empty($recent_soil_tests)): ?>
+                <p>No recent soil tests.</p>
+            <?php else: ?>
+                <div class="soil-test-item">
+                    <div class="farmer-info">
+                        <strong><?php echo htmlspecialchars($recent_soil_tests[0]['farmer_name']); ?></strong>
+                        <span class="test-date"><?php echo date('M j, Y', strtotime($recent_soil_tests[0]['test_date'])); ?></span>
+                    </div>
+                    <div class="test-values">
+                        <span>pH: <?php echo htmlspecialchars($recent_soil_tests[0]['ph_level'] ?? 'N/A'); ?></span>
+                        <span>N: <?php echo htmlspecialchars($recent_soil_tests[0]['nitrogen'] ?? 'N/A') . '%'; ?></span>
+                        <span>P: <?php echo htmlspecialchars($recent_soil_tests[0]['phosphorus'] ?? 'N/A') . '%'; ?></span>
+                        <span>K: <?php echo htmlspecialchars($recent_soil_tests[0]['potassium'] ?? 'N/A') . '%'; ?></span>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
 
         <div class="recent-section">
@@ -458,7 +718,18 @@ if ($result) {
 
         <div class="recent-section">
             <h2>Recent Farmers</h2>
-            <p>No recent farmers found.</p>
+            <?php if (!empty($farmers_list)): ?>
+                <div class="farmers-grid">
+                    <?php foreach ($farmers_list as $index => $farmer): ?>
+                        <div class="farmer-card slide-in" style="animation-delay: <?php echo $index * 0.2; ?>s;">
+                            <h3><?php echo htmlspecialchars($farmer['username']); ?></h3>
+                            <p><?php echo htmlspecialchars($farmer['email']); ?></p>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php else: ?>
+                <p>No recent farmers found.</p>
+            <?php endif; ?>
         </div>
 
         <div class="dashboard-grid">
@@ -522,11 +793,38 @@ if ($result) {
             mainContent.classList.toggle('expanded');
             
             if (sidebar.classList.contains('collapsed')) {
-                toggleIcon.classList.remove('fa-chevron-left');
-                toggleIcon.classList.add('fa-chevron-right');
+                toggleIcon.classList.remove('fa-angle-left');
+                toggleIcon.classList.add('fa-angle-right');
             } else {
-                toggleIcon.classList.remove('fa-chevron-right');
-                toggleIcon.classList.add('fa-chevron-left');
+                toggleIcon.classList.remove('fa-angle-right');
+                toggleIcon.classList.add('fa-angle-left');
+            }
+            
+            // Add animation for sidebar movement
+            sidebar.style.transition = 'width 0.3s ease'; // Add transition effect
+        }
+
+        // Add a function to create a running welcome message
+        function startMarquee() {
+            const welcomeMessage = document.querySelector('.user-welcome');
+            const message = welcomeMessage.textContent;
+            welcomeMessage.innerHTML = `<marquee>${message}</marquee>`;
+        }
+
+        // Call the function to start the marquee
+        startMarquee();
+
+        function toggleFarmersList() {
+            const farmersList = document.getElementById('farmers-list');
+            if (farmersList.style.display === 'none') {
+                farmersList.style.display = 'block';
+                // Add staggered animation to cards
+                const cards = document.querySelectorAll('.farmer-card');
+                cards.forEach((card, index) => {
+                    card.style.animationDelay = `${index * 0.1}s`;
+                });
+            } else {
+                farmersList.style.display = 'none';
             }
         }
     </script>

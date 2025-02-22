@@ -129,6 +129,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: " . $_SERVER['PHP_SELF']);
         exit();
     }
+
+    if (isset($_POST['delete_farmer'])) {
+        $farmer_id = $_POST['farmer_id'];
+        $delete_query = "DELETE FROM users WHERE id = ?";
+        $stmt = mysqli_prepare($conn, $delete_query);
+        mysqli_stmt_bind_param($stmt, "i", $farmer_id);
+        
+        if (mysqli_stmt_execute($stmt)) {
+            $message = 'Farmer deleted successfully!';
+        } else {
+            $message = 'Error deleting farmer!';
+        }
+        mysqli_stmt_close($stmt);
+        
+        // Redirect to prevent form resubmission
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit();
+    }
 }
 
 // Add weather analysis
@@ -660,7 +678,6 @@ try {
                             </span>
                         </td>
                         <td>
-                            <button onclick="editFarmer(<?php echo $farmer['id']; ?>)">Edit</button>
                             <button onclick="deleteFarmer(<?php echo $farmer['id']; ?>)">Delete</button>
                         </td>
                     </tr>
@@ -762,10 +779,8 @@ function validateField(input) {
     return true;
 }
 
-function editFarmer(farmerId) {
-    const newStatus = prompt('Enter new status (1 for Active, 0 for Inactive):');
-    
-    if (newStatus !== null && (newStatus === '0' || newStatus === '1')) {
+function deleteFarmer(farmerId) {
+    if (confirm('Are you sure you want to delete this farmer?')) {
         const form = document.createElement('form');
         form.method = 'POST';
         form.style.display = 'none';
@@ -775,32 +790,16 @@ function editFarmer(farmerId) {
         farmerIdInput.name = 'farmer_id';
         farmerIdInput.value = farmerId;
 
-        const statusInput = document.createElement('input');
-        statusInput.type = 'hidden';
-        statusInput.name = 'status';
-        statusInput.value = newStatus;
-
-        const submitInput = document.createElement('input');
-        submitInput.type = 'hidden';
-        submitInput.name = 'update_status';
-        submitInput.value = '1';
+        const deleteInput = document.createElement('input');
+        deleteInput.type = 'hidden';
+        deleteInput.name = 'delete_farmer';
+        deleteInput.value = '1';
 
         form.appendChild(farmerIdInput);
-        form.appendChild(statusInput);
-        form.appendChild(submitInput);
+        form.appendChild(deleteInput);
 
         document.body.appendChild(form);
         form.submit();
-    } else if (newStatus !== null) {
-        alert('Please enter either 0 or 1');
-    }
-}
-
-function deleteFarmer(farmerId) {
-    if (confirm('Are you sure you want to delete this farmer?')) {
-        // Implement delete functionality
-        console.log('Delete farmer:', farmerId);
-        // You can make an AJAX call to delete the farmer
     }
 }
 </script>
