@@ -541,3 +541,8 @@
 [22-Feb-2025 11:44:05 Europe/Berlin] Login successful - User ID: 73, Role: farmer
 [22-Feb-2025 11:45:57 Europe/Berlin] Login attempt - Email: binujiji@gmail.com, Role: farmer
 [22-Feb-2025 11:45:57 Europe/Berlin] Login successful - User ID: 70, Role: farmer
+[22-Feb-2025 16:14:52 Europe/Berlin] Login attempt - Email: milujiji702@gmail.com, Role: admin
+[22-Feb-2025 16:14:52 Europe/Berlin] Login successful - User ID: 36, Role: admin
+[22-Feb-2025 16:14:52 Europe/Berlin] Redirecting admin to admin.php
+[22-Feb-2025 16:17:08 Europe/Berlin] Login attempt - Email: annmariasusankurian2027@mca.ajce.in, Role: farmer
+[22-Feb-2025 16:17:08 Europe/Berlin] Login successful - User ID: 67, Role: farmer

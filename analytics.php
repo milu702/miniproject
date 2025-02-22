@@ -8,10 +8,16 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'farmer') {
 }
 
 require_once 'config.php';
+require_once 'weather_api.php';
+require_once 'soil_test.php';
 
 // Get user data
 $user_id = $_SESSION['user_id'];
 $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : 'Farmer';
+
+// Fetch weather and soil data
+$weather_data = getWeatherData($user_id);
+$soil_data = getSoilData($user_id);
 ?>
 
 <!DOCTYPE html>
@@ -238,6 +244,14 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
                         <h3>Profit Margins</h3>
                         <canvas id="profitChart"></canvas>
                     </div>
+                    <div class="stat-card">
+                        <h3>Soil Health Metrics</h3>
+                        <canvas id="soilChart"></canvas>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Weather Impact</h3>
+                        <canvas id="weatherChart"></canvas>
+                    </div>
                 </div>
             </div>
 
@@ -366,6 +380,78 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
                     tr.appendChild(td);
                 });
                 historicalData.appendChild(tr);
+            });
+
+            // Add Soil Health Chart
+            const soilCtx = document.getElementById('soilChart').getContext('2d');
+            new Chart(soilCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['pH Level', 'Nitrogen', 'Phosphorus', 'Potassium', 'Moisture'],
+                    datasets: [{
+                        label: 'Current Levels',
+                        data: <?php echo json_encode($soil_data['current_levels']); ?>,
+                        borderColor: '#2c5282',
+                        backgroundColor: 'rgba(44, 82, 130, 0.2)'
+                    }, {
+                        label: 'Optimal Levels',
+                        data: <?php echo json_encode($soil_data['optimal_levels']); ?>,
+                        borderColor: '#48bb78',
+                        backgroundColor: 'rgba(72, 187, 120, 0.2)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 10
+                        }
+                    }
+                }
+            });
+
+            // Add Weather Impact Chart
+            const weatherCtx = document.getElementById('weatherChart').getContext('2d');
+            new Chart(weatherCtx, {
+                type: 'line',
+                data: {
+                    labels: <?php echo json_encode($weather_data['dates']); ?>,
+                    datasets: [{
+                        label: 'Temperature (°C)',
+                        data: <?php echo json_encode($weather_data['temperatures']); ?>,
+                        borderColor: '#e53e3e',
+                        yAxisID: 'y'
+                    }, {
+                        label: 'Rainfall (mm)',
+                        data: <?php echo json_encode($weather_data['rainfall']); ?>,
+                        borderColor: '#4299e1',
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Temperature (°C)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Rainfall (mm)'
+                            }
+                        }
+                    }
+                }
             });
         });
     </script>

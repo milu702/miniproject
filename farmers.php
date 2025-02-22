@@ -130,6 +130,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 }
+
+// Add weather analysis
+$weather_info = [
+    'temperature' => null,
+    'condition' => null,
+    'icon' => null,
+    'message' => null
+];
+
+try {
+    // Replace with your actual API key
+    $api_key = 'YOUR_OPENWEATHER_API_KEY';
+    $city = 'Your_City'; // Replace with desired city
+    
+    $weather_url = "http://api.openweathermap.org/data/2.5/weather?q={$city}&appid={$api_key}&units=metric";
+    $weather_data = @file_get_contents($weather_url);
+    
+    if ($weather_data) {
+        $weather = json_decode($weather_data, true);
+        
+        $weather_info['temperature'] = round($weather['main']['temp']);
+        $weather_info['condition'] = $weather['weather'][0]['main'];
+        
+        // Map weather conditions to Font Awesome icons and farming messages
+        $weather_mappings = [
+            'Clear' => [
+                'icon' => 'fa-sun',
+                'message' => 'Perfect day for outdoor farming activities!'
+            ],
+            'Rain' => [
+                'icon' => 'fa-cloud-rain',
+                'message' => 'Indoor tasks recommended. Check drainage systems.'
+            ],
+            'Clouds' => [
+                'icon' => 'fa-cloud',
+                'message' => 'Good conditions for most farming activities.'
+            ],
+            'Snow' => [
+                'icon' => 'fa-snowflake',
+                'message' => 'Protect sensitive crops from frost.'
+            ],
+            'Thunderstorm' => [
+                'icon' => 'fa-bolt',
+                'message' => 'Take shelter. Secure equipment and livestock.'
+            ]
+        ];
+        
+        $condition = $weather['weather'][0]['main'];
+        $weather_info['icon'] = $weather_mappings[$condition]['icon'] ?? 'fa-cloud';
+        $weather_info['message'] = $weather_mappings[$condition]['message'] ?? 'Check local weather for detailed conditions.';
+    }
+} catch (Exception $e) {
+    // Weather service unavailable - set defaults
+    $weather_info['icon'] = 'fa-cloud';
+    $weather_info['message'] = 'Weather information temporarily unavailable';
+}
 ?>
 
 <!DOCTYPE html>
@@ -461,8 +517,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+.weather-banner {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+    padding: 15px 25px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(46, 125, 50, 0.2);
+}
 
+.weather-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
 
+.weather-info i {
+    font-size: 24px;
+}
+
+.weather-info .temperature {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.weather-info .weather-message {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+    .weather-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+}
 
     </style>
 </head>
@@ -498,6 +588,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <div class="content">
+    <div class="weather-banner">
+        <div class="weather-info">
+            <i class="fas <?php echo $weather_info['icon']; ?>"></i>
+            <?php if ($weather_info['temperature'] !== null): ?>
+                <span class="temperature"><?php echo $weather_info['temperature']; ?>°C</span>
+            <?php endif; ?>
+            <span class="weather-message"><?php echo $weather_info['message']; ?></span>
+        </div>
+    </div>
     <h2>Farmers Management</h2>
     <?php if ($message): ?>
     <div class="alert alert-success">

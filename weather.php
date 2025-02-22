@@ -107,6 +107,42 @@ function getWeatherData($location, &$weather_data, &$forecast_data, &$soil_moist
         $solar_radiation = rand(100, 1000); // Random value between 100-1000 W/m²
     }
 }
+
+// Function to get weather analysis based on conditions
+function getWeatherAnalysis($weather_data, $soil_moisture) {
+    $analysis = [];
+    
+    // Temperature analysis
+    $temp = $weather_data['main']['temp'];
+    if ($temp < 10) {
+        $analysis['temperature'] = ['status' => 'Poor', 'message' => 'Temperature too low for most crops'];
+    } elseif ($temp > 35) {
+        $analysis['temperature'] = ['status' => 'Poor', 'message' => 'Temperature too high, may cause heat stress'];
+    } else {
+        $analysis['temperature'] = ['status' => 'Good', 'message' => 'Optimal temperature for crop growth'];
+    }
+
+    // Humidity analysis
+    $humidity = $weather_data['main']['humidity'];
+    if ($humidity < 40) {
+        $analysis['humidity'] = ['status' => 'Poor', 'message' => 'Low humidity may cause water stress'];
+    } elseif ($humidity > 90) {
+        $analysis['humidity'] = ['status' => 'Warning', 'message' => 'High humidity may promote fungal growth'];
+    } else {
+        $analysis['humidity'] = ['status' => 'Good', 'message' => 'Optimal humidity levels'];
+    }
+
+    // Soil moisture analysis
+    if ($soil_moisture < 30) {
+        $analysis['soil'] = ['status' => 'Poor', 'message' => 'Soil too dry, irrigation needed'];
+    } elseif ($soil_moisture > 80) {
+        $analysis['soil'] = ['status' => 'Warning', 'message' => 'Soil too wet, reduce irrigation'];
+    } else {
+        $analysis['soil'] = ['status' => 'Good', 'message' => 'Optimal soil moisture'];
+    }
+
+    return $analysis;
+}
 ?>
 
 <!DOCTYPE html>
@@ -366,6 +402,55 @@ function getWeatherData($location, &$weather_data, &$forecast_data, &$soil_moist
             font-weight: 600;
             color: var(--primary-color);
         }
+
+        /* Add to your existing style section */
+        .welcome-message {
+            margin: 15px 0;
+            color: #4a5568;
+            font-size: 1.1rem;
+        }
+
+        .weather-analysis-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            margin: 30px 0;
+        }
+
+        .analysis-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .analysis-table th,
+        .analysis-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .analysis-table th {
+            background-color: #f7fafc;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .status-good {
+            color: #2f855a;
+            font-weight: 600;
+        }
+
+        .status-warning {
+            color: #c05621;
+            font-weight: 600;
+        }
+
+        .status-poor {
+            color: #c53030;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -406,6 +491,9 @@ function getWeatherData($location, &$weather_data, &$forecast_data, &$soil_moist
             <div class="farm-info-card">
                 <div class="farm-info-header">
                     <h2><i class="fas fa-cloud-sun"></i> Weather Dashboard</h2>
+                    <div class="welcome-message">
+                        <p>Welcome, <?php echo $username; ?>! Here's your weather report for today.</p>
+                    </div>
                 </div>
                 
                 <!-- Replace the existing location form with this new form -->
@@ -538,6 +626,34 @@ function getWeatherData($location, &$weather_data, &$forecast_data, &$soil_moist
                     <?php endif; ?>
                 </div>
 
+                <?php if (!empty($weather_data)): ?>
+                    <div class="weather-analysis-card">
+                        <h3>Weather Analysis</h3>
+                        <table class="analysis-table">
+                            <thead>
+                                <tr>
+                                    <th>Parameter</th>
+                                    <th>Status</th>
+                                    <th>Recommendation</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                $analysis = getWeatherAnalysis($weather_data, $soil_moisture);
+                                foreach ($analysis as $parameter => $data):
+                                    $statusClass = strtolower($data['status']);
+                                ?>
+                                <tr>
+                                    <td><?php echo ucfirst($parameter); ?></td>
+                                    <td class="status-<?php echo $statusClass; ?>"><?php echo $data['status']; ?></td>
+                                    <td><?php echo $data['message']; ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+
                 <div class="farm-info-card">
                     <h3>5-Day Forecast</h3>
                     <div class="forecast-grid">
@@ -580,5 +696,18 @@ function getWeatherData($location, &$weather_data, &$forecast_data, &$soil_moist
             </div>
         </div>
     </div>
+
+    <script>
+        // Update current time
+        function updateTime() {
+            const timeElement = document.getElementById('current-time');
+            const now = new Date();
+            timeElement.textContent = now.toLocaleTimeString();
+        }
+
+        // Update time every second
+        setInterval(updateTime, 1000);
+        updateTime(); // Initial call
+    </script>
 </body>
 </html> 
