@@ -95,6 +95,24 @@ if (!$recent_farmers) {
     die("Error fetching recent farmers: " . mysqli_error($conn));
 }
 
+// Fetch soil tests grouped by farmer
+$soil_tests_by_farmer_query = "SELECT st.*, u.username as farmer_name, u.id as farmer_id,
+                                     COUNT(*) as test_count,
+                                     AVG(ph_level) as avg_ph,
+                                     AVG(nitrogen_content) as avg_n,
+                                     AVG(phosphorus_content) as avg_p,
+                                     AVG(potassium_content) as avg_k
+                              FROM soil_tests st 
+                              JOIN users u ON st.farmer_id = u.id 
+                              WHERE u.role = 'farmer'
+                              GROUP BY u.id
+                              ORDER BY u.username";
+
+$soil_tests_by_farmer = mysqli_query($conn, $soil_tests_by_farmer_query);
+if (!$soil_tests_by_farmer) {
+    die("Error fetching soil tests by farmer: " . mysqli_error($conn));
+}
+
 mysqli_close($conn);
 ?>
 
@@ -107,271 +125,356 @@ mysqli_close($conn);
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #2B7A30;
+            --secondary-color: #27ae60;
+            --dark-color: #1B4D1E;
+            --light-color: #ecf0f1;
+        }
+
         body {
-            display: flex; /* Use flexbox for layout */
             margin: 0;
-            height: 100vh; /* Full height */
-            background-color: #f0f0f0; /* Light background for the page */
+            font-family: 'Segoe UI', sans-serif;
+            background: #f5f6fa;
+            display: flex;
+            min-height: 100vh;
         }
 
+        /* Updated Sidebar */
         .sidebar {
-            width: 200px; /* Reduced width */
-            background-color: #4CAF50; /* Green background */
-            padding: 15px; /* Reduced padding */
+            width: 250px;
+            background: var(--dark-color);
+            padding: 20px 0;
             color: white;
-            position: fixed; /* Fixed position */
-            height: 100%; /* Full height */
-        }
-
-        .content {
-            margin-left: 200px; /* Adjusted for new sidebar width */
-            padding: 15px; /* Reduced padding */
-            flex-grow: 1; /* Take remaining space */
-        }
-
-        .logout-container {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
+            height: 100vh;
         }
 
-        .logout-btn {
-            position: relative;
+        .sidebar h1 {
+            color: white;
+            font-size: 24px;
+            padding: 0 20px;
+            margin-bottom: 30px;
+        }
+
+        .sidebar-btn {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 12px 25px;
-            background: linear-gradient(135deg, #ff6b6b, #ee5253);
+            padding: 12px 20px;
             color: white;
             text-decoration: none;
-            border-radius: 50px;
-            font-weight: 600;
-            overflow: hidden;
-            transition: all 0.4s ease;
-        }
-
-        .logout-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: 0.5s;
-        }
-
-        .logout-btn:hover::before {
-            left: 100%;
-        }
-
-        .logout-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(238, 82, 83, 0.4);
-            background: linear-gradient(135deg, #ee5253, #ff6b6b);
-        }
-
-        .logout-btn i {
-            font-size: 1.2rem;
-            transition: transform 0.3s ease;
-        }
-
-        .logout-btn span {
-            opacity: 1;
             transition: all 0.3s ease;
         }
 
-        .logout-btn:hover i {
-            transform: rotate(180deg);
+        .sidebar-btn i {
+            margin-right: 15px;
+            font-size: 20px;
         }
 
-        .logout-btn:active {
-            transform: scale(0.95);
+        .sidebar-btn:hover, .sidebar-btn.active {
+            background: var(--primary-color);
         }
 
-        @media (max-width: 768px) {
-            .logout-btn span {
-                display: none;
-            }
-            
-            .logout-btn {
-                padding: 12px;
-                border-radius: 50%;
-            }
-            
-            .logout-btn i {
-                margin: 0;
-            }
+        /* Updated Content Area */
+        .content {
+            margin-left: 250px;
+            padding: 20px;
+            width: 100%;
         }
 
+        /* Updated Stats Cards */
         .stats-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
         }
 
         .stat-card {
-            background: linear-gradient(135deg, #28a745, #218838);
-            color: white;
-            padding: 1rem; /* Reduced padding */
-            border-radius: 8px; /* Slightly rounded corners */
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Enhanced shadow */
-            transition: transform 0.3s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .stat-card i {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: left;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .stat-card h3 {
-            font-size: 2rem;
-            margin: 0.5rem 0;
+            font-size: 32px;
+            color: var(--dark-color);
+            margin: 10px 0;
         }
 
-        .farmers-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
+        /* Updated Running Message */
+        .running-message {
+            background: linear-gradient(135deg, var(--primary-color), var(--dark-color));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
-        .farmer-card {
+        .message-content {
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .welcome-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .welcome-header i {
+            font-size: 2em;
+            color: #fff;
+        }
+
+        .welcome-header h2 {
+            margin: 0;
+            font-size: 1.5em;
+            color: #fff;
+        }
+
+        .message-body p {
+            margin: 5px 0;
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .quick-actions span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .quick-actions i {
+            font-size: 1.1em;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Updated Section Headers */
+        .section h2 {
+            color: var(--dark-color);
+            margin: 30px 0 20px;
+        }
+
+        /* Updated Cards and Tables */
+        .farmer-card, .soil-test-card {
             background: white;
-            margin: 10px; /* Added margin for spacing */
-            border-radius: 6px; /* Slightly rounded corners */
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Enhanced shadow */
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .table-responsive table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
             overflow: hidden;
         }
 
-        .farmer-header {
-            background: linear-gradient(135deg, #28a745, #218838);
+        .table-responsive th {
+            background: var(--primary-color);
             color: white;
-            padding: 0.75rem;
+            padding: 12px;
+            text-align: left;
+        }
+
+        .table-responsive td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* Logo Section */
+        .logo-section {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 10px;
+            padding: 20px;
         }
 
-        .farmer-header i {
-            font-size: 1.5rem;
+        .logo-section i {
+            font-size: 24px;
+            color: var(--primary-color);
         }
 
-        .farmer-details {
-            padding: 0.75rem;
-        }
-
-        .farmer-details p {
-            margin: 0.25rem 0;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .farmer-stats {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 1px solid #eee;
-            font-size: 0.9rem;
-        }
-
-        .farmer-actions {
-            padding: 0.75rem;
-            display: flex;
-            gap: 0.75rem;
-        }
-
-        .btn-view, .btn-test {
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            text-decoration: none;
-            text-align: center;
-            flex: 1;
-        }
-
-        .btn-view {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn-test {
-            background: #f8f9fa;
-            color: #28a745;
-            border: 1px solid #28a745;
-        }
-
-        .section h2 {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #28a745;
-        }
-
+        /* Updated Search and Logout Styles */
         .search-container {
-            margin: 20px auto;
-            max-width: 600px;
+            margin-bottom: 20px;
         }
 
         .search-form {
             display: flex;
             gap: 10px;
+            max-width: 500px;
         }
 
         .search-input {
             flex: 1;
             padding: 12px 20px;
-            border: 2px solid #28a745;
-            border-radius: 50px;
+            border: 2px solid #e0e0e0;
+            border-radius: 30px;
             font-size: 16px;
-            outline: none;
             transition: all 0.3s ease;
         }
 
         .search-input:focus {
-            border-color: #218838;
-            box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 10px rgba(43, 122, 48, 0.1);
+            outline: none;
         }
 
         .search-btn {
-            background: #28a745;
+            background: var(--primary-color);
             color: white;
             border: none;
             padding: 12px 25px;
-            border-radius: 50px;
+            border-radius: 30px;
             cursor: pointer;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
         }
 
         .search-btn:hover {
-            background: #218838;
+            background: var(--dark-color);
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(43, 122, 48, 0.2);
         }
 
-        .search-btn:active {
-            transform: translateY(0);
+        .logout-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
         }
 
-        .search-results {
-            grid-column: 1 / -1;
-            padding: 10px 15px;
-            background-color: #f8f9fa;
-            border-radius: 5px;
-            margin-bottom: 15px;
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #dc3545;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
         }
 
-        .search-results h3 {
-            color: #28a745;
+        .logout-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
+        }
+
+        .logout-btn i {
+            font-size: 18px;
+        }
+
+        /* Updated Farmers Grid Styles */
+        .farmers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .farmer-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .farmer-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(43, 122, 48, 0.2);
+        }
+
+        .farmer-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .farmer-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .farmer-header i {
+            font-size: 1.8em;
+            color: var(--primary-color);
+        }
+
+        .farmer-header h3 {
+            font-size: 1.1em;
             margin: 0;
+        }
+
+        .farmer-details {
+            padding: 10px 0;
+        }
+
+        .farmer-details p {
+            font-size: 0.9em;
+            margin: 5px 0;
+        }
+
+        .farmer-stats {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid #eee;
+            flex-wrap: wrap;
+        }
+
+        .farmer-stats span {
+            font-size: 0.8em;
+            padding: 4px 8px;
+        }
+
+        .farmer-actions {
+            margin-top: 10px;
+        }
+
+        .btn-view {
+            padding: 6px 15px;
+            font-size: 0.9em;
         }
 
         .no-results {
@@ -380,191 +483,119 @@ mysqli_close($conn);
             padding: 30px;
             background: #f8f9fa;
             border-radius: 10px;
-        }
-
-        .no-results p {
-            color: #6c757d;
-            font-size: 1.1rem;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
+            color: #666;
         }
 
         .no-results i {
-            color: #dc3545;
-            font-size: 1.3rem;
+            font-size: 2em;
+            color: var(--primary-color);
+            margin-bottom: 10px;
         }
 
-        .running-message {
-            background: #28a745;
-            color: white;
-            padding: 10px 20px;
-            display: flex;
-            align-items: center;
-            font-size: 1.2rem;
-            position: relative;
-            overflow: hidden;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .running-message span {
-            white-space: nowrap;
-            animation: marquee 10s linear infinite;
+        .farmer-card {
+            animation: fadeIn 0.5s ease forwards;
         }
 
-        .running-message i {
-            margin-right: 10px;
-            font-size: 1.5rem;
-        }
-
-        @keyframes marquee {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
-        }
-
-        .soil-tests-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            margin-top: 1rem;
-        }
-
-        .soil-test-card {
+        .farmer-soil-tests {
             background: white;
-            margin: 10px; /* Added margin for spacing */
-            border-radius: 6px; /* Slightly rounded corners */
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Enhanced shadow */
-            overflow: hidden;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
         }
 
-        .test-header {
-            background: linear-gradient(135deg, #2980b9, #3498db);
-            color: white;
-            padding: 0.75rem;
+        .farmer-soil-tests:hover {
+            transform: translateY(-5px);
+        }
+
+        .farmer-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 0.75rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
         }
 
-        .test-header i {
-            font-size: 1.5rem;
-        }
-
-        .test-header h3 {
+        .farmer-header h3 {
             margin: 0;
-            font-size: 1.1rem;
-        }
-
-        .test-details {
-            padding: 1rem;
-        }
-
-        .test-details p {
-            margin: 0 0 1rem 0;
-            color: #666;
+            color: var(--primary-dark);
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 10px;
         }
 
-        .test-stats {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
+        .test-count {
+            background: var(--primary-color);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9em;
         }
 
-        .stat-item {
+        .soil-averages {
             background: #f8f9fa;
-            padding: 0.75rem;
-            border-radius: 6px;
-            text-align: center;
-        }
-
-        .stat-item .label {
-            display: block;
-            color: #666;
-            font-size: 0.9rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .stat-item .value {
-            display: block;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #2980b9;
-        }
-
-        .test-actions {
-            padding: 0.75rem;
-            border-top: 1px solid #eee;
-        }
-
-        .test-actions .btn-view {
-            display: block;
-            background: #2980b9;
-            color: white;
-            text-align: center;
-            padding: 0.5rem;
-            border-radius: 5px;
-            text-decoration: none;
-            transition: background-color 0.3s;
-        }
-
-        .test-actions .btn-view:hover {
-            background: #3498db;
-        }
-
-        .logo-section {
-            background-color: #4CAF50; /* Green background */
-            padding: 20px;
-            text-align: center;
-            color: white;
-        }
-
-        .menu-text {
-            margin-left: 10px;
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-
-        .menu-section {
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-            background-color: #4CAF50; /* Green background */
-            border-radius: 8px;
-        }
-
-        .sidebar-btn {
-            display: flex;
-            align-items: center;
             padding: 15px;
-            margin: 5px 0;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .soil-averages h4 {
+            margin: 0 0 10px 0;
+            color: var(--primary-dark);
+        }
+
+        .averages-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+
+        .average-item {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .average-item .label {
+            display: block;
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .average-item .value {
+            display: block;
+            font-size: 1.2em;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .farmer-actions {
+            text-align: right;
+        }
+
+        .btn-view {
+            display: inline-block;
+            padding: 8px 20px;
+            background: var(--primary-color);
             color: white;
             text-decoration: none;
-            border-radius: 25px; /* Rounded buttons */
-            transition: background-color 0.3s, transform 0.3s;
-            background-color: #4CAF50; /* Green background */
+            border-radius: 20px;
+            transition: all 0.3s ease;
         }
 
-        .sidebar-btn i {
-            margin-right: 10px;
-            font-size: 1.2rem;
-        }
-
-        .sidebar-btn:hover {
-            background-color: #45a049; /* Darker green on hover */
-            transform: translateX(5px); /* Move button slightly to the right */
-        }
-
-        .sidebar-btn.active {
-            background-color: #388E3C; /* Active button color */
-            font-weight: bold; /* Make active button bold */
-        }
-
-        .bottom-section {
-            margin-top: auto; /* Pushes the bottom section to the bottom */
+        .btn-view:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
         }
     </style>
 </head>
@@ -572,8 +603,8 @@ mysqli_close($conn);
     <div class="sidebar">
         <h1>GrowGuide</h1>
         <a href="employe.php" class="sidebar-btn active">Dashboard</a>
-        <a href="farmers.php" class="sidebar-btn">Farmers</a>
-        <a href="varieties.php" class="sidebar-btn">Varieties</a>
+        <a href="employee_farmer.php" class="sidebar-btn">Farmers</a>
+        <a href="employe_varities.php" class="sidebar-btn">Varieties</a>
         <a href="notifications.php" class="sidebar-btn">Notifications</a>
         <a href="admin_setting.php" class="sidebar-btn">Settings</a>
         <a href="logout.php" class="sidebar-btn">Logout</a>
@@ -582,8 +613,20 @@ mysqli_close($conn);
     <div class="content">
         <!-- Running Message Section -->
         <div class="running-message">
-            <i class="fas fa-user-circle"></i>
-            <span>Welcome, <?php echo htmlspecialchars($username); ?>! Enjoy your day!</span>
+            <div class="message-content">
+                <div class="welcome-header">
+                    <i class="fas fa-user-md"></i>
+                    <h2>Welcome, Dr. <?php echo htmlspecialchars($username); ?>!</h2>
+                </div>
+                <div class="message-body">
+                    <p>Your Cardamom Care Dashboard is ready 🌿</p>
+                    <div class="quick-actions">
+                        <span><i class="fas fa-flask"></i> Analyze Soil & Weather</span>
+                        <span><i class="fas fa-leaf"></i> Fertilizer Recommendations</span>
+                        <span><i class="fas fa-comments"></i> Farmer Queries</span>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="dashboard-container">
             <!-- Updated logout button -->
@@ -676,44 +719,45 @@ mysqli_close($conn);
 
             <!-- Recent Soil Tests Section -->
             <div class="section">
-                <h2><i class="fas fa-flask"></i> Recent Soil Tests</h2>
+                <h2><i class="fas fa-flask"></i> Soil Tests by Farmer</h2>
                 <div class="soil-tests-grid">
-                    <?php if (mysqli_num_rows($recent_soil_tests) > 0): ?>
-                        <?php while ($test = mysqli_fetch_assoc($recent_soil_tests)): ?>
-                            <div class="soil-test-card">
-                                <div class="test-header">
-                                    <i class="fas fa-vial"></i>
-                                    <h3><?php echo htmlspecialchars($test['farmer_name']); ?></h3>
+                    <?php if (mysqli_num_rows($soil_tests_by_farmer) > 0): ?>
+                        <?php while ($farmer_tests = mysqli_fetch_assoc($soil_tests_by_farmer)): ?>
+                            <div class="farmer-soil-tests">
+                                <div class="farmer-header">
+                                    <h3><i class="fas fa-user-circle"></i> <?php echo htmlspecialchars($farmer_tests['farmer_name']); ?></h3>
+                                    <span class="test-count"><?php echo $farmer_tests['test_count']; ?> Tests</span>
                                 </div>
-                                <div class="test-details">
-                                    <p><i class="fas fa-calendar"></i> <?php echo date('M j, Y', strtotime($test['test_date'])); ?></p>
-                                    <div class="test-stats">
-                                        <div class="stat-item">
-                                            <span class="label">pH</span>
-                                            <span class="value"><?php echo htmlspecialchars($test['ph_level'] ?? 'N/A'); ?></span>
+                                <div class="soil-averages">
+                                    <h4>Soil Test Averages</h4>
+                                    <div class="averages-grid">
+                                        <div class="average-item">
+                                            <span class="label">pH Level</span>
+                                            <span class="value"><?php echo number_format($farmer_tests['avg_ph'], 2); ?></span>
                                         </div>
-                                        <div class="stat-item">
-                                            <span class="label">N</span>
-                                            <span class="value"><?php echo htmlspecialchars($test['nitrogen'] ?? 'N/A'); ?>%</span>
+                                        <div class="average-item">
+                                            <span class="label">Nitrogen (N)</span>
+                                            <span class="value"><?php echo number_format($farmer_tests['avg_n'], 2); ?>%</span>
                                         </div>
-                                        <div class="stat-item">
-                                            <span class="label">P</span>
-                                            <span class="value"><?php echo htmlspecialchars($test['phosphorus'] ?? 'N/A'); ?>%</span>
+                                        <div class="average-item">
+                                            <span class="label">Phosphorus (P)</span>
+                                            <span class="value"><?php echo number_format($farmer_tests['avg_p'], 2); ?>%</span>
                                         </div>
-                                        <div class="stat-item">
-                                            <span class="label">K</span>
-                                            <span class="value"><?php echo htmlspecialchars($test['potassium'] ?? 'N/A'); ?>%</span>
+                                        <div class="average-item">
+                                            <span class="label">Potassium (K)</span>
+                                            <span class="value"><?php echo number_format($farmer_tests['avg_k'], 2); ?>%</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="test-actions">
-                                    <a href="view_test.php?id=<?php echo $test['id']; ?>" class="btn-view">View Details</a>
+                                <div class="farmer-actions">
+                                    <a href="view_farmer_tests.php?farmer_id=<?php echo $farmer_tests['farmer_id']; ?>" 
+                                       class="btn-view">View All Tests</a>
                                 </div>
                             </div>
                         <?php endwhile; ?>
                     <?php else: ?>
                         <div class="no-results">
-                            <p><i class="fas fa-info-circle"></i> No recent soil tests found.</p>
+                            <p><i class="fas fa-info-circle"></i> No soil tests found for any farmer.</p>
                         </div>
                     <?php endif; ?>
                 </div>

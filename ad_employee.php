@@ -27,7 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_employee'])) {
         $username = mysqli_real_escape_string($conn, $_POST['username']);
         $email = mysqli_real_escape_string($conn, $_POST['email']);
-        $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+        $password = $_POST['password']; // Store original password for email
+        $hashed_password = password_hash($_POST['password'], PASSWORD_DEFAULT);
         
         // Check if username or email already exists
         $check_query = "SELECT id FROM users WHERE username = ? OR email = ?";
@@ -37,31 +38,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = 'Error preparing statement: ' . mysqli_error($conn);
         } else {
             mysqli_stmt_bind_param($check_stmt, "ss", $username, $email);
-            mysqli_stmt_execute($check_stmt);
-            mysqli_stmt_store_result($check_stmt);
             
-            if (mysqli_stmt_num_rows($check_stmt) > 0) {
-                $message = 'Username or email already exists!';
+            if (!mysqli_stmt_execute($check_stmt)) {
+                $message = 'Error executing check query: ' . mysqli_error($conn);
             } else {
-                // Insert new employee
-                $insert_query = "INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, 'employee', 1)";
-                $insert_stmt = mysqli_prepare($conn, $insert_query);
+                $check_result = mysqli_stmt_get_result($check_stmt);
                 
-                if ($insert_stmt === false) {
-                    $message = 'Error preparing insert statement: ' . mysqli_error($conn);
+                if (mysqli_num_rows($check_result) > 0) {
+                    $message = 'Username or email already exists!';
                 } else {
-                    mysqli_stmt_bind_param($insert_stmt, "sss", $username, $email, $password);
+                    // Insert new employee
+                    $insert_query = "INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, 'employee', 1)";
+                    $insert_stmt = mysqli_prepare($conn, $insert_query);
                     
-                    if (mysqli_stmt_execute($insert_stmt)) {
-                        $message = 'Employee added successfully!';
-                        // Clear any POST data to prevent duplicate submissions
-                        header("Location: " . $_SERVER['PHP_SELF']);
-                        exit();
+                    if ($insert_stmt === false) {
+                        $message = 'Error preparing insert statement: ' . mysqli_error($conn);
                     } else {
-                        $message = 'Error adding employee: ' . mysqli_error($conn);
+                        mysqli_stmt_bind_param($insert_stmt, "sss", $username, $email, $hashed_password);
+                        
+                        if (mysqli_stmt_execute($insert_stmt)) {
+                            $message = 'Employee added successfully!';
+                            // Clear any POST data to prevent duplicate submissions
+                            header("Location: " . $_SERVER['PHP_SELF']);
+                            exit();
+                        } else {
+                            $message = 'Error adding employee: ' . mysqli_error($conn);
+                        }
+                        mysqli_stmt_close($insert_stmt);
                     }
-                    mysqli_stmt_close($insert_stmt);
                 }
+                mysqli_free_result($check_result);
             }
             mysqli_stmt_close($check_stmt);
         }
@@ -140,6 +146,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             --primary-dark: #1b5e20;
             --error-color: #dc3545;
             --success-color: #28a745;
+            --transition-speed: 0.3s;
+            --hover-scale: 1.02;
         }
 
         body {
@@ -157,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             height: 100vh;
             padding: 10px;
             position: fixed;
-            transition: width 0.3s;
+            transition: all var(--transition-speed);
         }
 
         .sidebar-header {
@@ -186,13 +194,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             gap: 15px;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: all var(--transition-speed);
             margin: 5px 0;
+            position: relative;
         }
 
-        .menu li:hover, .menu .active {
-            background: var(--primary-dark);
-            border-radius: 4px;
+        .menu li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: white;
+            transform: scaleY(0);
+            transition: transform var(--transition-speed);
+        }
+
+        .menu li:hover::before,
+        .menu li.active::before {
+            transform: scaleY(1);
         }
 
         .menu li a {
@@ -236,6 +257,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            animation: fadeIn 0.5s ease-out;
+            transition: transform var(--transition-speed);
+        }
+
+        .form-grid:hover {
+            transform: scale(var(--hover-scale));
         }
 
         .form-group {
@@ -256,7 +283,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border: 1px solid #ddd;
             border-radius: 6px;
             font-size: 14px;
-            transition: all 0.3s;
+            transition: all var(--transition-speed);
             box-sizing: border-box;
         }
 
@@ -265,12 +292,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             left: 12px;
             top: 42px;
             color: #666;
+            transition: all var(--transition-speed);
         }
 
         .form-group input:focus {
             outline: none;
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(46, 125, 50, 0.15);
         }
 
         .error-message {
@@ -289,7 +319,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         button[type="submit"] {
-            background: var(--primary-color);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             color: white;
             border: none;
             padding: 12px 30px;
@@ -297,12 +327,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             cursor: pointer;
             font-size: 16px;
             font-weight: 500;
-            transition: background 0.3s;
+            transition: all var(--transition-speed);
             margin-top: 20px;
+            position: relative;
+            overflow: hidden;
         }
 
         button[type="submit"]:hover {
-            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(46, 125, 50, 0.2);
+        }
+
+        button[type="submit"]::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
+        }
+
+        button[type="submit"]:hover::after {
+            animation: ripple 1s ease-out;
+        }
+
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(100, 100);
+                opacity: 0;
+            }
         }
 
         table {
@@ -313,6 +375,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            animation: fadeIn 0.7s ease-out;
         }
 
         th, td {
@@ -378,16 +441,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: 12px;
             font-size: 12px;
             font-weight: 500;
+            transition: all var(--transition-speed);
         }
         
         .status-badge.active {
-            background-color: #d4edda;
-            color: #155724;
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
         }
         
         .status-badge.inactive {
-            background-color: #f8d7da;
-            color: #721c24;
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2);
         }
         .admin-dashboard-link {
     position: fixed;
@@ -453,6 +519,144 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         width: 28px;
         height: 28px;
     }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+    from { transform: translateX(-20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.form-grid {
+    animation: fadeIn 0.5s ease-out;
+    transition: transform var(--transition-speed);
+}
+
+.form-grid:hover {
+    transform: scale(var(--hover-scale));
+}
+
+.form-group input {
+    transition: all var(--transition-speed);
+}
+
+.form-group input:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(46, 125, 50, 0.15);
+}
+
+button[type="submit"] {
+    transition: all var(--transition-speed);
+}
+
+button[type="submit"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(46, 125, 50, 0.2);
+}
+
+button[type="submit"]::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%);
+    transform-origin: 50% 50%;
+}
+
+button[type="submit"]:hover::after {
+    animation: ripple 1s ease-out;
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0, 0);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(100, 100);
+        opacity: 0;
+    }
+}
+
+table {
+    animation: fadeIn 0.7s ease-out;
+}
+
+tr {
+    transition: all var(--transition-speed);
+}
+
+tr:hover {
+    background-color: rgba(46, 125, 50, 0.05);
+    transform: scale(var(--hover-scale));
+}
+
+.status-badge {
+    transition: all var(--transition-speed);
+}
+
+.status-badge.active {
+    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+}
+
+.status-badge.inactive {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2);
+}
+
+.sidebar {
+    transition: all var(--transition-speed);
+}
+
+.menu li {
+    transition: all var(--transition-speed);
+    position: relative;
+}
+
+.menu li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 3px;
+    background: white;
+    transform: scaleY(0);
+    transition: transform var(--transition-speed);
+}
+
+.menu li:hover::before,
+.menu li.active::before {
+    transform: scaleY(1);
+}
+
+.menu li i {
+    transition: all var(--transition-speed);
+}
+
+.menu li:hover i {
+    transform: translateX(5px) rotate(5deg);
+}
+
+.form-group i {
+    transition: all var(--transition-speed);
+}
+
+.form-group input:focus + i {
+    color: var(--primary-color);
+    transform: scale(1.1);
 }
     </style>
 </head>
@@ -723,7 +927,13 @@ function editEmployee(employeeId) {
         </div>
     `;
     
+    modal.style.opacity = '0';
     document.body.appendChild(modal);
+    
+    requestAnimationFrame(() => {
+        modal.style.opacity = '1';
+        modal.style.transition = 'opacity 0.3s ease';
+    });
 }
 
 function deleteEmployee(employeeId) {
@@ -743,6 +953,25 @@ function deleteEmployee(employeeId) {
 function toggleSidebar() {
     // ... existing code ...
 }
+
+// Add smooth scrolling animation
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+            behavior: 'smooth'
+        });
+    });
+});
+
+// Add loading animation
+window.addEventListener('load', () => {
+    document.body.style.opacity = '0';
+    document.body.style.transition = 'opacity 0.5s ease';
+    requestAnimationFrame(() => {
+        document.body.style.opacity = '1';
+    });
+});
 </script>
 </body>
 </html>

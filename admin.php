@@ -657,11 +657,7 @@ if ($farmers_result) {
                 <p>Total Employees</p>
                 <i class="fas fa-user-tie"></i>
             </div>
-            <div class="stat-card animated-box">
-                <h3><?php echo $total_soil_tests; ?></h3>
-                <p>Total Soil Tests</p>
-                <i class="fas fa-flask"></i>
-            </div>
+            
         </div>
 
         <div id="farmers-list" class="farmers-list-container" style="display: none;">

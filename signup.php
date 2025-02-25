@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $errors[] = "Passwords do not match";
     }
     
-    // Check existing email
+    // Check existing email only
     $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
@@ -51,32 +51,54 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $errors[] = "Email already exists";
     }
     
-    // Check existing username
-    $stmt = $conn->prepare("SELECT id FROM users WHERE username = ?");
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    if ($stmt->get_result()->num_rows > 0) {
-        $errors[] = "Username already exists";
-    }
-    
     if (empty($errors)) {
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
         
-        $stmt = $conn->prepare("INSERT INTO users (username, email, phone, password, role) VALUES (?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssss", $username, $email, $phone, $hashed_password, $role);
-        
-        if ($stmt->execute()) {
-            if ($role === 'employee') {
-                $_SESSION['temp_email'] = $email;
-                $_SESSION['temp_password'] = $password;
-                header("Location: employee_signup.php");
-                exit();
+        // Check if the issue is a database constraint by attempting the insert directly
+        try {
+            $stmt = $conn->prepare("INSERT INTO users (username, email, phone, password, role) VALUES (?, ?, ?, ?, ?)");
+            $stmt->bind_param("sssss", $username, $email, $phone, $hashed_password, $role);
+            
+            if ($stmt->execute()) {
+                if ($role === 'employee') {
+                    $_SESSION['temp_email'] = $email;
+                    $_SESSION['temp_password'] = $password;
+                    header("Location: employee_signup.php");
+                    exit();
+                } else {
+                    $success = "Registration successful! Please login.";
+                    header("refresh:3;url=login.php");
+                }
             } else {
-                $success = "Registration successful! Please login.";
-                header("refresh:3;url=login.php");
+                // If there's a database constraint error, try a different approach
+                if ($conn->errno == 1062) { // MySQL duplicate entry error code
+                    // This is likely a duplicate username constraint at the database level
+                    // We need to add a unique identifier to make it different
+                    $timestamp = time();
+                    $modified_username = $username . '_' . $timestamp;
+                    
+                    $stmt = $conn->prepare("INSERT INTO users (username, email, phone, password, role) VALUES (?, ?, ?, ?, ?)");
+                    $stmt->bind_param("sssss", $modified_username, $email, $phone, $hashed_password, $role);
+                    
+                    if ($stmt->execute()) {
+                        if ($role === 'employee') {
+                            $_SESSION['temp_email'] = $email;
+                            $_SESSION['temp_password'] = $password;
+                            header("Location: employee_signup.php");
+                            exit();
+                        } else {
+                            $success = "Registration successful! Please login.";
+                            header("refresh:3;url=login.php");
+                        }
+                    } else {
+                        $error = "Registration failed. Please try again.";
+                    }
+                } else {
+                    $error = "Registration failed. Please try again. Error: " . $conn->error;
+                }
             }
-        } else {
-            $error = "Registration failed. Please try again.";
+        } catch (Exception $e) {
+            $error = "Registration failed. Error: " . $e->getMessage();
         }
     } else {
         $error = implode("<br>", $errors);
@@ -528,4 +550,4 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     });
     </script>
 </body>
-</html
+</html>

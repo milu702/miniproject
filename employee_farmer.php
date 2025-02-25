@@ -669,11 +669,11 @@ try {
     </style>
 </head>
 <body>
-<a href="admin.php" class="admin-dashboard-link">
+<a href="employe.php" class="admin-dashboard-link">
     <div class="icon-container">
         <i class="fas fa-user-shield"></i>
     </div>
-    <span class="text">Admin Dashboard</span>
+    <span class="text">EMPLOYEE DASHBOARD</span>
 </a>
 <div class="sidebar" id="sidebar">
     <div class="sidebar-header">

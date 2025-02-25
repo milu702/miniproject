@@ -201,10 +201,7 @@ $soil_data = getSoilData($user_id);
                     <span>Dashboard</span>
                 </a>
                 
-                <a href="analytics.php" class="nav-item active">
-                    <i class="fas fa-chart-line"></i>
-                    <span>Analytics</span>
-                </a>
+               
                 <a href="schedule.php" class="nav-item">
                     <i class="fas fa-calendar-alt"></i>
                     <span>Schedule</span>

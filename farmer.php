@@ -81,23 +81,110 @@ $username = isset($farmerData['username']) && !empty($farmerData['username'])
     ? htmlspecialchars($farmerData['username']) 
     : (isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : 'Farmer');
 
-// Get farmer's location from database
+// Get farmer's location from users table instead of farmers table
 $location_stmt = $conn->prepare("
-    SELECT latitude, longitude, farm_location 
-    FROM farmers 
-    WHERE user_id = ?
+    SELECT farm_location 
+    FROM users 
+    WHERE id = ?
 ");
-$location_stmt->bind_param("i", $user_id);
+$location_stmt->bind_param("i", $_SESSION['user_id']);
 $location_stmt->execute();
 $location_result = $location_stmt->get_result()->fetch_assoc();
 
-$weather_data = null;
-if ($location_result && $location_result['latitude'] && $location_result['longitude']) {
-    $lat = $location_result['latitude'];
-    $lon = $location_result['longitude'];
-    $weather_url = "https://api.openweathermap.org/data/2.5/weather?lat={$lat}&lon={$lon}&units=metric&appid={$weather_api_key}";
+// Function to get coordinates from location name using OpenWeatherMap Geocoding API
+function getCoordinates($location, $api_key) {
+    $url = "http://api.openweathermap.org/geo/1.0/direct?q=" . urlencode($location) . "&limit=1&appid=" . $api_key;
+    $response = @file_get_contents($url);
+    if ($response) {
+        $data = json_decode($response, true);
+        if (!empty($data)) {
+            return [
+                'lat' => $data[0]['lat'],
+                'lon' => $data[0]['lon']
+            ];
+        }
+    }
+    return null;
+}
+
+// After database connection checks, add this array of Kerala districts
+$kerala_districts = [
+    'Alappuzha',
+    'Ernakulam',
+    'Idukki',
+    'Kannur',
+    'Kasaragod',
+    'Kollam',
+    'Kottayam',
+    'Kozhikode',
+    'Malappuram',
+    'Palakkad',
+    'Pathanamthitta',
+    'Thiruvananthapuram',
+    'Thrissur',
+    'Wayanad'
+];
+
+// Handle location form submission
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_location'])) {
+    $new_location = $_POST['farm_location'];
     
-    $weather_response = file_get_contents($weather_url);
+    // Get coordinates for the new location
+    $coordinates = getCoordinates($new_location, $weather_api_key);
+    
+    if ($coordinates) {
+        // Start transaction
+        $conn->begin_transaction();
+        
+        try {
+            // Update farm_location in users table only
+            $update_users = $conn->prepare("
+                UPDATE users 
+                SET farm_location = ? 
+                WHERE id = ?
+            ");
+            $update_users->bind_param("si", 
+                $new_location, 
+                $_SESSION['user_id']
+            );
+            $update_users->execute();
+
+            // Commit transaction
+            $conn->commit();
+            
+            $_SESSION['success'] = "Location updated successfully!";
+            
+            // Update location_result for immediate display
+            $location_result = [
+                'farm_location' => $new_location
+            ];
+            
+            // Get weather data for new location
+            $weather_url = "https://api.openweathermap.org/data/2.5/weather?lat={$coordinates['lat']}&lon={$coordinates['lon']}&units=metric&appid={$weather_api_key}";
+            $weather_response = file_get_contents($weather_url);
+            if ($weather_response) {
+                $weather_data = json_decode($weather_response, true);
+            }
+        } catch (Exception $e) {
+            // Rollback transaction on error
+            $conn->rollback();
+            $_SESSION['error'] = "Error updating location: " . $e->getMessage();
+        }
+    } else {
+        $_SESSION['error'] = "Invalid location. Please enter a valid city name.";
+    }
+    
+    // Redirect to refresh the page
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit();
+}
+
+// Get weather data if location exists
+$weather_data = null;
+if ($location_result && isset($location_result['farm_location'])) {
+    $weather_url = "https://api.openweathermap.org/data/2.5/weather?q=" . urlencode($location_result['farm_location']) . "&units=metric&appid=" . $weather_api_key;
+    
+    $weather_response = @file_get_contents($weather_url);
     if ($weather_response) {
         $weather_data = json_decode($weather_response, true);
     }
@@ -113,31 +200,6 @@ function getWeatherData($location) {
         return json_decode($response, true);
     }
     return null;
-}
-
-// Handle location form submission
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_location'])) {
-    $new_location = $_POST['farm_location'];
-    
-    // Verify the location exists by checking weather data
-    $weather_check = getWeatherData($new_location);
-    
-    if ($weather_check) {
-        // Update location in database
-        $update_stmt = $conn->prepare("UPDATE farmers SET farm_location = ? WHERE user_id = ?");
-        $update_stmt->bind_param("si", $new_location, $_SESSION['user_id']);
-        
-        if ($update_stmt->execute()) {
-            $_SESSION['success'] = "Location updated successfully!";
-        } else {
-            $_SESSION['error'] = "Error updating location.";
-        }
-    } else {
-        $_SESSION['error'] = "Invalid location. Please enter a valid city name.";
-    }
-    
-    header("Location: " . $_SERVER['PHP_SELF']);
-    exit();
 }
 ?>
 
@@ -282,6 +344,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_location'])) {
             align-items: center;
             justify-content: center;
             font-size: 2em;
+        }
+
+        .farmer-location {
+            margin-top: 10px;
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            font-size: 0.9em;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent-color);
+        }
+
+        .farmer-location i {
+            color: #ff6b6b;
+            font-size: 1em;
         }
 
         .nav-menu {
@@ -752,52 +831,164 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_location'])) {
         }
 
         .weather-banner {
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            overflow: hidden;
-            position: relative;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
         .weather-banner-content {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            animation: slideText 20s linear infinite;
         }
 
-        .weather-text {
-            white-space: nowrap;
-            margin-right: 20px;
+        .weather-info-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .weather-icon {
+            font-size: 2.5em;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .weather-details-header {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .weather-location {
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .weather-temp {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .weather-description {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .weather-extra-info {
+            display: flex;
+            gap: 15px;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+
+        .weather-extra-info span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         .weather-link {
+            background: rgba(255, 255, 255, 0.2);
             color: white;
             text-decoration: none;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 5px 15px;
-            border-radius: 20px;
-            transition: background 0.3s ease;
-            white-space: nowrap;
+            padding: 10px 20px;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
         }
 
         .weather-link:hover {
             background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
         }
 
-        @keyframes slideText {
+        @keyframes float {
             0% {
-                transform: translateX(100%);
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-5px);
             }
             100% {
-                transform: translateX(-100%);
+                transform: translateY(0px);
             }
         }
 
-        .weather-banner:hover .weather-banner-content {
-            animation-play-state: paused;
+        @media (max-width: 768px) {
+            .weather-banner-content {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .weather-info-header {
+                flex-direction: column;
+            }
+            
+            .weather-extra-info {
+                justify-content: center;
+            }
+            
+            .weather-link {
+                margin-top: 15px;
+            }
+        }
+
+        .info-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        @media (max-width: 992px) {
+            .info-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .cardamom-section {
+            margin-bottom: 30px;
+        }
+
+        .cardamom-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .location-form select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        .location-form select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 5px rgba(45, 106, 79, 0.2);
+        }
+
+        .location-form select option {
+            padding: 10px;
         }
     </style>
 </head>
@@ -813,6 +1004,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_location'])) {
                 </div>
                 <h3><?php echo $username; ?></h3>
                 <p>Cardamom Farmer</p>
+                <?php if (isset($location_result['farm_location']) && !empty($location_result['farm_location'])): ?>
+                    <div class="farmer-location">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <?php echo htmlspecialchars($location_result['farm_location']); ?>
+                    </div>
+                <?php endif; ?>
             </div>
             <nav class="nav-menu">
                 <div class="nav-menu-items">
@@ -824,9 +1021,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_location'])) {
                         <i class="fas fa-flask"></i> Soil Test
                     </a>
                     
-                    <a href="analytics.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'analytics.php' ? 'active' : ''; ?>">
-                        <i class="fas fa-chart-line"></i> Analytics
-                    </a>
+                  
                     <a href="schedule.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'schedule.php' ? 'active' : ''; ?>">
                         <i class="fas fa-calendar"></i> Schedule
                     </a>
@@ -848,18 +1043,69 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_location'])) {
 
         <div class="main-content">
             <div class="weather-banner">
-                <div class="weather-banner-content">
-                    <span class="weather-text">
-                        <?php 
-                        if ($weather_data) {
-                            echo "Current weather in " . htmlspecialchars($location_result['farm_location']) . ": " . 
-                                 round($weather_data['main']['temp']) . "°C, " . 
-                                 ucfirst($weather_data['weather'][0]['description']);
-                        }
-                        ?>
-                    </span>
-                    <a href="weather.php" class="weather-link">Check detailed weather forecast →</a>
-                </div>
+                <?php if ($weather_data): ?>
+                    <div class="weather-banner-content">
+                        <div class="weather-info-header">
+                            <div class="weather-icon">
+                                <?php
+                                $weather_code = $weather_data['weather'][0]['id'];
+                                $icon_class = 'fas ';
+                                
+                                // Map weather codes to Font Awesome icons
+                                if ($weather_code >= 200 && $weather_code < 300) {
+                                    $icon_class .= 'fa-bolt'; // Thunderstorm
+                                } elseif ($weather_code >= 300 && $weather_code < 400) {
+                                    $icon_class .= 'fa-cloud-rain'; // Drizzle
+                                } elseif ($weather_code >= 500 && $weather_code < 600) {
+                                    $icon_class .= 'fa-cloud-showers-heavy'; // Rain
+                                } elseif ($weather_code >= 600 && $weather_code < 700) {
+                                    $icon_class .= 'fa-snowflake'; // Snow
+                                } elseif ($weather_code >= 700 && $weather_code < 800) {
+                                    $icon_class .= 'fa-smog'; // Atmosphere
+                                } elseif ($weather_code == 800) {
+                                    $icon_class .= 'fa-sun'; // Clear sky
+                                } else {
+                                    $icon_class .= 'fa-cloud'; // Clouds
+                                }
+                                ?>
+                                <i class="<?php echo $icon_class; ?>"></i>
+                            </div>
+                            <div class="weather-details-header">
+                                <div class="weather-location">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <?php echo htmlspecialchars($location_result['farm_location']); ?>
+                                </div>
+                                <div class="weather-temp">
+                                    <?php echo round($weather_data['main']['temp']); ?>°C
+                                </div>
+                                <div class="weather-description">
+                                    <?php echo ucfirst($weather_data['weather'][0]['description']); ?>
+                                </div>
+                                <div class="weather-extra-info">
+                                    <span><i class="fas fa-tint"></i> <?php echo $weather_data['main']['humidity']; ?>%</span>
+                                    <span><i class="fas fa-wind"></i> <?php echo round($weather_data['wind']['speed']); ?> m/s</span>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="weather.php" class="weather-link">
+                            <i class="fas fa-chart-line"></i>
+                            Detailed Forecast
+                        </a>
+                    </div>
+                <?php else: ?>
+                    <div class="weather-banner-content">
+                        <div class="weather-info-header">
+                            <div class="weather-icon">
+                                <i class="fas fa-cloud-sun"></i>
+                            </div>
+                            <div class="weather-details-header">
+                                <div class="weather-description">
+                                    Weather information unavailable
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <div class="alert alert-soil-test">
@@ -939,137 +1185,114 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_location'])) {
                 </div>
             </div>
 
-            <!-- Modified layout for cardamom types and tasks -->
-            <div class="horizontal-layout">
-                <div class="cardamom-section">
-                    <h2><i class="fas fa-leaf"></i> Cardamom Varieties</h2>
-                    <div class="cardamom-types">
-                        <div class="cardamom-card">
-                            <h3>Malabar Cardamom</h3>
-                            <img src="img/harvast.jpeg" alt="Malabar Cardamom">
-                            <p><strong>Characteristics:</strong></p>
-                            <ul>
-                                <li>Large, dark green pods</li>
-                                <li>Strong aromatic flavor</li>
-                                <li>Best for culinary use</li>
-                                <li>Harvest period: 120-150 days</li>
-                            </ul>
-                        </div>
-
-                        <div class="cardamom-card">
-                            <h3>Mysore Cardamom</h3>
-                            <img src="img/pla.jpg" alt="Mysore Cardamom">
-                            <p><strong>Characteristics:</strong></p>
-                            <ul>
-                                <li>Medium-sized, light green pods</li>
-                                <li>Mild, sweet flavor</li>
-                                <li>High oil content</li>
-                                <li>Harvest period: 100-120 days</li>
-                            </ul>
-                        </div>
-
-                        <div class="cardamom-card">
-                            <h3>Vazhukka Cardamom</h3>
-                            <img src="img/card45.jpg" alt="Vazhukka Cardamom">
-                            <p><strong>Characteristics:</strong></p>
-                            <ul>
-                                <li>Small, light green pods</li>
-                                <li>Intense aroma</li>
-                                <li>Disease resistant</li>
-                                <li>Harvest period: 90-110 days</li>
-                            </ul>
-                        </div>
+            <!-- Modified layout for cardamom types -->
+            <div class="cardamom-section">
+                <h2><i class="fas fa-leaf"></i> Cardamom Varieties</h2>
+                <div class="cardamom-types">
+                    <div class="cardamom-card">
+                        <h3>Malabar Cardamom</h3>
+                        <img src="img/harvast.jpeg" alt="Malabar Cardamom">
+                        <p><strong>Characteristics:</strong></p>
+                        <ul>
+                            <li>Large, dark green pods</li>
+                            <li>Strong aromatic flavor</li>
+                            <li>Best for culinary use</li>
+                            <li>Harvest period: 120-150 days</li>
+                        </ul>
                     </div>
-                </div>
 
-                <div class="tasks-section">
-                    <h2><i class="fas fa-tasks"></i> Upcoming Tasks</h2>
-                    <div class="task-list">
-                        <?php
-                        try {
-                            $stmt = $pdo->prepare("SELECT * FROM tasks WHERE user_id = ? AND task_date >= CURRENT_DATE ORDER BY task_date ASC LIMIT 5");
-                            $stmt->execute([$user_id]);
-                            $tasks = $stmt->fetchAll();
+                    <div class="cardamom-card">
+                        <h3>Mysore Cardamom</h3>
+                        <img src="img/pla.jpg" alt="Mysore Cardamom">
+                        <p><strong>Characteristics:</strong></p>
+                        <ul>
+                            <li>Medium-sized, light green pods</li>
+                            <li>Mild, sweet flavor</li>
+                            <li>High oil content</li>
+                            <li>Harvest period: 100-120 days</li>
+                        </ul>
+                    </div>
 
-                            if (count($tasks) > 0) {
-                                foreach ($tasks as $task) {
-                                    echo '<div class="task-item">
-                                        <div class="task-content">
-                                            <div class="task-title">' . htmlspecialchars($task['title']) . '</div>
-                                            <div class="task-date">' . date('M d, Y H:i', strtotime($task['task_date'])) . '</div>
-                                        </div>
-                                    </div>';
-                                }
-                            } else {
-                                echo '<p>No upcoming tasks</p>';
-                            }
-                        } catch (PDOException $e) {
-                            echo '<p>Error loading tasks</p>';
-                        }
-                        ?>
+                    <div class="cardamom-card">
+                        <h3>Vazhukka Cardamom</h3>
+                        <img src="img/card45.jpg" alt="Vazhukka Cardamom">
+                        <p><strong>Characteristics:</strong></p>
+                        <ul>
+                            <li>Small, light green pods</li>
+                            <li>Intense aroma</li>
+                            <li>Disease resistant</li>
+                            <li>Harvest period: 90-110 days</li>
+                        </ul>
                     </div>
                 </div>
             </div>
 
-            <div class="cultivation-tips">
-                <h2><i class="fas fa-book"></i> Cardamom Cultivation Guide</h2>
-                <div class="tip-item">
-                    <h3>Ideal Growing Conditions</h3>
-                    <p>Temperature: 10-35°C<br>
-                       Rainfall: 1500-4000mm/year<br>
-                       Altitude: 600-1500m above sea level<br>
-                       Soil pH: 6.0-6.5</p>
+            <!-- Two-column layout for cultivation tips and location weather -->
+            <div class="info-columns">
+                <div class="cultivation-tips">
+                    <h2><i class="fas fa-book"></i> Cardamom Cultivation Guide</h2>
+                    <div class="tip-item">
+                        <h3>Ideal Growing Conditions</h3>
+                        <p>Temperature: 10-35°C<br>
+                           Rainfall: 1500-4000mm/year<br>
+                           Altitude: 600-1500m above sea level<br>
+                           Soil pH: 6.0-6.5</p>
+                    </div>
+                    <div class="tip-item">
+                        <h3>Planting Season</h3>
+                        <p>Best planted during the pre-monsoon period (May-June)</p>
+                    </div>
+                    <div class="tip-item">
+                        <h3>Spacing</h3>
+                        <p>2m x 2m for optimal growth</p>
+                    </div>
+                    <div class="tip-item">
+                        <h3>Irrigation</h3>
+                        <p>Regular irrigation needed during dry spells</p>
+                    </div>
                 </div>
-                <div class="tip-item">
-                    <h3>Planting Season</h3>
-                    <p>Best planted during the pre-monsoon period (May-June)</p>
-                </div>
-                <div class="tip-item">
-                    <h3>Spacing</h3>
-                    <p>2m x 2m for optimal growth</p>
-                </div>
-                <div class="tip-item">
-                    <h3>Irrigation</h3>
-                    <p>Regular irrigation needed during dry spells</p>
-                </div>
-            </div>
 
-            <div class="location-weather-section">
-                <div class="location-card">
-                    <h2><i class="fas fa-map-marker-alt"></i> Farm Location</h2>
-                    
-                    <form method="POST" class="location-form">
-                        <div class="input-group">
-                            <label for="farm_location">Farm Location:</label>
-                            <input type="text" 
-                                   id="farm_location" 
-                                   name="farm_location" 
-                                   value="<?php echo isset($location_result['farm_location']) ? htmlspecialchars($location_result['farm_location']) : ''; ?>" 
-                                   placeholder="Enter city name"
-                                   required>
-                        </div>
-                        <button type="submit" name="update_location" class="location-btn">
-                            <i class="fas fa-save"></i> Update Location
-                        </button>
-                    </form>
-
-                    <?php if ($location_result && $location_result['farm_location']): ?>
-                        <div class="current-location">
-                            <p><strong>Current Location:</strong> <?php echo htmlspecialchars($location_result['farm_location']); ?></p>
-                        </div>
+                <div class="location-weather-section">
+                    <div class="location-card">
+                        <h2><i class="fas fa-map-marker-alt"></i> Farm Location</h2>
                         
-                        <?php if ($weather_data): ?>
-                            <div class="weather-info">
-                                <h3>Current Weather</h3>
-                                <div class="weather-details">
-                                    <p><i class="fas fa-temperature-high"></i> Temperature: <?php echo round($weather_data['main']['temp']); ?>°C</p>
-                                    <p><i class="fas fa-tint"></i> Humidity: <?php echo $weather_data['main']['humidity']; ?>%</p>
-                                    <p><i class="fas fa-wind"></i> Wind: <?php echo $weather_data['wind']['speed']; ?> m/s</p>
-                                    <p><i class="fas fa-cloud"></i> Weather: <?php echo ucfirst($weather_data['weather'][0]['description']); ?></p>
-                                </div>
+                        <form method="POST" class="location-form">
+                            <div class="input-group">
+                                <label for="farm_location">Select District:</label>
+                                <select id="farm_location" name="farm_location" required>
+                                    <option value="">Select a district</option>
+                                    <?php foreach ($kerala_districts as $district): ?>
+                                        <option value="<?php echo htmlspecialchars($district); ?>" 
+                                                <?php echo (isset($location_result['farm_location']) && 
+                                                          $location_result['farm_location'] === $district) ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($district); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
+                            <button type="submit" name="update_location" class="location-btn">
+                                <i class="fas fa-save"></i> Update Location
+                            </button>
+                        </form>
+
+                        <?php if ($location_result && $location_result['farm_location']): ?>
+                            <div class="current-location">
+                                <p><strong>Current Location:</strong> <?php echo htmlspecialchars($location_result['farm_location']); ?></p>
+                            </div>
+                            
+                            <?php if ($weather_data): ?>
+                                <div class="weather-info">
+                                    <h3>Current Weather</h3>
+                                    <div class="weather-details">
+                                        <p><i class="fas fa-temperature-high"></i> Temperature: <?php echo round($weather_data['main']['temp']); ?>°C</p>
+                                        <p><i class="fas fa-tint"></i> Humidity: <?php echo $weather_data['main']['humidity']; ?>%</p>
+                                        <p><i class="fas fa-wind"></i> Wind: <?php echo $weather_data['wind']['speed']; ?> m/s</p>
+                                        <p><i class="fas fa-cloud"></i> Weather: <?php echo ucfirst($weather_data['weather'][0]['description']); ?></p>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
                         <?php endif; ?>
-                    <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </div>
