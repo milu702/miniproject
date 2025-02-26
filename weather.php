@@ -51,6 +51,18 @@ $kerala_districts = [
     ]
 ];
 
+// Add these coordinates at the top of the file after the kerala_districts array
+$district_coordinates = [
+    'Wayanad' => [
+        'lat' => 11.6854,
+        'lon' => 76.1320
+    ],
+    'Idukki' => [
+        'lat' => 9.9189,
+        'lon' => 77.1025
+    ]
+];
+
 // Handle location form submission
 $weather_data = [];
 $forecast_data = [];
@@ -61,24 +73,33 @@ $message = '';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $selected_district = isset($_POST['district']) ? $_POST['district'] : '';
-    
-    // Check if the selected district is suitable for cardamom plantation
-    if ($selected_district === 'Wayanad' || $selected_district === 'Idukki') {
+    if (!empty($selected_district)) {
         $location = $selected_district . ', Kerala, India';
-        getWeatherData($location, $weather_data, $forecast_data, $soil_moisture, $solar_radiation, $weather_api_key);
-    } else {
-        // Set a message indicating that the weather is not suitable for cardamom plantation
-        $weather_data = null; // Clear weather data
-        $message = "The weather is not suitable for cardamom plantation in " . htmlspecialchars($selected_district) . ".";
         
-        // Get weather data and forecast even if not suitable
-        $location = $selected_district . ', Kerala, India';
+        // Initialize arrays before passing them
+        $weather_data = [];
+        $forecast_data = [];
+        $soil_moisture = 0;
+        $solar_radiation = 0;
+        
+        // Get weather data
         getWeatherData($location, $weather_data, $forecast_data, $soil_moisture, $solar_radiation, $weather_api_key);
+        
+        // Add debug logging
+        error_log('Selected District: ' . $selected_district);
+        error_log('Weather Data: ' . print_r($weather_data, true));
+        
+        // Set message for non-cardamom districts
+        if ($selected_district && $selected_district !== 'Wayanad' && $selected_district !== 'Idukki') {
+            $message = "The selected district " . htmlspecialchars($selected_district) . " is not optimal for cardamom cultivation.";
+        }
     }
 }
 
 // Function to get weather data
 function getWeatherData($location, &$weather_data, &$forecast_data, &$soil_moisture, &$solar_radiation, $api_key) {
+    global $district_coordinates;
+    
     // Function to make API calls using cURL
     function makeApiCall($url) {
         $ch = curl_init();
@@ -86,35 +107,62 @@ function getWeatherData($location, &$weather_data, &$forecast_data, &$soil_moist
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         $response = curl_exec($ch);
+        
+        if (curl_errno($ch)) {
+            error_log('Curl error: ' . curl_error($ch));
+            return null;
+        }
+        
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         
         if ($http_code === 200) {
             return json_decode($response, true);
         }
+        error_log('API returned status code: ' . $http_code . ' for URL: ' . $url);
         return null;
     }
 
-    $geocode_url = "http://api.openweathermap.org/geo/1.0/direct?q=" . urlencode($location) . "&limit=1&appid=" . $api_key;
-    $geocode_data = makeApiCall($geocode_url);
+    // Extract district name from location
+    $district = trim(explode(',', $location)[0]);
     
-    if (!empty($geocode_data)) {
-        $lat = $geocode_data[0]['lat'];
-        $lon = $geocode_data[0]['lon'];
+    // Get coordinates
+    if (isset($district_coordinates[$district])) {
+        // Use predefined coordinates for Wayanad and Idukki
+        $lat = $district_coordinates[$district]['lat'];
+        $lon = $district_coordinates[$district]['lon'];
+    } else {
+        // Use geocoding API for other districts
+        $geocode_url = "http://api.openweathermap.org/geo/1.0/direct?q=" . urlencode($location) . "&limit=1&appid=" . $api_key;
+        $geocode_data = makeApiCall($geocode_url);
         
-        // Get weather data
-        $api_url = "https://api.openweathermap.org/data/2.5/weather?lat={$lat}&lon={$lon}&units=metric&appid={$api_key}";
-        $weather_data = makeApiCall($api_url);
-
-        // Get forecast data
-        $forecast_url = "https://api.openweathermap.org/data/2.5/forecast?lat={$lat}&lon={$lon}&units=metric&appid={$api_key}";
-        $forecast_data = makeApiCall($forecast_url);
-
-        // Simulate soil moisture and solar radiation data (since OpenWeatherMap doesn't provide these)
-        // In a real application, you would get this from soil sensors or specialized APIs
-        $soil_moisture = rand(30, 80); // Random value between 30-80%
-        $solar_radiation = rand(100, 1000); // Random value between 100-1000 W/m²
+        if (!empty($geocode_data)) {
+            $lat = $geocode_data[0]['lat'];
+            $lon = $geocode_data[0]['lon'];
+        } else {
+            error_log('Failed to get geocode data for location: ' . $location);
+            return;
+        }
     }
+    
+    // Get weather data
+    $api_url = "https://api.openweathermap.org/data/2.5/weather?lat={$lat}&lon={$lon}&units=metric&appid={$api_key}";
+    $weather_data = makeApiCall($api_url);
+
+    // Get forecast data
+    $forecast_url = "https://api.openweathermap.org/data/2.5/forecast?lat={$lat}&lon={$lon}&units=metric&appid={$api_key}";
+    $forecast_data = makeApiCall($forecast_url);
+
+    // Generate soil moisture and solar radiation data for Wayanad and Idukki
+    if ($district === 'Wayanad' || $district === 'Idukki') {
+        $soil_moisture = rand(30, 80);
+        $solar_radiation = rand(100, 1000);
+    }
+    
+    // Add debug logging
+    error_log("API URL: " . $api_url);
+    error_log("Weather Data Response: " . print_r($weather_data, true));
+    error_log("Forecast Data Response: " . print_r($forecast_data, true));
 }
 
 // Function to get weather analysis based on conditions
@@ -177,6 +225,114 @@ function getWeatherAnalysis($weather_data, $soil_moisture) {
     }
 
     return $analysis;
+}
+
+// Modify the getCardamomGrowthIndex function
+function getCardamomGrowthIndex($weather_data, $soil_moisture) {
+    $conditions = [
+        'optimal' => 0,
+        'moderate' => 0,
+        'poor' => 0
+    ];
+    
+    $analysis = [];
+    
+    // Weather Parameters Analysis
+    $temp = $weather_data['main']['temp'];
+    $humidity = $weather_data['main']['humidity'];
+    $wind_speed = $weather_data['wind']['speed'];
+    
+    // Create simplified soil data array with available values
+    $soil_data = [
+        'soil_moisture' => $soil_moisture,
+        // Set default values for other parameters
+        'ph_level' => 6.0,  // Default optimal value
+        'nitrogen_content' => 2.0,  // Default optimal value
+        'phosphorus_content' => 1.5,  // Default optimal value
+        'potassium_content' => 1.5   // Default optimal value
+    ];
+    
+    // Temperature Analysis (15-25°C optimal)
+    if ($temp >= 15 && $temp <= 25) {
+        $conditions['optimal']++;
+        $analysis['temperature'] = ['status' => 'Optimal', 'message' => 'Ideal temperature for cardamom growth'];
+    } elseif ($temp > 25 && $temp <= 30) {
+        $conditions['moderate']++;
+        $analysis['temperature'] = ['status' => 'Moderate', 'message' => 'Consider shade management'];
+    } else {
+        $conditions['poor']++;
+        $analysis['temperature'] = ['status' => 'Poor', 'message' => 'Temperature needs attention'];
+    }
+    
+    // Humidity Analysis (70-90% optimal)
+    if ($humidity >= 70 && $humidity <= 90) {
+        $conditions['optimal']++;
+        $analysis['humidity'] = ['status' => 'Optimal', 'message' => 'Perfect humidity range'];
+    } elseif ($humidity > 90) {
+        $conditions['moderate']++;
+        $analysis['humidity'] = ['status' => 'Moderate', 'message' => 'Monitor for fungal diseases'];
+    } else {
+        $conditions['poor']++;
+        $analysis['humidity'] = ['status' => 'Poor', 'message' => 'Increase humidity'];
+    }
+    
+    // Soil moisture Analysis (30-50% optimal)
+    if ($soil_data['soil_moisture'] >= 30 && $soil_data['soil_moisture'] <= 50) {
+        $conditions['optimal']++;
+        $analysis['soil_moisture'] = ['status' => 'Optimal', 'message' => 'Ideal soil moisture for cardamom growth'];
+    } elseif ($soil_data['soil_moisture'] > 50) {
+        $conditions['moderate']++;
+        $analysis['soil_moisture'] = ['status' => 'Moderate', 'message' => 'Monitor drainage'];
+    } else {
+        $conditions['poor']++;
+        $analysis['soil_moisture'] = ['status' => 'Poor', 'message' => 'Increase irrigation'];
+    }
+    
+    // Calculate Growth Index
+    $total_conditions = array_sum($conditions);
+    $growth_index = ($conditions['optimal'] * 100 + $conditions['moderate'] * 50) / ($total_conditions * 100);
+    
+    // Determine Overall Growth Condition
+    $growth_condition = '';
+    if ($growth_index >= 0.8) {
+        $growth_condition = 'Excellent';
+    } elseif ($growth_index >= 0.6) {
+        $growth_condition = 'Good';
+    } elseif ($growth_index >= 0.4) {
+        $growth_condition = 'Fair';
+    } else {
+        $growth_condition = 'Poor';
+    }
+    
+    return [
+        'condition_name' => "Cardamom Growth Index: $growth_condition",
+        'index_value' => round($growth_index * 100),
+        'analysis' => $analysis,
+        'recommendations' => getGrowthRecommendations($analysis)
+    ];
+}
+
+function getGrowthRecommendations($analysis) {
+    $recommendations = [];
+    
+    foreach ($analysis as $parameter => $data) {
+        if ($data['status'] !== 'Optimal') {
+            switch ($parameter) {
+                case 'temperature':
+                    $recommendations[] = "Install shade nets and maintain proper irrigation to regulate temperature";
+                    break;
+                case 'humidity':
+                    $recommendations[] = "Use misting systems during dry periods and ensure proper spacing for air circulation";
+                    break;
+                case 'soil_moisture':
+                    $recommendations[] = "Ensure consistent irrigation to maintain soil moisture within the 30% – 50% range. Utilize mulching to retain soil moisture and reduce evaporation.";
+                    break;
+                // Add more cases for other parameters
+            }
+        }
+    }
+    
+    return $recommendations;
 }
 ?>
 
@@ -275,7 +431,7 @@ function getWeatherAnalysis($weather_data, $soil_moisture) {
         .main-content {
             flex: 1;
             margin-left: 80px;
-            padding: 20px;
+            padding: 20px 20px 20px 0;
         }
 
         .layout-container {
@@ -289,6 +445,7 @@ function getWeatherAnalysis($weather_data, $soil_moisture) {
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
+            width: 100%;
         }
 
         .weather-card {
@@ -711,6 +868,337 @@ function getWeatherAnalysis($weather_data, $soil_moisture) {
                 transform: translateX(-100%);
             }
         }
+
+        /* Add these new styles for the recommendations box */
+        .recommendations-box {
+            background: linear-gradient(135deg, #ffffff, #f8fafc);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e2e8f0;
+            overflow-x: auto;
+        }
+
+        .recommendations-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .recommendations-header h3 {
+            color: var(--primary-color);
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .recommendations-header i {
+            color: var(--primary-color);
+            font-size: 1.8rem;
+        }
+
+        .recommendations-grid {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 20px;
+            padding: 10px 5px;
+            min-width: min-content;
+        }
+
+        .recommendation-card {
+            flex: 0 0 300px;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .recommendation-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .recommendation-icon {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .recommendation-icon i {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(44, 82, 130, 0.1);
+            border-radius: 10px;
+        }
+
+        .recommendation-icon h4 {
+            margin: 0;
+            color: #2d3748;
+            font-size: 1.1rem;
+        }
+
+        .recommendation-content {
+            color: #4a5568;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .recommendation-footer {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-color);
+            font-size: 0.9rem;
+        }
+
+        .recommendation-footer i {
+            font-size: 0.8rem;
+        }
+
+        /* Add smooth scrolling for the recommendations container */
+        .recommendations-box {
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Add custom scrollbar styling */
+        .recommendations-box::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .recommendations-box::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .recommendations-box::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        .recommendations-box::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+        }
+
+        /* Add these styles to your existing CSS */
+        .growth-analysis-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .growth-analysis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .growth-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .growth-title i {
+            font-size: 2rem;
+            color: var(--primary-color);
+        }
+
+        .growth-title h3 {
+            margin: 0;
+            color: #2d3748;
+            font-size: 1.8rem;
+        }
+
+        .growth-score {
+            position: relative;
+            width: 150px;
+            height: 150px;
+        }
+
+        .score-circle {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .circular-chart {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .progress {
+            transition: stroke-dasharray 1s ease-in-out;
+        }
+
+        .score-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .score-value .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            display: block;
+        }
+
+        .score-value .label {
+            font-size: 0.9rem;
+            color: #718096;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .analysis-card {
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .analysis-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .analysis-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary-color);
+        }
+
+        .analysis-icon i {
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .analysis-content {
+            flex: 1;
+        }
+
+        .analysis-content h4 {
+            margin: 0 0 10px 0;
+            color: #2d3748;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .status-badge.good {
+            background: #C6F6D5;
+            color: #2F855A;
+        }
+
+        .status-badge.warning {
+            background: #FEEBC8;
+            color: #C05621;
+        }
+
+        .status-badge.poor {
+            background: #FED7D7;
+            color: #C53030;
+        }
+
+        .analysis-content p {
+            margin: 0;
+            color: #4A5568;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .recommendations-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #E2E8F0;
+        }
+
+        .recommendations-section h4 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #2D3748;
+            margin: 0 0 20px 0;
+        }
+
+        .recommendations-section h4 i {
+            color: var(--primary-color);
+        }
+
+        .recommendations-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .recommendation-item {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+            padding: 15px;
+            background: #F7FAFC;
+            border-radius: 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .recommendation-item:hover {
+            transform: translateX(10px);
+        }
+
+        .recommendation-number {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .recommendation-item p {
+            margin: 0;
+            color: #4A5568;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
     </style>
 </head>
 <body>
@@ -776,6 +1264,12 @@ function getWeatherAnalysis($weather_data, $soil_moisture) {
                     <button type="submit"><i class="fas fa-search"></i> Get Weather</button>
                 </form>
 
+                <?php if (!empty($selected_district) && empty($weather_data)): ?>
+                    <div class="alert alert-danger">
+                        Unable to fetch weather data for <?php echo htmlspecialchars($selected_district); ?>. Please try again later.
+                    </div>
+                <?php endif; ?>
+
                 <div class="weather-grid">
                     <?php if (!empty($weather_data)): ?>
                         <div class="weather-card main-weather">
@@ -824,212 +1318,278 @@ function getWeatherAnalysis($weather_data, $soil_moisture) {
                             </div>
                         </div>
 
-                        <div class="weather-card">
-                            <div class="detail-item">
-                                <i class="fas fa-water"></i>
-                                <div class="detail-info">
-                                    <span class="label">Soil Moisture</span>
-                                    <span class="value"><?php echo $soil_moisture; ?>%</span>
-                                    <span class="description">Optimal range: 50-75%</span>
+                        <?php if ($selected_district === 'Wayanad' || $selected_district === 'Idukki'): ?>
+                            <div class="weather-card">
+                                <div class="detail-item">
+                                    <i class="fas fa-water"></i>
+                                    <div class="detail-info">
+                                        <span class="label">Soil Moisture</span>
+                                        <span class="value"><?php echo $soil_moisture; ?>%</span>
+                                        <span class="description">Optimal range: 50-75%</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="weather-card">
-                            <div class="detail-item">
-                                <i class="fas fa-sun"></i>
-                                <div class="detail-info">
-                                    <span class="label">Solar Radiation</span>
-                                    <span class="value"><?php echo $solar_radiation; ?> W/m²</span>
-                                    <span class="description">Optimal range: 200-1000 W/m²</span>
+                            <div class="weather-card">
+                                <div class="detail-item">
+                                    <i class="fas fa-sun"></i>
+                                    <div class="detail-info">
+                                        <span class="label">Solar Radiation</span>
+                                        <span class="value"><?php echo $solar_radiation; ?> W/m²</span>
+                                        <span class="description">Optimal range: 200-1000 W/m²</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    <?php else: ?>
-                        <div class="weather-card">
-                            <div class="weather-icon">
-                                <i class="fas fa-temperature-high"></i>
-                            </div>
-                            <h3>Temperature</h3>
-                            <div class="stat-value">25°C</div>
-                            <p>Optimal range: 10-35°C</p>
-                        </div>
-
-                        <div class="weather-card">
-                            <div class="weather-icon">
-                                <i class="fas fa-tint"></i>
-                            </div>
-                            <h3>Humidity</h3>
-                            <div class="stat-value">75%</div>
-                            <p>Optimal range: 70-80%</p>
-                        </div>
-
-                        <div class="weather-card">
-                            <div class="weather-icon">
-                                <i class="fas fa-cloud-rain"></i>
-                            </div>
-                            <h3>Rainfall</h3>
-                            <div class="stat-value">1500mm</div>
-                            <p>Annual requirement: 1500-4000mm</p>
-                        </div>
-
-                        <div class="weather-card">
-                            <div class="weather-icon">
-                                <i class="fas fa-water"></i>
-                            </div>
-                            <h3>Soil Moisture</h3>
-                            <div class="stat-value">60%</div>
-                            <p>Optimal range: 50-75%</p>
-                        </div>
-
-                        <div class="weather-card">
-                            <div class="weather-icon">
-                                <i class="fas fa-sun"></i>
-                            </div>
-                            <h3>Solar Radiation</h3>
-                            <div class="stat-value">500 W/m²</div>
-                            <p>Optimal range: 200-1000 W/m²</p>
-                        </div>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
 
-                <?php if (!empty($weather_data)): ?>
-                    <div class="weather-analysis-card">
-                        <h3>Weather Analysis</h3>
-                        
-                        <!-- Updated Alert Box -->
-                        <div class="alert-box">
-                            <div class="alert-icon">
-                                <i class="fas fa-bell fa-shake"></i>
+                <?php if ($selected_district === 'Wayanad' || $selected_district === 'Idukki'): ?>
+                    <div class="recommendations-box">
+                        <div class="recommendations-header">
+                            <i class="fas fa-lightbulb"></i>
+                            <h3>Weather Recommendations</h3>
+                        </div>
+                        <div class="recommendations-grid">
+                            <div class="recommendation-card">
+                                <div class="recommendation-icon">
+                                    <i class="fas fa-temperature-high"></i>
+                                    <h4>Temperature Management</h4>
+                                </div>
+                                <div class="recommendation-content">
+                                    Current temperature is slightly above the ideal range (15°C – 25°C).
+                                    Implement shade nets or increase canopy cover to reduce direct sunlight
+                                    and lower ambient temperature around the plants.
+                                </div>
+                                <div class="recommendation-footer">
+                                    <i class="fas fa-clock"></i>
+                                    <span>Priority: High</span>
+                                </div>
                             </div>
-                            <div class="alert-content">
-                                <div class="alert-messages">
-                                    <div class="alert-message">
-                                        <i class="fas fa-temperature-high"></i>
-                                        <span>Temperature: Highs of 31°C to 33°C are slightly above the ideal range (15°C – 25°C). 
-                                            <strong>Recommendation:</strong> Implement shade nets or increase canopy cover to reduce direct sunlight and lower ambient temperature around the plants.
-                                        </span>
-                                    </div>
-                                    <div class="alert-message">
-                                        <i class="fas fa-tint"></i>
-                                        <span>Humidity: Assumed to be moderate; however, if it falls below the ideal 70% – 90% range. 
-                                            <strong>Recommendation:</strong> Use misting systems or increase irrigation frequency to boost humidity levels.
-                                        </span>
-                                    </div>
-                                    <div class="alert-message">
-                                        <i class="fas fa-wind"></i>
-                                        <span>Wind Speed: Assumed to be low, which is suitable for cardamom cultivation. 
-                                            <strong>Recommendation:</strong> Maintain existing windbreaks (e.g., planting trees or installing barriers) to protect plants from potential future wind exposure.
-                                        </span>
-                                    </div>
-                                    <div class="alert-message">
-                                        <i class="fas fa-compress-arrows-alt"></i>
-                                        <span>Pressure: Assumed to be within the normal range (900 - 1015 hPa). 
-                                            <strong>Recommendation:</strong> No specific action required. Continue to monitor for any significant changes.
-                                        </span>
-                                    </div>
-                                    <div class="alert-message">
-                                        <i class="fas fa-water"></i>
-                                        <span>Soil Moisture: Assumed to be adequate; however, with high temperatures. 
-                                            <strong>Recommendation:</strong> Ensure consistent irrigation to maintain soil moisture within the 30% – 50% range. Utilize mulching to retain soil moisture and reduce evaporation.
-                                        </span>
-                                    </div>
-                                    <div class="alert-message">
-                                        <i class="fas fa-sun"></i>
-                                        <span>Solar Radiation: High solar radiation is expected due to sunny conditions. 
-                                            <strong>Recommendation:</strong> Increase shade coverage to achieve 50% – 60% shade, protecting plants from excessive sunlight and preventing leaf scorching.
-                                        </span>
+
+                            <div class="recommendation-card">
+                                <div class="recommendation-icon">
+                                    <i class="fas fa-tint"></i>
+                                    <h4>Humidity Control</h4>
+                                </div>
+                                <div class="recommendation-content">
+                                    Maintain humidity within 70% – 90% range. Use misting systems during dry
+                                    periods and ensure proper spacing between plants for adequate air circulation.
+                                </div>
+                                <div class="recommendation-footer">
+                                    <i class="fas fa-clock"></i>
+                                    <span>Priority: Medium</span>
+                                </div>
+                            </div>
+
+                            <div class="recommendation-card">
+                                <div class="recommendation-icon">
+                                    <i class="fas fa-wind"></i>
+                                    <h4>Wind Protection</h4>
+                                </div>
+                                <div class="recommendation-content">
+                                    Current wind conditions are suitable. Maintain existing windbreaks and
+                                    monitor for any changes in wind patterns that might affect the plants.
+                                </div>
+                                <div class="recommendation-footer">
+                                    <i class="fas fa-clock"></i>
+                                    <span>Priority: Low</span>
+                                </div>
+                            </div>
+
+                            <div class="recommendation-card">
+                                <div class="recommendation-icon">
+                                    <i class="fas fa-water"></i>
+                                    <h4>Soil Moisture</h4>
+                                </div>
+                                <div class="recommendation-content">
+                                    Maintain soil moisture between 30% – 50%. Use mulching to retain moisture
+                                    and implement proper irrigation scheduling based on weather conditions.
+                                </div>
+                                <div class="recommendation-footer">
+                                    <i class="fas fa-clock"></i>
+                                    <span>Priority: High</span>
+                                </div>
+                            </div>
+
+                            <div class="recommendation-card">
+                                <div class="recommendation-icon">
+                                    <i class="fas fa-sun"></i>
+                                    <h4>Solar Radiation</h4>
+                                </div>
+                                <div class="recommendation-content">
+                                    Adjust shade coverage to achieve 50% – 60% shade during peak sunlight hours.
+                                    Monitor leaf condition for signs of sun damage or insufficient light.
+                                </div>
+                                <div class="recommendation-footer">
+                                    <i class="fas fa-clock"></i>
+                                    <span>Priority: Medium</span>
+                                </div>
+                            </div>
+
+                            <div class="recommendation-card">
+                                <div class="recommendation-icon">
+                                    <i class="fas fa-seedling"></i>
+                                    <h4>Overall Plant Care</h4>
+                                </div>
+                                <div class="recommendation-content">
+                                    Regular monitoring of plant health and weather conditions is essential.
+                                    Adjust care practices based on daily weather forecasts and plant response.
+                                </div>
+                                <div class="recommendation-footer">
+                                    <i class="fas fa-clock"></i>
+                                    <span>Priority: Ongoing</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="farm-info-card">
+                        <h3>5-Day Forecast</h3>
+                        <div class="forecast-grid">
+                            <?php if (!empty($forecast_data)): ?>
+                                <?php
+                                $processed_days = [];
+                                $day_count = 0;
+                                
+                                foreach ($forecast_data['list'] as $forecast) {
+                                    $date = date('Y-m-d', $forecast['dt']);
+                                    
+                                    if (!in_array($date, $processed_days) && $date != date('Y-m-d')) {
+                                        $processed_days[] = $date;
+                                        $day_count++;
+                                        
+                                        if ($day_count > 5) break;
+                                        
+                                        $day_name = date('l', $forecast['dt']);
+                                        $formatted_date = date('M d', $forecast['dt']);
+                                        $temp = round($forecast['main']['temp']);
+                                        $humidity = $forecast['main']['humidity'];
+                                        $weather_icon = $forecast['weather'][0]['icon'];
+                                        $weather_desc = ucfirst($forecast['weather'][0]['description']);
+                                        $wind_speed = round($forecast['wind']['speed']);
+                                        ?>
+                                        <div class='forecast-card'>
+                                            <div class="forecast-date">
+                                                <h4><?php echo $day_name; ?></h4>
+                                                <span class="date"><?php echo $formatted_date; ?></span>
+                                            </div>
+                                            <div class="forecast-info">
+                                                <img src='http://openweathermap.org/img/wn/<?php echo $weather_icon; ?>@2x.png' 
+                                                     alt='<?php echo $weather_desc; ?>' 
+                                                     style="width: 50px; height: 50px;">
+                                                <span class="forecast-temp"><?php echo $temp; ?>°C</span>
+                                                <div class="forecast-details">
+                                                    <div class="forecast-detail-item">
+                                                        <i class="fas fa-tint"></i>
+                                                        <span><?php echo $humidity; ?>%</span>
+                                                    </div>
+                                                    <div class="forecast-detail-item">
+                                                        <i class="fas fa-wind"></i>
+                                                        <span><?php echo $wind_speed; ?> m/s</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="forecast-desc">
+                                                <i class="fas fa-cloud"></i>
+                                                <span><?php echo $weather_desc; ?></span>
+                                            </div>
+                                        </div>
+                                        <?php
+                                    }
+                                }
+                                ?>
+                            <?php else: ?>
+                                <p>Please select a district to see the forecast.</p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <div class="growth-analysis-card">
+                        <?php
+                        $growth_analysis = getCardamomGrowthIndex($weather_data, $soil_moisture);
+                        ?>
+                        <div class="growth-analysis-header">
+                            <div class="growth-title">
+                                <i class="fas fa-chart-line"></i>
+                                <h3>Cardamom Growth Analysis</h3>
+                            </div>
+                            <div class="growth-score">
+                                <div class="score-circle" data-value="<?php echo $growth_analysis['index_value']; ?>">
+                                    <svg viewBox="0 0 36 36" class="circular-chart">
+                                        <path d="M18 2.0845
+                                            a 15.9155 15.9155 0 0 1 0 31.831
+                                            a 15.9155 15.9155 0 0 1 0 -31.831"
+                                            fill="none"
+                                            stroke="#eee"
+                                            stroke-width="2.5"
+                                        />
+                                        <path d="M18 2.0845
+                                            a 15.9155 15.9155 0 0 1 0 31.831
+                                            a 15.9155 15.9155 0 0 1 0 -31.831"
+                                            fill="none"
+                                            stroke="url(#gradient)"
+                                            stroke-width="2.5"
+                                            stroke-dasharray="<?php echo $growth_analysis['index_value']; ?>, 100"
+                                            class="progress"
+                                        />
+                                        <defs>
+                                            <linearGradient id="gradient">
+                                                <stop offset="0%" stop-color="#2c5282" />
+                                                <stop offset="100%" stop-color="#4299e1" />
+                                            </linearGradient>
+                                        </defs>
+                                    </svg>
+                                    <div class="score-value">
+                                        <span class="value"><?php echo $growth_analysis['index_value']; ?>%</span>
+                                        <span class="label"><?php echo $growth_analysis['condition_name']; ?></span>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Rest of the analysis table -->
-                        <table class="analysis-table">
-                            <thead>
-                                <tr>
-                                    <th>Parameter</th>
-                                    <th>Status</th>
-                                    <th>Recommendation</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php
-                                $analysis = getWeatherAnalysis($weather_data, $soil_moisture);
-                                foreach ($analysis as $parameter => $data):
-                                    $statusClass = strtolower($data['status']);
-                                ?>
-                                <tr>
-                                    <td><?php echo ucfirst($parameter); ?></td>
-                                    <td class="status-<?php echo $statusClass; ?>"><?php echo $data['status']; ?></td>
-                                    <td><?php echo $data['message']; ?></td>
-                                </tr>
+                        <div class="analysis-grid">
+                            <?php foreach ($growth_analysis['analysis'] as $parameter => $data): ?>
+                                <div class="analysis-card <?php echo strtolower($data['status']); ?>">
+                                    <div class="analysis-icon">
+                                        <?php
+                                        $icon = '';
+                                        switch ($parameter) {
+                                            case 'temperature': $icon = 'fa-temperature-high'; break;
+                                            case 'humidity': $icon = 'fa-tint'; break;
+                                            case 'soil_moisture': $icon = 'fa-water'; break;
+                                            case 'wind': $icon = 'fa-wind'; break;
+                                            case 'pressure': $icon = 'fa-compress-arrows-alt'; break;
+                                            case 'solar': $icon = 'fa-sun'; break;
+                                            default: $icon = 'fa-chart-bar';
+                                        }
+                                        ?>
+                                        <i class="fas <?php echo $icon; ?>"></i>
+                                    </div>
+                                    <div class="analysis-content">
+                                        <h4><?php echo ucfirst($parameter); ?></h4>
+                                        <div class="status-badge <?php echo strtolower($data['status']); ?>">
+                                            <?php echo $data['status']; ?>
+                                        </div>
+                                        <p><?php echo $data['message']; ?></p>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <div class="recommendations-section">
+                            <h4><i class="fas fa-lightbulb"></i> Recommendations</h4>
+                            <div class="recommendations-list">
+                                <?php foreach ($growth_analysis['recommendations'] as $index => $recommendation): ?>
+                                    <div class="recommendation-item">
+                                        <span class="recommendation-number"><?php echo $index + 1; ?></span>
+                                        <p><?php echo $recommendation; ?></p>
+                                    </div>
                                 <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                            </div>
+                        </div>
                     </div>
                 <?php endif; ?>
-
-                <div class="farm-info-card">
-                    <h3>5-Day Forecast</h3>
-                    <div class="forecast-grid">
-                        <?php if (!empty($forecast_data)): ?>
-                            <?php
-                            $processed_days = [];
-                            $day_count = 0;
-                            
-                            foreach ($forecast_data['list'] as $forecast) {
-                                $date = date('Y-m-d', $forecast['dt']);
-                                
-                                if (!in_array($date, $processed_days) && $date != date('Y-m-d')) {
-                                    $processed_days[] = $date;
-                                    $day_count++;
-                                    
-                                    if ($day_count > 5) break;
-                                    
-                                    $day_name = date('l', $forecast['dt']);
-                                    $formatted_date = date('M d', $forecast['dt']);
-                                    $temp = round($forecast['main']['temp']);
-                                    $humidity = $forecast['main']['humidity'];
-                                    $weather_icon = $forecast['weather'][0]['icon'];
-                                    $weather_desc = ucfirst($forecast['weather'][0]['description']);
-                                    $wind_speed = round($forecast['wind']['speed']);
-                                    ?>
-                                    <div class='forecast-card'>
-                                        <div class="forecast-date">
-                                            <h4><?php echo $day_name; ?></h4>
-                                            <span class="date"><?php echo $formatted_date; ?></span>
-                                        </div>
-                                        <div class="forecast-info">
-                                            <img src='http://openweathermap.org/img/wn/<?php echo $weather_icon; ?>@2x.png' 
-                                                 alt='<?php echo $weather_desc; ?>' 
-                                                 style="width: 50px; height: 50px;">
-                                            <span class="forecast-temp"><?php echo $temp; ?>°C</span>
-                                            <div class="forecast-details">
-                                                <div class="forecast-detail-item">
-                                                    <i class="fas fa-tint"></i>
-                                                    <span><?php echo $humidity; ?>%</span>
-                                                </div>
-                                                <div class="forecast-detail-item">
-                                                    <i class="fas fa-wind"></i>
-                                                    <span><?php echo $wind_speed; ?> m/s</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="forecast-desc">
-                                            <i class="fas fa-cloud"></i>
-                                            <span><?php echo $weather_desc; ?></span>
-                                        </div>
-                                    </div>
-                                    <?php
-                                }
-                            }
-                            ?>
-                        <?php else: ?>
-                            <p>Please select a district to see the forecast.</p>
-                        <?php endif; ?>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -1052,6 +1612,16 @@ function getWeatherAnalysis($weather_data, $soil_moisture) {
         // Update time every second
         setInterval(updateTime, 1000);
         updateTime(); // Initial call
+
+        // Add this JavaScript to animate the progress circle on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const circles = document.querySelectorAll('.score-circle');
+            circles.forEach(circle => {
+                const value = circle.getAttribute('data-value');
+                const progress = circle.querySelector('.progress');
+                progress.style.strokeDasharray = `${value}, 100`;
+            });
+        });
     </script>
 </body>
 </html> 

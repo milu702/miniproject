@@ -129,52 +129,28 @@ $kerala_districts = [
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_location'])) {
     $new_location = $_POST['farm_location'];
     
-    // Get coordinates for the new location
-    $coordinates = getCoordinates($new_location, $weather_api_key);
-    
-    if ($coordinates) {
-        // Start transaction
-        $conn->begin_transaction();
-        
-        try {
-            // Update farm_location in users table only
-            $update_users = $conn->prepare("
-                UPDATE users 
-                SET farm_location = ? 
-                WHERE id = ?
-            ");
-            $update_users->bind_param("si", 
-                $new_location, 
-                $_SESSION['user_id']
-            );
-            $update_users->execute();
-
-            // Commit transaction
-            $conn->commit();
-            
-            $_SESSION['success'] = "Location updated successfully!";
-            
-            // Update location_result for immediate display
-            $location_result = [
-                'farm_location' => $new_location
-            ];
-            
-            // Get weather data for new location
-            $weather_url = "https://api.openweathermap.org/data/2.5/weather?lat={$coordinates['lat']}&lon={$coordinates['lon']}&units=metric&appid={$weather_api_key}";
-            $weather_response = file_get_contents($weather_url);
-            if ($weather_response) {
-                $weather_data = json_decode($weather_response, true);
-            }
-        } catch (Exception $e) {
-            // Rollback transaction on error
-            $conn->rollback();
-            $_SESSION['error'] = "Error updating location: " . $e->getMessage();
-        }
-    } else {
-        $_SESSION['error'] = "Invalid location. Please enter a valid city name.";
+    // Remove the Idukki/Wayanad restriction
+    $update_stmt = $conn->prepare("UPDATE users SET farm_location = ? WHERE id = ?");
+    if ($update_stmt === false) {
+        $_SESSION['error'] = "Error preparing statement: " . $conn->error;
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit();
     }
     
-    // Redirect to refresh the page
+    $update_stmt->bind_param("si", $new_location, $_SESSION['user_id']);
+    
+    if ($update_stmt->execute()) {
+        $_SESSION['success'] = "Location updated successfully!";
+        
+        // Update the location_result variable for immediate display
+        $location_result['farm_location'] = $new_location;
+        
+        // Fetch new weather data for the updated location
+        $weather_data = getWeatherData($new_location);
+    } else {
+        $_SESSION['error'] = "Error updating location: " . $update_stmt->error;
+    }
+    
     header("Location: " . $_SERVER['PHP_SELF']);
     exit();
 }
@@ -990,6 +966,179 @@ function getWeatherData($location) {
         .location-form select option {
             padding: 10px;
         }
+
+        .location-update-section {
+            padding: 0 20px;
+            margin: -15px 0 30px 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .location-card-wrapper {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .location-card-content {
+            padding: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .location-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .location-icon-wrapper {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .location-icon-wrapper i {
+            font-size: 24px;
+            color: white;
+        }
+
+        .location-text h3 {
+            margin: 0;
+            color: var(--text-color);
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .current-location {
+            margin: 5px 0 0 0;
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .update-location-toggle {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .update-location-toggle:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .location-update-form {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background: #f8f9fa;
+        }
+
+        .location-update-form.show {
+            max-height: 200px;
+        }
+
+        .form-content {
+            padding: 25px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            border-top: 1px solid #eee;
+        }
+
+        .select-wrapper {
+            position: relative;
+            flex: 1;
+        }
+
+        .select-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary-color);
+            z-index: 1;
+        }
+
+        .select-wrapper select {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 1em;
+            appearance: none;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .select-wrapper select:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1);
+        }
+
+        .select-wrapper select:hover {
+            border-color: var(--primary-color);
+        }
+
+        .submit-location-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .submit-location-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .location-card-content {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+
+            .location-header {
+                flex-direction: column;
+            }
+
+            .form-content {
+                flex-direction: column;
+            }
+
+            .submit-location-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1021,7 +1170,10 @@ function getWeatherData($location) {
                         <i class="fas fa-flask"></i> Soil Test
                     </a>
                     
-                  
+                    <a href="farm_analysis.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'farm_analysis.php' ? 'active' : ''; ?>">
+                        <i class="fas fa-chart-bar"></i> Farm Analysis
+                    </a>
+                    
                     <a href="schedule.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'schedule.php' ? 'active' : ''; ?>">
                         <i class="fas fa-calendar"></i> Schedule
                     </a>
@@ -1106,6 +1258,49 @@ function getWeatherData($location) {
                         </div>
                     </div>
                 <?php endif; ?>
+            </div>
+
+            <!-- Add this new section right after the weather banner -->
+            <div class="location-update-section">
+                <div class="location-card-wrapper">
+                    <div class="location-card-content">
+                        <div class="location-header">
+                            <div class="location-icon-wrapper">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="location-text">
+                                <h3>Farm Location</h3>
+                                <p class="current-location">
+                                    <?php echo htmlspecialchars($location_result['farm_location'] ?? 'Location not set'); ?>
+                                </p>
+                            </div>
+                        </div>
+                        <button class="update-location-toggle" onclick="toggleLocationUpdate()">
+                            <i class="fas fa-edit"></i> Update Location
+                        </button>
+                    </div>
+                    
+                    <form method="POST" id="locationUpdateForm" class="location-update-form">
+                        <div class="form-content">
+                            <div class="select-wrapper">
+                                <i class="fas fa-map-pin select-icon"></i>
+                                <select id="farm_location" name="farm_location" required>
+                                    <option value="">Select your district</option>
+                                    <?php foreach ($kerala_districts as $district): ?>
+                                        <option value="<?php echo htmlspecialchars($district); ?>" 
+                                                <?php echo (isset($location_result['farm_location']) && 
+                                                          $location_result['farm_location'] === $district) ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($district); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <button type="submit" name="update_location" class="submit-location-btn">
+                                <i class="fas fa-check-circle"></i> Confirm Location
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             <div class="alert alert-soil-test">
@@ -1258,7 +1453,7 @@ function getWeatherData($location) {
                         
                         <form method="POST" class="location-form">
                             <div class="input-group">
-                                <label for="farm_location">Select District:</label>
+                                <label for="farm_location">Select District: <small>(not not suitable for cardamom cultivation)</small></label>
                                 <select id="farm_location" name="farm_location" required>
                                     <option value="">Select a district</option>
                                     <?php foreach ($kerala_districts as $district): ?>
@@ -1299,20 +1494,23 @@ function getWeatherData($location) {
     </div>
 
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Check for updated name in session storage
-        const updatedName = sessionStorage.getItem('updatedFarmerName');
-        if (updatedName) {
-            // Update all elements that display the farmer's name
-            const nameElements = document.querySelectorAll('.farmer-name, .welcome-name, .sidebar-header span');
-            nameElements.forEach(element => {
-                element.textContent = updatedName;
-            });
-            
-            // Clear the session storage
-            sessionStorage.removeItem('updatedFarmerName');
+    // Prevent form resubmission on page refresh
+    if (window.history.replaceState) {
+        window.history.replaceState(null, null, window.location.href);
+    }
+    
+    // Remove the loading screen if it exists
+    window.onload = function() {
+        const loadingScreen = document.querySelector('.loading-screen');
+        if (loadingScreen) {
+            loadingScreen.style.display = 'none';
         }
-    });
+    }
+
+    function toggleLocationUpdate() {
+        const form = document.getElementById('locationUpdateForm');
+        form.classList.toggle('show');
+    }
     </script>
 </body>
 </html>

@@ -110,6 +110,28 @@ if ($farmers_result) {
     }
     mysqli_free_result($farmers_result);
 }
+
+// Add this query near the top PHP section where other queries are
+$soil_tests_by_farmer = mysqli_query($conn, "
+    SELECT 
+        u.id as farmer_id,
+        u.username as farmer_name,
+        COUNT(st.test_id) as test_count,
+        AVG(st.ph_level) as avg_ph,
+        AVG(st.nitrogen_content) as avg_n,
+        AVG(st.phosphorus_content) as avg_p,
+        AVG(st.potassium_content) as avg_k
+    FROM users u
+    LEFT JOIN soil_tests st ON u.id = st.farmer_id
+    WHERE u.role = 'farmer' AND u.status = 1
+    GROUP BY u.id, u.username
+    ORDER BY test_count DESC
+");
+
+// Add error handling
+if (!$soil_tests_by_farmer) {
+    die("Query failed: " . mysqli_error($conn));
+}
 ?>
 
 <!DOCTYPE html>
@@ -576,6 +598,92 @@ if ($farmers_result) {
             50% { transform: scale(1.1); }
             100% { transform: scale(1); }
         }
+
+        .soil-tests-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .farmer-soil-tests {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .farmer-soil-tests:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .farmer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .test-count {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+
+        .averages-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .average-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        .average-item .label {
+            display: block;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .average-item .value {
+            display: block;
+            font-size: 1.2em;
+            color: #2e7d32;
+            font-weight: bold;
+        }
+
+        .farmer-actions {
+            margin-top: 15px;
+            text-align: right;
+        }
+
+        .btn-view {
+            display: inline-block;
+            padding: 8px 15px;
+            background: #2e7d32;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .btn-view:hover {
+            background: #1b5e20;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -687,25 +795,7 @@ if ($farmers_result) {
             </div>
         </div>
 
-        <div class="recent-section">
-            <h2>Most Recent Soil Test</h2>
-            <?php if (empty($recent_soil_tests)): ?>
-                <p>No recent soil tests.</p>
-            <?php else: ?>
-                <div class="soil-test-item">
-                    <div class="farmer-info">
-                        <strong><?php echo htmlspecialchars($recent_soil_tests[0]['farmer_name']); ?></strong>
-                        <span class="test-date"><?php echo date('M j, Y', strtotime($recent_soil_tests[0]['test_date'])); ?></span>
-                    </div>
-                    <div class="test-values">
-                        <span>pH: <?php echo htmlspecialchars($recent_soil_tests[0]['ph_level'] ?? 'N/A'); ?></span>
-                        <span>N: <?php echo htmlspecialchars($recent_soil_tests[0]['nitrogen'] ?? 'N/A') . '%'; ?></span>
-                        <span>P: <?php echo htmlspecialchars($recent_soil_tests[0]['phosphorus'] ?? 'N/A') . '%'; ?></span>
-                        <span>K: <?php echo htmlspecialchars($recent_soil_tests[0]['potassium'] ?? 'N/A') . '%'; ?></span>
-                    </div>
-                </div>
-            <?php endif; ?>
-        </div>
+       
 
         <div class="recent-section">
             <h2>Recent Fertilizer Recommendations</h2>
@@ -753,26 +843,47 @@ if ($farmers_result) {
                 </div>
             <?php endforeach; ?>
 
-            <div class="dashboard-card">
-                <h3>Recent Soil Tests</h3>
-                <?php if (empty($recent_soil_tests)): ?>
-                    <p>No recent soil tests.</p>
-                <?php else: ?>
-                    <div class="soil-tests-list">
-                        <?php foreach ($recent_soil_tests as $test): ?>
-                            <div class="soil-test-item">
-                                <div class="farmer-info">
-                                    <strong><?php echo htmlspecialchars($test['farmer_name']); ?></strong>
-                                    <span class="test-date"><?php echo date('M j, Y', strtotime($test['test_date'])); ?></span>
-                                </div>
-                                <div class="test-values">
-                                    <span>pH: <?php echo htmlspecialchars($test['ph_level'] ?? 'N/A'); ?></span>
-                                    <span>N: <?php echo htmlspecialchars($test['nitrogen'] ?? 'N/A') . '%'; ?></span>
-                                    <span>P: <?php echo htmlspecialchars($test['phosphorus'] ?? 'N/A') . '%'; ?></span>
-                                    <span>K: <?php echo htmlspecialchars($test['potassium'] ?? 'N/A') . '%'; ?></span>
+           
+        <div class="recent-section">
+            <h2><i class="fas fa-flask"></i> Soil Tests by Farmer</h2>
+            <div class="soil-tests-grid">
+                <?php if (mysqli_num_rows($soil_tests_by_farmer) > 0): ?>
+                    <?php while ($farmer_tests = mysqli_fetch_assoc($soil_tests_by_farmer)): ?>
+                        <div class="farmer-soil-tests">
+                            <div class="farmer-header">
+                                <h3><i class="fas fa-user-circle"></i> <?php echo htmlspecialchars($farmer_tests['farmer_name']); ?></h3>
+                                <span class="test-count"><?php echo $farmer_tests['test_count']; ?> Tests</span>
+                            </div>
+                            <div class="soil-averages">
+                                <h4>Soil Test Averages</h4>
+                                <div class="averages-grid">
+                                    <div class="average-item">
+                                        <span class="label">pH Level</span>
+                                        <span class="value"><?php echo number_format($farmer_tests['avg_ph'], 2); ?></span>
+                                    </div>
+                                    <div class="average-item">
+                                        <span class="label">Nitrogen (N)</span>
+                                        <span class="value"><?php echo number_format($farmer_tests['avg_n'], 2); ?>%</span>
+                                    </div>
+                                    <div class="average-item">
+                                        <span class="label">Phosphorus (P)</span>
+                                        <span class="value"><?php echo number_format($farmer_tests['avg_p'], 2); ?>%</span>
+                                    </div>
+                                    <div class="average-item">
+                                        <span class="label">Potassium (K)</span>
+                                        <span class="value"><?php echo number_format($farmer_tests['avg_k'], 2); ?>%</span>
+                                    </div>
                                 </div>
                             </div>
-                        <?php endforeach; ?>
+                            <div class="farmer-actions">
+                                <a href="view_farmer_tests.php?farmer_id=<?php echo $farmer_tests['farmer_id']; ?>" 
+                                   class="btn-view">View All Tests</a>
+                            </div>
+                        </div>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <div class="no-results">
+                        <p><i class="fas fa-info-circle"></i> No soil tests found for any farmer.</p>
                     </div>
                 <?php endif; ?>
             </div>
