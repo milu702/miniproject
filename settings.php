@@ -131,15 +131,9 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
 
         .form-group {
             background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .form-group:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.12);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
         }
 
         .form-group h3 {
@@ -149,40 +143,8 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
         }
 
         .input-group {
-            position: relative;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
-
-        .input-group i {
-            position: absolute;
-            left: 12px;
-            top: 40px;
-            color: #6B7280;
-            transition: color 0.3s ease;
-        }
-
-        .input-group input {
-            padding: 12px 40px;
-            background-color: #F3F4F6;
-            border: 2px solid transparent;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .input-group input:focus {
-            border-color: #4299e1;
-            background-color: #fff;
-        }
-
-        .input-group input:focus + i {
-            color: #4299e1;
-        }
-
-        /* Field-specific colors */
-        .input-group.name-field i { color: #3B82F6; }
-        .input-group.email-field i { color: #10B981; }
-        .input-group.phone-field i { color: #F59E0B; }
-        .input-group.password-field i { color: #6366F1; }
 
         .input-group label {
             display: block;
@@ -191,16 +153,18 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
             font-weight: 500;
         }
 
-        .input-group input.error {
-            border-color: #dc3545;
-            background-color: #fff8f8;
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            transition: all 0.3s ease;
         }
 
-        .validation-message {
-            color: #dc3545;
-            font-size: 0.8rem;
-            margin-top: 5px;
-            display: block;
+        .input-group input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.1);
+            outline: none;
         }
 
         .notification-group {
@@ -237,7 +201,7 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
         }
 
         .submit-btn {
-            background: var(--primary-color);
+            background: linear-gradient(45deg, #2c5282, #4299e1);
             color: white;
             border: none;
             padding: 12px 25px;
@@ -247,14 +211,19 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
             transition: all 0.3s ease;
             display: inline-flex;
             align-items: center;
-            justify-content: center;
             gap: 8px;
         }
 
         .submit-btn:hover {
-            background: var(--secondary-color);
+            background: linear-gradient(45deg, #4299e1, #2c5282);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 12px rgba(44, 82, 130, 0.2);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .alert {
@@ -358,10 +327,26 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
             padding: 20px;
         }
 
+        .input-group input.error {
+            border-color: #dc3545;
+            background-color: #fff8f8;
+        }
+
+        .input-group input.error:focus {
+            box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.25);
+        }
+
         .form-requirements {
             font-size: 0.8rem;
             color: #666;
             margin-top: 5px;
+        }
+
+        .validation-message {
+            color: #dc3545;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: block;
         }
 
         .button-group {
@@ -371,55 +356,72 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
         }
 
         .update-btn {
-            background: linear-gradient(135deg, #4299e1, #3B82F6);
-            color: white;
+            background: var(--secondary-color);
+            color: black;
             border: none;
-            padding: 12px 30px;
+            padding: 12px 25px;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 500;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .update-btn:before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(
-                120deg,
-                transparent,
-                rgba(255, 255, 255, 0.3),
-                transparent
-            );
-            transition: 0.5s;
-        }
-
-        .update-btn:hover:before {
-            left: 100%;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .update-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+            background: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
-        .update-btn:active {
-            transform: translateY(1px);
+        .input-group small {
+            color: #666;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: block;
         }
 
-        /* Loading animation */
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .input-with-icon {
+            position: relative;
         }
 
-        .loading-spin {
-            animation: spin 1s linear infinite;
+        .input-with-icon i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6B7280;
+            transition: all 0.3s ease;
+        }
+
+        .input-with-icon input {
+            padding-right: 40px;
+        }
+
+        .input-with-icon i.error-icon {
+            color: #dc3545;
+        }
+
+        /* Animation classes */
+        .animate__animated {
+            animation-duration: 0.5s;
+        }
+
+        .animate__fadeIn {
+            animation-name: fadeIn;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
@@ -436,7 +438,10 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
                     <span>Dashboard</span>
                 </a>
                 
-              
+                </a>
+                <a href="analytics.php" class="nav-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Analytics</span>
                 </a>
                 <a href="schedule.php" class="nav-item">
                     <i class="fas fa-calendar-alt"></i>
@@ -486,53 +491,56 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
                 <form action="update_settings.php" method="POST" class="data-form" id="settingsForm" onsubmit="return validateForm()">
                     <div class="form-grid">
                         <div class="form-group">
-                            <h3><i class="fas fa-user-circle"></i> Profile Information</h3>
-                            <div class="input-group name-field">
+                            <h3>Profile Information</h3>
+                            <div class="input-group">
                                 <label for="name">Full Name *</label>
                                 <input type="text" id="name" name="name" value="<?php echo $farmerName; ?>" required>
-                                <i class="fas fa-user"></i>
                                 <span class="validation-message" id="nameError"></span>
                             </div>
-                            <div class="input-group email-field">
+                            <div class="input-group">
                                 <label for="email">Email *</label>
                                 <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($userData['email'] ?? ''); ?>" required>
-                                <i class="fas fa-envelope"></i>
                                 <span class="validation-message" id="emailError"></span>
                             </div>
-                            <div class="input-group phone-field">
+                            <div class="input-group">
                                 <label for="phone">Phone</label>
                                 <input type="tel" id="phone" name="phone" value="<?php echo htmlspecialchars($userData['phone'] ?? ''); ?>" pattern="[0-9]{10}">
-                                <i class="fas fa-phone"></i>
                                 <span class="validation-message" id="phoneError"></span>
                                 <small class="form-requirements">Enter 10-digit phone number</small>
                             </div>
                         </div>
                         
                         <div class="form-group">
-                            <h3><i class="fas fa-shield-alt"></i> Security</h3>
-                            <div class="input-group password-field">
+                            <h3>Security</h3>
+                            <div class="input-group">
                                 <label for="current_password">Current Password</label>
                                 <input type="password" id="current_password" name="current_password">
-                                <i class="fas fa-lock"></i>
                             </div>
-                            <div class="input-group password-field">
+                            <div class="input-group">
                                 <label for="new_password">New Password</label>
                                 <input type="password" id="new_password" name="new_password">
-                                <i class="fas fa-key"></i>
+                                <i class="fas fa-lock"></i>
+                                <div class="password-strength">
+                                    <div class="strength-bar-container">
+                                        <div id="passwordStrength" class="strength-bar"></div>
+                                    </div>
+                                    <span id="strengthText" class="strength-text"></span>
+                                </div>
+                                <span class="validation-message" id="new_passwordError"></span>
                                 <div class="form-requirements">
                                     Password must be at least 8 characters long and contain:
                                     <ul>
-                                        <li>One uppercase letter</li>
-                                        <li>One lowercase letter</li>
-                                        <li>One number</li>
-                                        <li>One special character (@$!%*?&)</li>
+                                        <li class="requirement" id="req-length"><i class="fas fa-circle"></i> 8+ characters</li>
+                                        <li class="requirement" id="req-uppercase"><i class="fas fa-circle"></i> One uppercase letter</li>
+                                        <li class="requirement" id="req-lowercase"><i class="fas fa-circle"></i> One lowercase letter</li>
+                                        <li class="requirement" id="req-number"><i class="fas fa-circle"></i> One number</li>
+                                        <li class="requirement" id="req-special"><i class="fas fa-circle"></i> One special character (@$!%*?&)</li>
                                     </ul>
                                 </div>
                             </div>
-                            <div class="input-group password-field">
+                            <div class="input-group">
                                 <label for="confirm_password">Confirm New Password</label>
                                 <input type="password" id="confirm_password" name="confirm_password">
-                                <i class="fas fa-check-circle"></i>
                             </div>
                         </div>
                     </div>
@@ -543,9 +551,7 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
                         <button type="submit" class="submit-btn" name="action" value="submit">
                             <i class="fas fa-check-circle"></i> Submit Changes
                         </button>
-                        <button type="button" class="update-btn" onclick="updateDashboard()">
-                            <i class="fas fa-sync"></i> Update Dashboard
-                        </button>
+                       
                     </div>
                 </form>
             </div>
@@ -685,15 +691,10 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
 
     function updateDashboard() {
         if (validateForm()) {
+            // Show loading state
             const updateBtn = document.querySelector('.update-btn');
             const originalBtnText = updateBtn.innerHTML;
-            
-            // Enhanced loading state
-            updateBtn.innerHTML = `
-                <i class="fas fa-spinner loading-spin"></i>
-                <span>Updating...</span>
-            `;
-            updateBtn.style.background = 'linear-gradient(135deg, #3B82F6, #2563EB)';
+            updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
             updateBtn.disabled = true;
 
             // Save form data
@@ -753,6 +754,165 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
             document.getElementById(this.id + 'Error').textContent = '';
         });
     });
+
+    // Live validation functions
+    function setupLiveValidation() {
+        const inputs = {
+            name: {
+                element: document.getElementById('name'),
+                icon: '<i class="fas fa-user"></i>',
+                validate: (value) => {
+                    if (value.length < 3) return 'Name must be at least 3 characters';
+                    if (!/^[a-zA-Z\s]+$/.test(value)) return 'Name can only contain letters and spaces';
+                    return '';
+                }
+            },
+            email: {
+                element: document.getElementById('email'),
+                icon: '<i class="fas fa-envelope"></i>',
+                validate: (value) => {
+                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email';
+                    return '';
+                }
+            },
+            phone: {
+                element: document.getElementById('phone'),
+                icon: '<i class="fas fa-phone"></i>',
+                validate: (value) => {
+                    if (value && !/^[0-9]{10}$/.test(value)) return 'Please enter a valid 10-digit number';
+                    return '';
+                }
+            },
+            current_password: {
+                element: document.getElementById('current_password'),
+                icon: '<i class="fas fa-key"></i>',
+                validate: (value) => {
+                    const newPassword = document.getElementById('new_password').value;
+                    if (newPassword && !value) return 'Current password is required when setting new password';
+                    return '';
+                }
+            },
+            new_password: {
+                element: document.getElementById('new_password'),
+                icon: '<i class="fas fa-lock"></i>',
+                validate: (value) => {
+                    if (!value) return '';
+                    if (value.length < 8) return 'Password must be at least 8 characters';
+                    if (!/[A-Z]/.test(value)) return 'Password must contain an uppercase letter';
+                    if (!/[a-z]/.test(value)) return 'Password must contain a lowercase letter';
+                    if (!/[0-9]/.test(value)) return 'Password must contain a number';
+                    if (!/[@$!%*?&]/.test(value)) return 'Password must contain a special character (@$!%*?&)';
+                    return '';
+                }
+            },
+            confirm_password: {
+                element: document.getElementById('confirm_password'),
+                icon: '<i class="fas fa-check-circle"></i>',
+                validate: (value) => {
+                    const newPassword = document.getElementById('new_password').value;
+                    if (newPassword && value !== newPassword) return 'Passwords do not match';
+                    return '';
+                }
+            }
+        };
+
+        // Add icons and setup validation for each input
+        Object.keys(inputs).forEach(key => {
+            const input = inputs[key];
+            const wrapper = input.element.parentElement;
+            
+            // Add icon
+            wrapper.classList.add('input-with-icon');
+            wrapper.insertAdjacentHTML('beforeend', input.icon);
+
+            // Setup live validation
+            input.element.addEventListener('input', () => {
+                const error = input.validate(input.element.value.trim());
+                const errorElement = document.getElementById(`${key}Error`);
+                
+                if (error) {
+                    input.element.classList.add('error');
+                    errorElement.textContent = error;
+                    wrapper.querySelector('i').classList.add('error-icon');
+                } else {
+                    input.element.classList.remove('error');
+                    errorElement.textContent = '';
+                    wrapper.querySelector('i').classList.remove('error-icon');
+                }
+            });
+        });
+    }
+
+    // Enhanced update function
+    function updateSettings(event) {
+        event.preventDefault();
+        const form = document.getElementById('settingsForm');
+        const submitBtn = form.querySelector('.submit-btn');
+        const originalBtnText = submitBtn.innerHTML;
+
+        // Show loading state
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+        submitBtn.disabled = true;
+
+        fetch('update_settings.php', {
+            method: 'POST',
+            body: new FormData(form)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                showAlert('success', 'Settings updated successfully!');
+                
+                // Store updated name in session storage for dashboard
+                sessionStorage.setItem('updatedFarmerName', data.updatedData.name);
+                
+                // Update sidebar name immediately
+                const sidebarName = document.querySelector('.sidebar-header span');
+                if (sidebarName) {
+                    sidebarName.textContent = data.updatedData.name;
+                }
+                
+                // Redirect to dashboard after delay
+                setTimeout(() => {
+                    window.location.href = 'farmer.php';
+                }, 1500);
+            } else {
+                throw new Error(data.message || 'Update failed');
+            }
+        })
+        .catch(error => {
+            showAlert('error', error.message);
+        })
+        .finally(() => {
+            // Restore button state
+            submitBtn.innerHTML = originalBtnText;
+            submitBtn.disabled = false;
+        });
+    }
+
+    // Helper function to show alerts
+    function showAlert(type, message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} animate__animated animate__fadeIn`;
+        alertDiv.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+            ${message}
+        `;
+        
+        // Remove existing alerts
+        document.querySelectorAll('.alert').forEach(alert => alert.remove());
+        
+        // Add new alert
+        const form = document.querySelector('.data-form');
+        form.insertBefore(alertDiv, form.firstChild);
+    }
+
+    // Initialize live validation
+    document.addEventListener('DOMContentLoaded', setupLiveValidation);
+
+    // Setup form submission
+    document.getElementById('settingsForm').addEventListener('submit', updateSettings);
     </script>
 </body>
 </html>

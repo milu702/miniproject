@@ -1297,6 +1297,23 @@ function getWeatherData($location) {
             </div>
         </div>
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check for updated name in session storage
+        const updatedName = sessionStorage.getItem('updatedFarmerName');
+        if (updatedName) {
+            // Update all elements that display the farmer's name
+            const nameElements = document.querySelectorAll('.farmer-name, .welcome-name, .sidebar-header span');
+            nameElements.forEach(element => {
+                element.textContent = updatedName;
+            });
+            
+            // Clear the session storage
+            sessionStorage.removeItem('updatedFarmerName');
+        }
+    });
+    </script>
 </body>
 </html>
 

@@ -1,10 +1,9 @@
 <?php
-header('Content-Type: application/json');
 session_start();
 
 // Ensure user is logged in and has the 'farmer' role
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'farmer') {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
+    header("Location: login.php");
     exit();
 }
 
@@ -15,6 +14,12 @@ $user_id = $_SESSION['user_id'];
 
 // Initialize response array for AJAX requests
 $response = array('success' => false, 'message' => '');
+
+// Clear any output buffers
+ob_clean();
+
+// Set JSON header
+header('Content-Type: application/json');
 
 try {
     // Start transaction
@@ -47,12 +52,8 @@ try {
     }
 
     // Update farmers table
-    $stmt = $conn->prepare("
-        INSERT INTO farmers (user_id, phone) 
-        VALUES (?, ?) 
-        ON DUPLICATE KEY UPDATE phone = ?
-    ");
-    $stmt->bind_param("iss", $user_id, $phone, $phone);
+    $stmt = $conn->prepare("UPDATE farmers SET phone = ?, username = ? WHERE user_id = ?");
+    $stmt->bind_param("ssi", $phone, $name, $user_id);
     
     if (!$stmt->execute()) {
         throw new Exception("Error updating farmer information.");
@@ -93,13 +94,21 @@ try {
     // Commit transaction
     $conn->commit();
 
-    // Set success message
-    $_SESSION['success'] = "Settings updated successfully!";
-    $response['success'] = true;
-    $response['message'] = "Settings updated successfully!";
+    // Update session variables
+    $_SESSION['username'] = $name;
+    $_SESSION['farmer_name'] = $name;
 
-    // Return success response
-    echo json_encode($response);
+    // Return success response with updated data
+    echo json_encode([
+        'success' => true,
+        'message' => 'Settings updated successfully',
+        'updatedData' => [
+            'name' => $name,
+            'email' => $email,
+            'phone' => $phone
+        ]
+    ]);
+
 } catch (Exception $e) {
     // Rollback transaction on error
     $conn->rollback();
@@ -109,5 +118,11 @@ try {
     $response['message'] = $e->getMessage();
 
     // Return error response
-    echo json_encode($response);
-} 
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getMessage()
+    ]);
+}
+
+// Ensure no additional output
+exit; 

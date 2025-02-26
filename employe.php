@@ -140,21 +140,46 @@ mysqli_close($conn);
             min-height: 100vh;
         }
 
-        /* Updated Sidebar */
+        /* Enhanced Sidebar Styles */
         .sidebar {
             width: 250px;
-            background: var(--dark-color);
+            background: linear-gradient(180deg, var(--dark-color) 0%, #1a472a 100%);
             padding: 20px 0;
             color: white;
             position: fixed;
             height: 100vh;
+            transition: all 0.3s ease;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            z-index: 1000;
         }
 
-        .sidebar h1 {
-            color: white;
-            font-size: 24px;
+        /* Logo Section */
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
             padding: 0 20px;
             margin-bottom: 30px;
+        }
+
+        .sidebar-logo i {
+            font-size: 28px;
+            color: #4CAF50;
+            margin-right: 10px;
+            animation: rotateLogo 20s linear infinite;
+        }
+
+        .sidebar-logo h1 {
+            font-size: 24px;
+            background: linear-gradient(45deg, #fff, #4CAF50);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+
+        /* Navigation Links */
+        .sidebar-nav {
+            padding: 0 10px;
         }
 
         .sidebar-btn {
@@ -164,15 +189,101 @@ mysqli_close($conn);
             color: white;
             text-decoration: none;
             transition: all 0.3s ease;
+            border-radius: 10px;
+            margin-bottom: 5px;
+            position: relative;
+            overflow: hidden;
         }
 
         .sidebar-btn i {
             margin-right: 15px;
             font-size: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 2;
         }
 
-        .sidebar-btn:hover, .sidebar-btn.active {
+        .sidebar-btn span {
+            position: relative;
+            z-index: 2;
+        }
+
+        .sidebar-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: all 0.5s ease;
+        }
+
+        .sidebar-btn:hover::before {
+            left: 100%;
+        }
+
+        .sidebar-btn:hover {
+            background: rgba(76, 175, 80, 0.2);
+            transform: translateX(5px);
+        }
+
+        .sidebar-btn:hover i {
+            transform: scale(1.2);
+        }
+
+        .sidebar-btn.active {
             background: var(--primary-color);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .sidebar-btn.active i {
+            color: #fff;
+        }
+
+        /* Logout Button Special Style */
+        .sidebar-btn.logout {
+            margin-top: 30px;
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+        }
+
+        .sidebar-btn.logout:hover {
+            background: rgba(220, 53, 69, 0.2);
+            border-color: rgba(220, 53, 69, 0.5);
+        }
+
+        /* Animations */
+        @keyframes rotateLogo {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .sidebar-btn {
+            animation: fadeIn 0.5s ease forwards;
+            animation-delay: calc(var(--btn-index) * 0.1s);
+        }
+
+        /* Hover Indicator */
+        .hover-indicator {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 0;
+            background: #4CAF50;
+            transition: all 0.3s ease;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .sidebar-btn:hover .hover-indicator {
+            height: 70%;
         }
 
         /* Updated Content Area */
@@ -601,13 +712,55 @@ mysqli_close($conn);
 </head>
 <body>
     <div class="sidebar">
-        <h1>GrowGuide</h1>
-        <a href="employe.php" class="sidebar-btn active">Dashboard</a>
-        <a href="employee_farmer.php" class="sidebar-btn">Farmers</a>
-        <a href="employe_varities.php" class="sidebar-btn">Varieties</a>
-        <a href="notifications.php" class="sidebar-btn">Notifications</a>
-        <a href="admin_setting.php" class="sidebar-btn">Settings</a>
-        <a href="logout.php" class="sidebar-btn">Logout</a>
+        <div class="sidebar-logo">
+            <i class="fas fa-leaf"></i>
+            <h1>GrowGuide</h1>
+        </div>
+        
+        <div class="sidebar-nav">
+            <a href="employe.php" class="sidebar-btn active" style="--btn-index: 1">
+                <div class="hover-indicator"></div>
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            
+            <a href="employee_farmer.php" class="sidebar-btn" style="--btn-index: 2">
+                <div class="hover-indicator"></div>
+                <i class="fas fa-users"></i>
+                <span>Farmers</span>
+            </a>
+            
+            <a href="employe_varities.php" class="sidebar-btn" style="--btn-index: 3">
+                <div class="hover-indicator"></div>
+                <i class="fas fa-seedling"></i>
+                <span>Varieties</span>
+            </a>
+            
+            <a href="soil_test.php" class="sidebar-btn" style="--btn-index: 4">
+                <div class="hover-indicator"></div>
+                <i class="fas fa-flask"></i>
+                <span>Soil Tests</span>
+            </a>
+            
+            <a href="notifications.php" class="sidebar-btn" style="--btn-index: 5">
+                <div class="hover-indicator"></div>
+                <i class="fas fa-bell"></i>
+                <span>Notifications</span>
+            </a>
+            
+            <a href="employee_settings.php"
+             class="sidebar-btn" style="--btn-index: 6">
+                <div class="hover-indicator"></div>
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+            
+            <a href="logout.php" class="sidebar-btn logout" style="--btn-index: 7">
+                <div class="hover-indicator"></div>
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </div>
     </div>
 
     <div class="content">
@@ -691,9 +844,6 @@ mysqli_close($conn);
                                     <h3><?php echo htmlspecialchars($farmer['username']); ?></h3>
                                 </div>
                                 <div class="farmer-details">
-                                    <p><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($farmer['location'] ?? 'N/A'); ?></p>
-                                    <p><i class="fas fa-phone"></i> <?php echo htmlspecialchars($farmer['phone'] ?? 'N/A'); ?></p>
-                                    <p><i class="fas fa-ruler-combined"></i> Land: <?php echo htmlspecialchars($farmer['land_area'] ?? '0'); ?> hectares</p>
                                     <div class="farmer-stats">
                                         <span><i class="fas fa-flask"></i> <?php echo $farmer['total_soil_tests']; ?> Tests</span>
                                         <span><i class="fas fa-clipboard-list"></i> <?php echo $farmer['total_recommendations']; ?> Recommendations</span>
@@ -701,7 +851,6 @@ mysqli_close($conn);
                                 </div>
                                 <div class="farmer-actions">
                                     <a href="view_farmer.php?id=<?php echo $farmer['id']; ?>" class="btn-view">View Profile</a>
-                                   
                                 </div>
                             </div>
                         <?php endwhile; ?>

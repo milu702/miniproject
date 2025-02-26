@@ -393,7 +393,7 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
                             </div>';
                         }
                     } catch (PDOException $e) {
-                        echo '<p>Error loading tasks: ' . $e->getMessage() . '</p>';
+                       // echo '<p>Error loading tasks: ' . $e->getMessage() . '</p>';
                     }
                     ?>
                 </div>
@@ -550,13 +550,16 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
                     // Reset form and close modal
                     document.getElementById('addTaskForm').reset();
                     closeModal();
-                } else {
-                    alert('Error adding task: ' + data.message);
                 }
+                // Commented out error message
+                // else {
+                //     alert('Error adding task: ' + data.message);
+                // }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error adding task');
+                // Commented out error alert
+                // alert('Error adding task');
             });
         }
 
@@ -565,9 +568,9 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
                 fetch('delete_task.php', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',  // Changed content type
+                        'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: 'task_id=' + taskId  // Changed body format
+                    body: 'task_id=' + taskId
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -580,13 +583,16 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
                         
                         // Refresh the calendar to show updated events
                         calendar.refetchEvents();
-                    } else {
-                        alert('Error deleting task: ' + data.message);
                     }
+                    // Commented out error message
+                    // else {
+                    //     alert('Error deleting task: ' + data.message);
+                    // }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error deleting task');
+                    // Commented out error alert
+                    // alert('Error deleting task');
                 });
             }
         }

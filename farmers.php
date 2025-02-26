@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Username or email already exists!');
             }
             
-            // Insert new farmer into users table
+            // First insert into users table
             $insert_query = "INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, 'farmer', 1)";
             $insert_stmt = mysqli_prepare($conn, $insert_query);
             
@@ -76,17 +76,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Error adding farmer to users table: ' . mysqli_error($conn));
             }
             
-            $farmer_id = mysqli_insert_id($conn);
+            // Get the user_id of the newly inserted user
+            $user_id = mysqli_insert_id($conn);
             
-            // Insert into farmers table
-            $insert_farmer_query = "INSERT INTO farmers (user_id, created_at) VALUES (?, NOW())";
+            // Then insert into farmers table with minimal required fields
+            $insert_farmer_query = "INSERT INTO farmers (user_id, farm_location, created_at) VALUES (?, 'Not specified', NOW())";
             $insert_farmer_stmt = mysqli_prepare($conn, $insert_farmer_query);
             
             if ($insert_farmer_stmt === false) {
                 throw new Exception('Error preparing farmer insert statement: ' . mysqli_error($conn));
             }
             
-            mysqli_stmt_bind_param($insert_farmer_stmt, "i", $farmer_id);
+            mysqli_stmt_bind_param($insert_farmer_stmt, "i", $user_id);
             
             if (!mysqli_stmt_execute($insert_farmer_stmt)) {
                 throw new Exception('Error adding record to farmers table: ' . mysqli_error($conn));
@@ -666,6 +667,58 @@ try {
     to { transform: translateY(0); opacity: 1; }
 }
 
+.search-container {
+    margin: 20px 0;
+}
+
+.search-input-group {
+    position: relative;
+    max-width: 500px;
+}
+
+.search-input-group input {
+    width: 100%;
+    padding: 12px 20px 12px 45px;
+    border: 2px solid #ddd;
+    border-radius: 30px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.search-input-group input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+    outline: none;
+}
+
+.search-input-group i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+    font-size: 18px;
+    transition: color 0.3s ease;
+}
+
+.search-input-group input:focus + i {
+    color: var(--primary-color);
+}
+
+.highlight {
+    background-color: #fff3cd;
+    transition: background-color 0.3s ease;
+}
+
+.no-results {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
     </style>
 </head>
 <body>
@@ -716,6 +769,15 @@ try {
     </div>
     <?php endif; ?>
     
+    <div class="search-container">
+        <form class="search-form">
+            <div class="search-input-group">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search farmers...">
+            </div>
+        </form>
+    </div>
+    
     <form method="POST" onsubmit="return validateForm()">
         <div class="form-grid">
             <div class="form-group">
@@ -747,7 +809,7 @@ try {
         <button type="submit" name="add_farmer">Add Farmer</button>
     </form>
     
-    <table>
+    <table id="farmersTable">
         <thead>
             <tr>
                 <th>Username</th>
@@ -779,7 +841,6 @@ try {
                                     <?php echo $farmer['status'] ? 'Deactivate' : 'Activate'; ?>
                                 </button>
                             </form>
-                            <button onclick="deleteFarmer(<?php echo $farmer['id']; ?>)" class="delete-btn">Delete</button>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -847,6 +908,21 @@ function validateForm() {
         firstError.querySelector('input').focus();
     }
     
+    // Additional validation for form submission
+    if (isValid) {
+        // Show loading state on submit button
+        const submitBtn = document.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+        submitBtn.disabled = true;
+
+        // Re-enable button after short delay (in case of error)
+        setTimeout(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }, 3000);
+    }
+
     return isValid;
 }
 
@@ -902,6 +978,70 @@ function deleteFarmer(farmerId) {
         document.body.appendChild(form);
         form.submit();
     }
+}
+
+function searchFarmers() {
+    const input = document.getElementById('searchInput');
+    const filter = input.value.toLowerCase();
+    const table = document.getElementById('farmersTable');
+    const rows = table.getElementsByTagName('tr');
+    let hasResults = false;
+
+    // Start from index 1 to skip the header row
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const username = row.cells[0]?.textContent || '';
+        const email = row.cells[1]?.textContent || '';
+        
+        if (username.toLowerCase().includes(filter) || 
+            email.toLowerCase().includes(filter)) {
+            row.style.display = '';
+            row.classList.add('highlight');
+            setTimeout(() => row.classList.remove('highlight'), 1500);
+            hasResults = true;
+        } else {
+            row.style.display = 'none';
+        }
+    }
+
+    // Show no results message if needed
+    const existingNoResults = table.querySelector('.no-results');
+    if (existingNoResults) {
+        existingNoResults.remove();
+    }
+
+    if (!hasResults && filter) {
+        const noResults = document.createElement('tr');
+        noResults.className = 'no-results';
+        noResults.innerHTML = `
+            <td colspan="4">
+                <i class="fas fa-search"></i> 
+                No farmers found matching "${filter}"
+            </td>
+        `;
+        table.querySelector('tbody').appendChild(noResults);
+    }
+}
+
+// Add event listener for search input
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(searchFarmers, 300));
+    }
+});
+
+// Debounce function to improve search performance
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }
 </script>
 </body>
