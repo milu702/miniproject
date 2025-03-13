@@ -42,10 +42,11 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #2B7A30;
-            --secondary-color: #27ae60;
-            --dark-color: #1B4D1E;
+            --primary-color: #2d6a4f;  /* Dark green */
+            --secondary-color: #40916c; /* Medium green */
+            --accent-color: #95d5b2;   /* Light green */
             --light-color: #ecf0f1;
+            --dark-color: #1B4D1E;     /* Very dark green */
         }
 
         /* Copy all the base styles from employe.php */
@@ -66,13 +67,13 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
             background: white;
             padding: 30px;
             border-radius: 15px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 8px 20px rgba(45, 106, 79, 0.08);  /* Green tinted shadow */
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
         .form-group:hover {
             transform: translateY(-5px);
-            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 12px 25px rgba(45, 106, 79, 0.12);  /* Darker green shadow on hover */
         }
 
         .input-group {
@@ -91,7 +92,7 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
 
         .input-group input:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 10px rgba(43, 122, 48, 0.1);
+            box-shadow: 0 0 10px rgba(45, 106, 79, 0.1);
         }
 
         .input-group i {
@@ -102,7 +103,7 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
         }
 
         .submit-btn {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            background: linear-gradient(135deg, #2d6a4f, #40916c);
             color: white;
             border: none;
             padding: 12px 25px;
@@ -117,7 +118,7 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
 
         .submit-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(43, 122, 48, 0.2);
+            box-shadow: 0 4px 12px rgba(45, 106, 79, 0.2);
         }
 
         @keyframes fadeIn {
@@ -137,7 +138,7 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
 
         .alert-success {
             background-color: #d4edda;
-            color: #155724;
+            color: #2d6a4f;
             border: 1px solid #c3e6cb;
         }
 
@@ -168,6 +169,100 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
                 opacity: 1;
             }
         }
+
+        .welcome-header {
+            color: var(--primary-color);
+        }
+
+        .running-message {
+            background: linear-gradient(135deg, #2d6a4f, #40916c);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .validation-message i.fa-check-circle {
+            color: #2d6a4f;
+        }
+
+        /* Add these new styles for better visual hierarchy */
+        .form-group h3 {
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 25px;
+            font-size: 1.2em;
+        }
+
+        .form-group h3 i {
+            color: var(--primary-color);
+            font-size: 1.2em;
+        }
+
+        .input-group label {
+            color: #2d6a4f;
+            font-weight: 500;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        /* Password requirements styling */
+        .password-requirements {
+            background: #f8f9fa;
+            border-left: 4px solid var(--primary-color);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .password-requirements ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .password-requirements li {
+            color: #2d6a4f;
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .password-requirements li i {
+            color: var(--primary-color);
+        }
+
+        .back-to-dashboard {
+            margin-bottom: 20px;
+        }
+
+        .dashboard-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: white;
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .dashboard-link:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateX(-5px);
+            box-shadow: 0 4px 12px rgba(45, 106, 79, 0.2);
+        }
+
+        .dashboard-link i {
+            font-size: 1.1em;
+        }
     </style>
 </head>
 <body>
@@ -178,40 +273,16 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
             <h1>GrowGuide</h1>
         </div>
         
-        <div class="sidebar-nav">
-            <a href="employe.php" class="sidebar-btn" style="--btn-index: 1">
-                <div class="hover-indicator"></div>
-                <i class="fas fa-home"></i>
-                <span>Dashboard</span>
-            </a>
-            
-            <a href="employee_farmer.php" class="sidebar-btn" style="--btn-index: 2">
-                <div class="hover-indicator"></div>
-                <i class="fas fa-users"></i>
-                <span>Farmers</span>
-            </a>
-            
-            <a href="soil_test.php" class="sidebar-btn" style="--btn-index: 3">
-                <div class="hover-indicator"></div>
-                <i class="fas fa-flask"></i>
-                <span>Soil Tests</span>
-            </a>
-            
-            <a href="employee_settings.php" class="sidebar-btn active" style="--btn-index: 4">
-                <div class="hover-indicator"></div>
-                <i class="fas fa-cog"></i>
-                <span>Settings</span>
-            </a>
-            
-            <a href="logout.php" class="sidebar-btn logout" style="--btn-index: 5">
-                <div class="hover-indicator"></div>
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Logout</span>
-            </a>
-        </div>
-    </div>
+        
 
     <div class="content">
+        <div class="back-to-dashboard">
+            <a href="employe.php" class="dashboard-link">
+                <i class="fas fa-arrow-left"></i>
+                <span>Back to Dashboard</span>
+            </a>
+        </div>
+
         <div class="running-message">
             <div class="message-content">
                 <div class="welcome-header">
@@ -293,8 +364,7 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
                 </div>
             </form>
         </div>
-
-
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {

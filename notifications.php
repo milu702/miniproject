@@ -1,38 +1,53 @@
 <?php
 session_start();
 
-// Add database connection
-$conn = mysqli_connect("localhost", "root", "", "growguide");
+// Ensure user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
+}
 
-// Check connection
+// Database connection
+$conn = mysqli_connect("localhost", "root", "", "growguide");
 if (!$conn) {
     die("Connection failed: " . mysqli_connect_error());
 }
 
-// Fetch notifications from database
-$notifications = [];
-$query = "SELECT n.*, u.username as from_user 
-          FROM notifications n 
-          LEFT JOIN users u ON n.from_user_id = u.id 
-          ORDER BY n.created_at DESC 
-          LIMIT 50";
+// Get notifications for the user
+$user_id = $_SESSION['user_id'];
+$query = "SELECT n.*, 
+          CASE 
+            WHEN n.type = 'fertilizer_recommendation' THEN fr.recommendation_details
+            WHEN n.type = 'soil_test' THEN st.test_results
+   
+            ELSE NULL 
+          END as additional_details,
+          u.username as sender_name
+          FROM notifications n
+          LEFT JOIN fertilizer_recommendations fr ON n.id = fr.recommendation_id
+          LEFT JOIN soil_tests st ON n.id = st.test_id
+          
+          LEFT JOIN users u ON n.sender_id = u.id
+          WHERE n.user_id = ?
+          ORDER BY n.created_at DESC";
 
-$result = mysqli_query($conn, $query);
-if ($result) {
-    while ($row = mysqli_fetch_assoc($result)) {
-        $notifications[] = $row;
-    }
-    mysqli_free_result($result);
+$stmt = mysqli_prepare($conn, $query);
+if (!$stmt) {
+    die("Prepare failed: " . mysqli_error($conn));
 }
+mysqli_stmt_bind_param($stmt, "i", $user_id);
+if (!mysqli_stmt_execute($stmt)) {
+    die("Execute failed: " . mysqli_stmt_error($stmt));
+}
+$notifications = mysqli_stmt_get_result($stmt);
 
-// Get unread notifications count
-$unread_count = 0;
-$query = "SELECT COUNT(*) as count FROM notifications WHERE read_status = 0";
-$result = mysqli_query($conn, $query);
-if ($result) {
-    $row = mysqli_fetch_assoc($result);
-    $unread_count = $row['count'];
-}
+// Update to use is_read instead of status
+$update_query = "UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0";
+$update_stmt = mysqli_prepare($conn, $update_query);
+mysqli_stmt_bind_param($update_stmt, "i", $user_id);
+mysqli_stmt_execute($update_stmt);
+
+mysqli_close($conn);
 ?>
 
 <!DOCTYPE html>
@@ -40,304 +55,158 @@ if ($result) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GrowGuide - Notifications</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <title>Notifications - GrowGuide</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* ... existing styles from admin.php ... */
+        .notifications-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
 
-        /* Additional Notification Styles */
+        .notification-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .notification-item:hover {
+            transform: translateY(-2px);
+        }
+
         .notification-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .notification-filters {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .filter-btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 20px;
-            background: #f0f0f0;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .filter-btn.active {
-            background: #2e7d32;
-            color: white;
-        }
-
-        .notification-list {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .notification-card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
-            cursor: pointer;
-        }
-
-        .notification-card:hover {
-            transform: translateY(-2px);
-        }
-
-        .notification-card.unread {
-            border-left: 4px solid #2e7d32;
-        }
-
-        .notification-top {
-            display: flex;
-            justify-content: space-between;
             margin-bottom: 10px;
         }
 
-        .notification-icon {
-            width: 40px;
-            height: 40px;
-            background: #e8f5e9;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #2e7d32;
-        }
-
-        .notification-content {
-            flex: 1;
-            margin: 0 15px;
-        }
-
-        .notification-title {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .notification-message {
-            color: #666;
+        .notification-type {
+            background: #2B7A30;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
             font-size: 0.9em;
         }
 
         .notification-time {
-            color: #999;
-            font-size: 0.8em;
-        }
-
-        .notification-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .action-btn {
-            padding: 5px 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
+            color: #666;
             font-size: 0.9em;
         }
 
-        .mark-read {
-            background: #e8f5e9;
-            color: #2e7d32;
+        .notification-content {
+            margin-top: 10px;
         }
 
-        .delete-btn {
-            background: #ffebee;
-            color: #c62828;
-        }
-
-        .notification-summary {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-        }
-
-        .summary-card {
-            text-align: center;
-            padding: 15px;
-            border-radius: 8px;
-            background: #f8f9fa;
-        }
-
-        .summary-card h3 {
-            color: #2e7d32;
-            margin-bottom: 5px;
-        }
-
-        .admin-dashboard-link {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 50px;
-            text-decoration: none;
+        .notification-actions {
+            margin-top: 15px;
             display: flex;
-            align-items: center;
             gap: 10px;
-            font-weight: 500;
-            box-shadow: 0 4px 15px rgba(46, 125, 50, 0.2);
-            transition: all 0.3s ease;
-            z-index: 1000;
-            border: 2px solid rgba(255, 255, 255, 0.1);
         }
 
-        .admin-dashboard-link:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(46, 125, 50, 0.3);
-            background: linear-gradient(135deg, #33873b 0%, #1e6823 100%);
+        .btn-view {
+            background: #2B7A30;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.9em;
         }
 
-        .admin-dashboard-link i {
-            font-size: 20px;
-        }
-
-        .admin-dashboard-link .icon-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            transition: all 0.3s ease;
-        }
-
-        .admin-dashboard-link:hover .icon-container {
-            transform: rotate(360deg);
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .admin-dashboard-link .text {
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        @media (max-width: 768px) {
-            .admin-dashboard-link {
-                padding: 10px 16px;
-            }
-            
-            .admin-dashboard-link .text {
-                display: none;
-            }
-            
-            .admin-dashboard-link .icon-container {
-                width: 28px;
-                height: 28px;
-            }
-        }
-
-        /* Update the main-content style to use full width */
-        .main-content {
-            padding: 20px;
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
+        .unread {
+            border-left: 4px solid #2B7A30;
         }
     </style>
 </head>
 <body>
-    <!-- Main Content -->
-    <div class="main-content" id="main-content" style="margin-left: 0;">
-        <div class="notification-header">
-            <h1>Notifications</h1>
-            <button class="action-btn mark-read">Mark All as Read</button>
+    <div class="notifications-container">
+        <div style="margin-bottom: 20px;">
+            <a href="employe.php" class="btn-view" style="display: inline-block;">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
         </div>
-
-        <!-- Add the admin dashboard link -->
-        <a href="admin.php" class="admin-dashboard-link">
-            <div class="icon-container">
-                <i class="fas fa-user-shield"></i>
-            </div>
-            <span class="text">Admin Dashboard</span>
-        </a>
-
-        <div class="notification-summary">
-            <div class="summary-card">
-                <h3><?php echo $unread_count; ?></h3>
-                <p>Unread Notifications</p>
-            </div>
-            <div class="summary-card">
-                <h3>24h</h3>
-                <p>Response Time</p>
-            </div>
-            <div class="summary-card">
-                <h3>150</h3>
-                <p>Total Notifications</p>
-            </div>
-        </div>
-
-        <div class="notification-filters">
-            <button class="filter-btn active">All</button>
-            <button class="filter-btn">Unread</button>
-            <button class="filter-btn">Soil Tests</button>
-            <button class="filter-btn">Farmers</button>
-            <button class="filter-btn">System</button>
-        </div>
-
-        <div class="notification-list">
-            <?php if (empty($notifications)): ?>
-                <div class="notification-card">
-                    <p>No notifications found.</p>
-                </div>
-            <?php else: ?>
-                <?php foreach ($notifications as $notification): ?>
-                    <div class="notification-card <?php echo $notification['read_status'] ? '' : 'unread'; ?>">
-                        <div class="notification-top">
-                            <div class="notification-icon">
-                                <i class="fas fa-bell"></i>
-                            </div>
-                            <div class="notification-content">
-                                <div class="notification-title"><?php echo htmlspecialchars($notification['title']); ?></div>
-                                <div class="notification-message"><?php echo htmlspecialchars($notification['message']); ?></div>
-                            </div>
-                            <div class="notification-time">
-                                <?php echo date('M j, Y H:i', strtotime($notification['created_at'])); ?>
-                            </div>
-                        </div>
-                        <div class="notification-actions">
-                            <?php if (!$notification['read_status']): ?>
-                                <button class="action-btn mark-read">Mark as Read</button>
-                            <?php endif; ?>
-                            <button class="action-btn delete-btn">Delete</button>
-                        </div>
+        <h1><i class="fas fa-bell"></i> Notifications</h1>
+        
+        <?php if (mysqli_num_rows($notifications) > 0): ?>
+            <?php while ($notification = mysqli_fetch_assoc($notifications)): ?>
+                <div class="notification-item <?php echo !$notification['is_read'] ? 'unread' : ''; ?>">
+                    <div class="notification-header">
+                        <span class="notification-type">
+                            <?php 
+                            switch($notification['type']) {
+                                case 'fertilizer_recommendation':
+                                    echo '<i class="fas fa-leaf"></i> Fertilizer Recommendation';
+                                    break;
+                                case 'soil_test':
+                                    echo '<i class="fas fa-vial"></i> Soil Test Results';
+                                    break;
+                                case 'query':
+                                    echo '<i class="fas fa-question-circle"></i> Query Response';
+                                    break;
+                                default:
+                                    echo '<i class="fas fa-info-circle"></i> Notification';
+                            }
+                            ?>
+                        </span>
+                        <span class="notification-time">
+                            <?php echo date('M d, Y H:i', strtotime($notification['created_at'])); ?>
+                        </span>
                     </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>
+                    
+                    <div class="notification-content">
+                        <p><?php echo htmlspecialchars($notification['message']); ?></p>
+                        <?php if ($notification['additional_details']): ?>
+                            <div class="notification-preview">
+                                <p><strong>
+                                    <?php
+                                    switch($notification['type']) {
+                                        case 'fertilizer_recommendation':
+                                            echo 'Recommendation: ';
+                                            break;
+                                        case 'soil_test':
+                                            echo 'Test Results: ';
+                                            break;
+                                        case 'query':
+                                            echo 'Query Details: ';
+                                            break;
+                                    }
+                                    ?>
+                                </strong>
+                                <?php echo htmlspecialchars(substr($notification['additional_details'], 0, 150)) . '...'; ?>
+                                </p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <div class="notification-actions">
+                        <?php 
+                        switch($notification['type']) {
+                            case 'fertilizer_recommendation': ?>
+                                <a href="view_recommendation.php?id=<?php echo $notification['related_id']; ?>" class="btn-view">
+                                    View Full Recommendation
+                                </a>
+                                <?php break;
+                            case 'soil_test': ?>
+                                <a href="view_soil_test.php?id=<?php echo $notification['related_id']; ?>" class="btn-view">
+                                    View Soil Test Results
+                                </a>
+                                <?php break;
+                            case 'query': ?>
+                                <a href="view_query.php?id=<?php echo $notification['related_id']; ?>" class="btn-view">
+                                    View Full Query
+                                </a>
+                                <?php break;
+                        } ?>
+                    </div>
+                </div>
+            <?php endwhile; ?>
+        <?php else: ?>
+            <p>No notifications found.</p>
+        <?php endif; ?>
     </div>
-
-    <script>
-        document.querySelectorAll('.notification-card').forEach(card => {
-            card.addEventListener('click', function() {
-                this.classList.remove('unread');
-            });
-        });
-
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-            });
-        });
-    </script>
 </body>
 </html> 

@@ -114,6 +114,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Add Google Sign-In API -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         * {
             margin: 0;
@@ -380,6 +382,54 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         input:-ms-input-placeholder {
             color: rgba(255, 255, 255, 0.9);
         }
+
+        /* Add these new styles for Google Sign-In button */
+        .google-btn {
+            width: 100%;
+            margin: 15px 0;
+            padding: 10px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .google-btn img {
+            width: 20px;
+            margin-right: 10px;
+        }
+
+        .google-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .or-divider {
+            margin: 20px 0;
+            text-align: center;
+            position: relative;
+        }
+
+        .or-divider:before,
+        .or-divider:after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            width: 45%;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .or-divider:before {
+            left: 0;
+        }
+
+        .or-divider:after {
+            right: 0;
+        }
     </style>
 </head>
 <body>
@@ -395,6 +445,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div class="success-message"><?php echo $success; ?></div>
         <?php endif; ?>
         
+        <!-- Add Google Sign-In button -->
+        <div id="g_id_onload"
+             data-client_id="123456789-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com"
+             data-context="signup"
+             data-ux_mode="popup"
+             data-callback="handleGoogleSignIn"
+             data-auto_prompt="false">
+        </div>
+
+        <div class="g_id_signin"
+             data-type="standard"
+             data-shape="rectangular"
+             data-theme="outline"
+             data-text="signup_with"
+             data-size="large"
+             data-logo_alignment="left"
+             data-width="100%">
+        </div>
+
+        <div class="or-divider">OR</div>
+
         <form method="POST" id="signupForm">
             <div class="form-group">
                 <i class="fas fa-user"></i>
@@ -448,12 +519,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </div>
 
     <script>
+    // Add this function to handle Google Sign-In
+    function handleGoogleSignIn(response) {
+        // Get the ID token from the response
+        const credential = response.credential;
+        
+        // Send the token to your server
+        fetch('google_auth.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ credential: credential })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = 'dashboard.php';
+            } else {
+                alert('Google sign-in failed: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred during Google sign-in');
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('signupForm');
         
         // Validation patterns
         const patterns = {
-            username: /^[a-zA-Z0-9_]{3,20}$/,
+            username: /^[a-zA-Z0-9_ ]{3,20}$/,
             email: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/,
             phone: /^[6-9]\d{9}$/,
             password: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/

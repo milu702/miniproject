@@ -14,21 +14,20 @@ $user_id = $_SESSION['user_id'];
 $stmt = $conn->prepare("
     SELECT 
         f.farmer_id,
-        p.soil_type,
-        p.soil_moisture,
-        st.ph_level as soil_ph,
-        st.nitrogen_content,
-        st.phosphorus_content,
-        st.potassium_content,
-        
+        COALESCE(p.soil_type, '') as soil_type,
+        COALESCE(p.soil_moisture, 0) as soil_moisture,
+        COALESCE(st.ph_level, 0) as avg_ph,
+        COALESCE(st.nitrogen_content, 0) as avg_nitrogen,
+        COALESCE(st.phosphorus_content, 0) as avg_phosphorus,
+        COALESCE(st.potassium_content, 0) as avg_potassium,
         st.test_date,
-        u.farm_location,
+        COALESCE(u.farm_location, '') as farm_location,
         u.username as farmer_name
-    FROM farmers f
+    FROM users u
+    LEFT JOIN farmers f ON u.id = f.user_id
     LEFT JOIN farmer_profiles p ON f.farmer_id = p.farmer_id
-    LEFT JOIN users u ON f.user_id = u.id
-    LEFT JOIN soil_tests st ON f.farmer_id = st.farmer_id
-    WHERE f.user_id = ?
+    LEFT JOIN soil_tests st ON u.id = st.farmer_id
+    WHERE u.id = ?
     ORDER BY st.test_date DESC LIMIT 1
 ");
 
@@ -40,6 +39,14 @@ $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
 $farmerData = $result->fetch_assoc();
+
+// Add error handling if no farmer data is found
+if (!$farmerData) {
+    // Redirect to an error page or show a message
+    $_SESSION['error'] = "No farmer profile found. Please complete your profile first.";
+    header("Location: farmer.php");
+    exit();
+}
 
 // Get weather data
 $weather_api_key = "cc02c9dee7518466102e748f211bca05";
@@ -58,118 +65,203 @@ function analyzeConditions($weather_data, $soil_data) {
     $recommendations = [];
     $conditions = [];
     $unsuitable_location = false;
+    $current_location = '';
 
-    // Add location check for cardamom suitability
+    // Weather-based analysis
+    if ($weather_data) {
+        // Temperature analysis
+        $temp = $weather_data['main']['temp'] ?? null;
+        if ($temp !== null) {
+            $conditions['temperature'] = [
+                'value' => $temp,
+                'status' => ($temp >= 10 && $temp <= 35) ? 'optimal' : 'suboptimal'
+            ];
+            
+            if ($temp < 10) {
+                $recommendations[] = "Temperature is too low. Consider using frost protection measures and maintain proper shade.";
+            } elseif ($temp > 35) {
+                $recommendations[] = "Temperature is too high. Increase irrigation frequency and maintain adequate shade cover.";
+            }
+        }
+
+        // Humidity analysis
+        $humidity = $weather_data['main']['humidity'] ?? null;
+        if ($humidity !== null) {
+            $conditions['humidity'] = [
+                'value' => $humidity,
+                'status' => ($humidity >= 60 && $humidity <= 90) ? 'optimal' : 'suboptimal'
+            ];
+            
+            if ($humidity < 60) {
+                $recommendations[] = "Low humidity detected. Consider using mulching and increasing irrigation frequency.";
+            } elseif ($humidity > 90) {
+                $recommendations[] = "High humidity detected. Monitor for fungal diseases and ensure proper air circulation.";
+            }
+        }
+
+        // Weather condition analysis
+        $weather_condition = $weather_data['weather'][0]['main'] ?? null;
+        if ($weather_condition) {
+            switch (strtolower($weather_condition)) {
+                case 'rain':
+                    $recommendations[] = "Rainy conditions: Ensure proper drainage and monitor for root rot.";
+                    break;
+                case 'clear':
+                    $recommendations[] = "Clear weather: Ideal for pollination. Consider foliar spray applications.";
+                    break;
+                case 'clouds':
+                    $recommendations[] = "Cloudy conditions: Good for plant growth. Monitor soil moisture levels.";
+                    break;
+                case 'thunderstorm':
+                    $recommendations[] = "Thunderstorm warning: Protect plants from strong winds and check drainage systems.";
+                    break;
+            }
+        }
+
+        // Wind speed analysis
+        $wind_speed = $weather_data['wind']['speed'] ?? null;
+        if ($wind_speed !== null) {
+            if ($wind_speed > 10) {
+                $recommendations[] = "High wind speeds detected. Check support structures and windbreakers.";
+            }
+        }
+
+        // Add soil analysis
+        if (isset($soil_data['avg_ph'])) {
+            $ph = $soil_data['avg_ph'];
+            $conditions['soil_ph'] = [
+                'value' => $ph,
+                'status' => ($ph >= 5.5 && $ph <= 6.5) ? 'optimal' : 'suboptimal'
+            ];
+            
+            if ($ph < 5.5) {
+                $recommendations[] = "Soil pH is too acidic. Apply agricultural lime to raise pH. Target pH range is 5.5-6.5.";
+            } elseif ($ph > 6.5) {
+                $recommendations[] = "Soil pH is too alkaline. Consider adding organic matter or sulfur to lower pH.";
+            }
+        }
+
+        // Nitrogen content analysis
+        if (isset($soil_data['avg_nitrogen'])) {
+            $nitrogen = $soil_data['avg_nitrogen'];
+            $conditions['nitrogen_content'] = [
+                'value' => $nitrogen,
+                'status' => ($nitrogen >= 150 && $nitrogen <= 250) ? 'optimal' : 'suboptimal'
+            ];
+            
+            if ($nitrogen < 150) {
+                $recommendations[] = "Low nitrogen levels detected. Apply organic nitrogen-rich fertilizers like vermicompost or neem cake.";
+            } elseif ($nitrogen > 250) {
+                $recommendations[] = "High nitrogen levels. Reduce nitrogen fertilization and monitor leaf growth.";
+            }
+        }
+
+        // Phosphorus content analysis
+        if (isset($soil_data['avg_phosphorus'])) {
+            $phosphorus = $soil_data['avg_phosphorus'];
+            $conditions['phosphorus_content'] = [
+                'value' => $phosphorus,
+                'status' => ($phosphorus >= 15 && $phosphorus <= 25) ? 'optimal' : 'suboptimal'
+            ];
+            
+            if ($phosphorus < 15) {
+                $recommendations[] = "Low phosphorus levels. Apply rock phosphate or bone meal to improve soil phosphorus content.";
+            } elseif ($phosphorus > 25) {
+                $recommendations[] = "High phosphorus levels. Avoid phosphorus-rich fertilizers and consider growing phosphorus-hungry cover crops.";
+            }
+        }
+
+        // Potassium content analysis
+        if (isset($soil_data['avg_potassium'])) {
+            $potassium = $soil_data['avg_potassium'];
+            $conditions['potassium_content'] = [
+                'value' => $potassium,
+                'status' => ($potassium >= 120 && $potassium <= 200) ? 'optimal' : 'suboptimal'
+            ];
+            
+            if ($potassium < 120) {
+                $recommendations[] = "Low potassium levels. Apply potash or wood ash to improve soil potassium content.";
+            } elseif ($potassium > 200) {
+                $recommendations[] = "High potassium levels. Reduce potassium fertilization and monitor plant growth.";
+            }
+        }
+
+        // Combined weather and soil recommendations
+        $temp = $weather_data['main']['temp'] ?? null;
+        $humidity = $weather_data['main']['humidity'] ?? null;
+        $soil_moisture = $soil_data['soil_moisture'] ?? null;
+
+        if ($temp > 30 && $humidity < 60 && $soil_moisture < 60) {
+            $recommendations[] = "High temperature and low humidity detected. Implement these measures:
+                - Increase irrigation frequency
+                - Apply mulch to retain soil moisture
+                - Consider installing shade nets
+                - Use drip irrigation system for water conservation";
+        }
+
+        if ($temp < 15 && $humidity > 80) {
+            $recommendations[] = "Cold and humid conditions detected. Take these actions:
+                - Improve air circulation between plants
+                - Monitor for fungal diseases
+                - Reduce irrigation frequency
+                - Apply copper-based fungicides if necessary";
+        }
+
+        // Seasonal recommendations based on weather patterns
+        $month = date('n');
+        if ($month >= 6 && $month <= 8) { // Monsoon season
+            $recommendations[] = "Monsoon season care:
+                - Ensure proper drainage
+                - Monitor for root rot
+                - Apply anti-fungal treatments preventively
+                - Maintain proper spacing between plants";
+        } elseif ($month >= 12 || $month <= 2) { // Winter season
+            $recommendations[] = "Winter season care:
+                - Protect plants from frost
+                - Reduce watering frequency
+                - Apply organic mulch
+                - Monitor soil temperature";
+        }
+    }
+
+    // Location analysis
     if (isset($soil_data['farm_location'])) {
         $suitable_locations = ['idukki', 'wayanad'];
         $current_location = strtolower($soil_data['farm_location']);
         if (!in_array($current_location, $suitable_locations)) {
             $unsuitable_location = true;
-        }
-    }
-
-    // If location is unsuitable, only return this message
-    if ($unsuitable_location) {
-        return [
-            'conditions' => [],
-            'recommendations' => [],
-            'unsuitable_location' => true
-        ];
-    }
-
-    // Ideal conditions for cardamom
-    $ideal_conditions = [
-        'temperature' => ['min' => 10, 'max' => 35],
-        'humidity' => ['min' => 60, 'max' => 90],
-        'soil_ph' => ['min' => 6.0, 'max' => 6.5],
-        'soil_moisture' => ['min' => 60, 'max' => 80],
-        'nitrogen_content' => ['min' => 120, 'max' => 160], // ppm
-        'phosphorus_content' => ['min' => 20, 'max' => 30], // ppm
-        'potassium_content' => ['min' => 200, 'max' => 300], // ppm
-    ];
-
-    // Weather analysis
-    if ($weather_data) {
-        $temp = $weather_data['main']['temp'];
-        $humidity = $weather_data['main']['humidity'];
-        
-        $conditions['temperature'] = [
-            'value' => $temp,
-            'status' => ($temp >= $ideal_conditions['temperature']['min'] && 
-                        $temp <= $ideal_conditions['temperature']['max']) ? 'optimal' : 'suboptimal'
-        ];
-        
-        $conditions['humidity'] = [
-            'value' => $humidity,
-            'status' => ($humidity >= $ideal_conditions['humidity']['min'] && 
-                        $humidity <= $ideal_conditions['humidity']['max']) ? 'optimal' : 'suboptimal'
-        ];
-    }
-
-    // Soil analysis
-    if ($soil_data) {
-        $conditions['soil_ph'] = [
-            'value' => $soil_data['soil_ph'],
-            'status' => ($soil_data['soil_ph'] >= $ideal_conditions['soil_ph']['min'] && 
-                        $soil_data['soil_ph'] <= $ideal_conditions['soil_ph']['max']) ? 'optimal' : 'suboptimal'
-        ];
-        
-        // Add new soil nutrient conditions
-        $conditions['nitrogen_content'] = [
-            'value' => $soil_data['nitrogen_content'],
-            'status' => ($soil_data['nitrogen_content'] >= $ideal_conditions['nitrogen_content']['min'] && 
-                        $soil_data['nitrogen_content'] <= $ideal_conditions['nitrogen_content']['max']) ? 'optimal' : 'suboptimal'
-        ];
-        
-        $conditions['phosphorus_content'] = [
-            'value' => $soil_data['phosphorus_content'],
-            'status' => ($soil_data['phosphorus_content'] >= $ideal_conditions['phosphorus_content']['min'] && 
-                        $soil_data['phosphorus_content'] <= $ideal_conditions['phosphorus_content']['max']) ? 'optimal' : 'suboptimal'
-        ];
-        
-        $conditions['potassium_content'] = [
-            'value' => $soil_data['potassium_content'],
-            'status' => ($soil_data['potassium_content'] >= $ideal_conditions['potassium_content']['min'] && 
-                        $soil_data['potassium_content'] <= $ideal_conditions['potassium_content']['max']) ? 'optimal' : 'suboptimal'
-        ];
-        
-        // Add recommendations based on conditions
-        if ($conditions['soil_ph']['status'] === 'suboptimal') {
-            if ($soil_data['soil_ph'] < $ideal_conditions['soil_ph']['min']) {
-                $recommendations[] = "Consider adding agricultural lime to increase soil pH.";
-            } else {
-                $recommendations[] = "Add organic matter to help lower soil pH.";
-            }
-        }
-        
-        if ($conditions['nitrogen_content']['status'] === 'suboptimal') {
-            if ($soil_data['nitrogen_content'] < $ideal_conditions['nitrogen_content']['min']) {
-                $recommendations[] = "Consider adding nitrogen-rich fertilizers or organic matter like compost.";
-            } else {
-                $recommendations[] = "Reduce nitrogen application and consider planting nitrogen-consuming crops.";
-            }
-        }
-        
-        if ($conditions['phosphorus_content']['status'] === 'suboptimal') {
-            if ($soil_data['phosphorus_content'] < $ideal_conditions['phosphorus_content']['min']) {
-                $recommendations[] = "Add phosphorus-rich fertilizers or bone meal to improve phosphorus levels.";
-            } else {
-                $recommendations[] = "Reduce phosphorus application to prevent excess buildup.";
-            }
-        }
-        
-        if ($conditions['potassium_content']['status'] === 'suboptimal') {
-            if ($soil_data['potassium_content'] < $ideal_conditions['potassium_content']['min']) {
-                $recommendations[] = "Apply potassium-rich fertilizers or add wood ash to increase potassium levels.";
-            } else {
-                $recommendations[] = "Reduce potassium application and monitor levels.";
+            $recommendations[] = "Consider relocating your cardamom plantation to Idukki or Wayanad regions for optimal growth conditions.";
+        } else {
+            // Location-specific recommendations
+            if ($current_location === 'idukki') {
+                $recommendations = [
+                    "Maintain shade levels at 60-70% using native tree species like Silver Oak or Rosewood",
+                    "Plant cardamom at 1000-1500m elevation for best results",
+                    "Implement terracing on slopes to prevent soil erosion during monsoon",
+                    "Use organic mulching to retain soil moisture during dry spells",
+                    "Consider intercropping with pepper or coffee for additional income",
+                    "Monitor for capsule rot during heavy rainfall periods (June-August)",
+                    "Install proper drainage systems to prevent waterlogging"
+                ];
+            } elseif ($current_location === 'wayanad') {
+                $recommendations = [
+                    "Maintain 50-60% shade coverage using mixed shade trees",
+                    "Focus on moisture conservation during dry months (December-March)",
+                    "Plant cardamom at 800-1200m elevation for optimal growth",
+                    "Use bio-fencing with vetiver grass to prevent wild animal entry",
+                    "Practice regular pruning of shade trees before monsoon",
+                    "Apply organic matter before the onset of southwest monsoon",
+                    "Monitor for thrips during dry season (February-May)"
+                ];
             }
         }
     }
 
     return [
         'conditions' => $conditions,
-        'recommendations' => $recommendations
+        'recommendations' => $recommendations,
+        'unsuitable_location' => $unsuitable_location,
+        'current_location' => $current_location
     ];
 }
 
@@ -408,14 +500,11 @@ $analysis = analyzeConditions($weather_data, $farmerData);
                     <i class="fas fa-exclamation-triangle summary-icon" style="color: #c53030;"></i>
                     <div class="summary-text">
                         <div class="running-message" style="white-space: nowrap; overflow: hidden;">
-                            Dear <?php echo htmlspecialchars($farmerData['farmer_name'] ?? 'Farmer'); ?>, 
-                            this location is not suitable for cardamom plantation. Cardamom cultivation is best suited for Idukki and Wayanad regions due to their specific climatic conditions and elevation.
+                            ⚠️ Warning: <?php echo ucfirst($analysis['current_location']); ?>'s weather and soil conditions are not ideal for cardamom plantation. For optimal cardamom cultivation, consider locations in Idukki or Wayanad regions which offer the perfect climate and elevation. ⚠️
                         </div>
                     </div>
                 </div>
             </div>
-
-            <?php return; // Stop displaying the rest of the analysis ?>
             <?php endif; ?>
 
             <!-- Add this new section before the analysis section -->
@@ -503,7 +592,7 @@ $analysis = analyzeConditions($weather_data, $farmerData);
                         </div>
                         <h3>Soil pH</h3>
                         <div class="parameter-value">
-                            <?php echo isset($farmerData['soil_ph']) ? number_format($farmerData['soil_ph'], 1) : 'N/A'; ?>
+                            <?php echo isset($farmerData['avg_ph']) ? number_format($farmerData['avg_ph'], 1) : 'N/A'; ?>
                         </div>
                         <?php if (isset($analysis['conditions']['soil_ph'])): ?>
                             <span class="status-indicator status-<?php echo $analysis['conditions']['soil_ph']['status']; ?>">
@@ -518,7 +607,13 @@ $analysis = analyzeConditions($weather_data, $farmerData);
                         </div>
                         <h3>Nitrogen</h3>
                         <div class="parameter-value">
-                            <?php echo isset($farmerData['nitrogen_content']) ? $farmerData['nitrogen_content'] . ' ppm' : 'N/A'; ?>
+                            <?php 
+                                if (isset($farmerData['avg_nitrogen']) && $farmerData['avg_nitrogen'] !== null) {
+                                    echo number_format($farmerData['avg_nitrogen'], 1) . ' ppm';
+                                } else {
+                                    echo 'No data';
+                                }
+                            ?>
                         </div>
                         <?php if (isset($analysis['conditions']['nitrogen_content'])): ?>
                             <span class="status-indicator status-<?php echo $analysis['conditions']['nitrogen_content']['status']; ?>">
@@ -533,7 +628,13 @@ $analysis = analyzeConditions($weather_data, $farmerData);
                         </div>
                         <h3>Phosphorus</h3>
                         <div class="parameter-value">
-                            <?php echo isset($farmerData['phosphorus_content']) ? $farmerData['phosphorus_content'] . ' ppm' : 'N/A'; ?>
+                            <?php 
+                                if (isset($farmerData['avg_phosphorus']) && $farmerData['avg_phosphorus'] !== null) {
+                                    echo number_format($farmerData['avg_phosphorus'], 1) . ' ppm';
+                                } else {
+                                    echo 'No data';
+                                }
+                            ?>
                         </div>
                         <?php if (isset($analysis['conditions']['phosphorus_content'])): ?>
                             <span class="status-indicator status-<?php echo $analysis['conditions']['phosphorus_content']['status']; ?>">
@@ -548,7 +649,13 @@ $analysis = analyzeConditions($weather_data, $farmerData);
                         </div>
                         <h3>Potassium</h3>
                         <div class="parameter-value">
-                            <?php echo isset($farmerData['potassium_content']) ? $farmerData['potassium_content'] . ' ppm' : 'N/A'; ?>
+                            <?php 
+                                if (isset($farmerData['avg_potassium']) && $farmerData['avg_potassium'] !== null) {
+                                    echo number_format($farmerData['avg_potassium'], 1) . ' ppm';
+                                } else {
+                                    echo 'No data';
+                                }
+                            ?>
                         </div>
                         <?php if (isset($analysis['conditions']['potassium_content'])): ?>
                             <span class="status-indicator status-<?php echo $analysis['conditions']['potassium_content']['status']; ?>">

@@ -106,6 +106,25 @@ function getPHStatus($ph) {
     if ($ph > 7.5) return 'Alkaline';
     return 'Optimal';
 }
+
+// Add these helper functions at the top with the other functions
+function getNitrogenStatus($value) {
+    if ($value < 0.5) return ['Low', '#ff6b6b'];
+    if ($value > 1.0) return ['High', '#4d96ff'];
+    return ['Optimal', '#69db7c'];
+}
+
+function getPhosphorusStatus($value) {
+    if ($value < 0.05) return ['Low', '#ff6b6b'];
+    if ($value > 0.2) return ['High', '#4d96ff'];
+    return ['Optimal', '#69db7c'];
+}
+
+function getPotassiumStatus($value) {
+    if ($value < 1.0) return ['Low', '#ff6b6b'];
+    if ($value > 2.0) return ['High', '#4d96ff'];
+    return ['Optimal', '#69db7c'];
+}
 ?>
 
 <!DOCTYPE html>
@@ -172,7 +191,7 @@ function getPHStatus($ph) {
 
         .form-group {
             position: relative;
-            margin-bottom: 25px;
+            margin-bottom: 40px; /* Increased to accommodate the info box */
             padding: 20px;
             border-radius: 15px;
             background: linear-gradient(145deg, #ffffff, #f3f3f3);
@@ -535,6 +554,84 @@ function getPHStatus($ph) {
             50% { transform: translateY(-5px); }
             100% { transform: translateY(0); }
         }
+
+        .soil-details {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 8px;
+        }
+
+        .soil-parameter {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .soil-parameter h5 {
+            color: var(--primary-dark);
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .recommendations-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .recommendations-box h5 {
+            color: var(--primary-dark);
+            margin-top: 0;
+        }
+
+        .recommendations-box ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .recommendations-box li {
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .recommendation {
+            font-style: italic;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .input-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-left: 4px solid var(--primary-color);
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .input-info p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        .input-info strong {
+            color: var(--primary-dark);
+        }
+
+        .input-info ul {
+            margin: 10px 0;
+            padding-left: 20px;
+            color: #666;
+        }
+
+        .input-info li {
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body>
@@ -556,106 +653,195 @@ function getPHStatus($ph) {
                 </a>
                 <h2>Soil Test Analysis</h2>
 
-            
-            
-            <?php if ($message): ?>
-                <div class="alert alert-success"><?php echo $message; ?></div>
-            <?php endif; ?>
+                <div class="test-results">
+                    <h3>Recent Soil Tests</h3>
+                    <?php if (empty($soil_tests)): ?>
+                        <p>No soil tests found.</p>
+                    <?php else: ?>
+                        <?php foreach ($soil_tests as $test): ?>
+                            <div class="test-card">
+                                <h4>
+                                    <i class="fas fa-user-farmer" style="color: var(--primary-color);"></i>
+                                    Farmer: <?php echo htmlspecialchars($test['farmer_name']); ?>
+                                </h4>
+                                <p>Test Date: <?php echo date('F j, Y', strtotime($test['test_date'])); ?></p>
+                                
+                                <div class="soil-details">
+                                    <div class="soil-parameter">
+                                        <h5>pH Level Analysis</h5>
+                                        <p>Value: <?php echo $test['ph_level']; ?>
+                                            <span class="value-indicator" style="background-color: <?php echo getPHColor($test['ph_level']); ?>">
+                                                <?php echo getPHStatus($test['ph_level']); ?>
+                                            </span>
+                                        </p>
+                                    </div>
 
-            <form method="POST" onsubmit="return validateForm()" novalidate>
-                <div class="form-grid">
-                    <input type="hidden" name="farmer_id" value="<?php echo $_SESSION['user_id']; ?>">
-                    <div class="form-group">
-                        <i class="fas fa-vial"></i>
-                        <label>pH Level</label>
-                        <input type="number" name="ph_level" id="ph_level" step="0.1" required min="0" max="14">
-                        <span class="error-message">Please enter a valid pH level (0-14)</span>
-                    </div>
-                    <div class="form-group">
-                        <i class="fas fa-leaf"></i>
-                        <label>Nitrogen (N) %</label>
-                        <input type="number" name="nitrogen_content" id="nitrogen_content" step="0.01" required min="0">
-                        <span class="error-message">Please enter a valid nitrogen percentage</span>
-                    </div>
-                    <div class="form-group">
-                        <i class="fas fa-seedling"></i>
-                        <label>Phosphorus (P) %</label>
-                        <input type="number" name="phosphorus_content" id="phosphorus_content" step="0.01" required min="0">
-                        <span class="error-message">Please enter a valid phosphorus percentage</span>
-                    </div>
-                    <div class="form-group">
-                        <i class="fas fa-flask"></i>
-                        <label>Potassium (K) %</label>
-                        <input type="number" name="potassium_content" id="potassium_content" step="0.01" required min="0">
-                        <span class="error-message">Please enter a valid potassium percentage</span>
-                    </div>
+                                    <div class="soil-parameter">
+                                        <h5>NPK Analysis</h5>
+                                        <?php 
+                                            $n_status = getNitrogenStatus($test['nitrogen_content']);
+                                            $p_status = getPhosphorusStatus($test['phosphorus_content']);
+                                            $k_status = getPotassiumStatus($test['potassium_content']);
+                                        ?>
+                                        <p>Nitrogen: <?php echo $test['nitrogen_content']; ?>%
+                                            <span class="value-indicator" style="background-color: <?php echo $n_status[1]; ?>">
+                                                <?php echo $n_status[0]; ?>
+                                            </span>
+                                        </p>
+                                        <p>Phosphorus: <?php echo $test['phosphorus_content']; ?>%
+                                            <span class="value-indicator" style="background-color: <?php echo $p_status[1]; ?>">
+                                                <?php echo $p_status[0]; ?>
+                                            </span>
+                                        </p>
+                                        <p>Potassium: <?php echo $test['potassium_content']; ?>%
+                                            <span class="value-indicator" style="background-color: <?php echo $k_status[1]; ?>">
+                                                <?php echo $k_status[0]; ?>
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="recommendations-box">
+                                    <h5>Solutions & Recommendations</h5>
+                                    <ul>
+                                        <?php if ($test['ph_level'] < 5.5): ?>
+                                            <li>pH is too acidic - Add lime to increase pH level</li>
+                                        <?php elseif ($test['ph_level'] > 6.5): ?>
+                                            <li>pH is too alkaline - Add sulfur to decrease pH level</li>
+                                        <?php endif; ?>
+                                        
+                                        <?php if ($n_status[0] === 'Low'): ?>
+                                            <li>Add nitrogen-rich organic matter or compost</li>
+                                        <?php elseif ($n_status[0] === 'High'): ?>
+                                            <li>Reduce nitrogen application</li>
+                                        <?php endif; ?>
+                                        
+                                        <?php if ($p_status[0] === 'Low'): ?>
+                                            <li>Apply bone meal or rock phosphate</li>
+                                        <?php elseif ($p_status[0] === 'High'): ?>
+                                            <li>Reduce phosphorus application</li>
+                                        <?php endif; ?>
+                                        
+                                        <?php if ($k_status[0] === 'Low'): ?>
+                                            <li>Add wood ash or potassium-rich fertilizers</li>
+                                        <?php elseif ($k_status[0] === 'High'): ?>
+                                            <li>Reduce potassium application</li>
+                                        <?php endif; ?>
+                                        
+                                        <?php if ($n_status[0] === 'Optimal' && $p_status[0] === 'Optimal' && 
+                                                $k_status[0] === 'Optimal' && $test['ph_level'] >= 5.5 && 
+                                                $test['ph_level'] <= 6.5): ?>
+                                            <li>All soil parameters are optimal. Maintain current practices.</li>
+                                        <?php endif; ?>
+                                    </ul>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
-                <button type="submit" name="add_soil_test">Add Soil Test</button>
-            </form>
 
-            <div class="test-results">
-                <h3>Recent Soil Tests</h3>
-                <?php if (empty($soil_tests)): ?>
-                    <p>No soil tests found.</p>
-                <?php else: ?>
-                    <?php foreach ($soil_tests as $test): ?>
-                        <div class="test-card">
-                            <h4>
-                                <i class="fas fa-user-farmer" style="color: var(--primary-color);"></i>
-                                Farmer: <?php echo htmlspecialchars($test['farmer_name']); ?>
-                            </h4>
-                            <p>Test Date: <?php echo date('F j, Y', strtotime($test['test_date'])); ?></p>
-                            <p>pH Level: <?php echo $test['ph_level']; ?>
-                                <span class="value-indicator" style="background-color: <?php echo getPHColor($test['ph_level']); ?>">
-                                    <?php echo getPHStatus($test['ph_level']); ?>
-                                </span>
-                            </p>
-                            <p>NPK Values: <?php echo $test['nitrogen_content']; ?>% N, 
-                               <?php echo $test['phosphorus_content']; ?>% P, 
-                               <?php echo $test['potassium_content']; ?>% K</p>
-                            <p class="farmer-message" style="color: var(--success-color); font-weight: bold;">
-                                Keep up the great work, <?php echo htmlspecialchars($test['farmer_name']); ?>! 🌱
-                            </p>
+                <div class="soil-analysis">
+                    <h3>Soil Analysis & Recommendations</h3>
+                    <div class="analysis-box">
+                        <h4>Ideal Soil Conditions for Cardamom</h4>
+                        <ul>
+                            <li><strong>pH Level:</strong> 5.5 - 6.5 (Slightly Acidic)</li>
+                            <li><strong>Nitrogen (N) %:</strong> 0.5% - 1.0%</li>
+                            <li><strong>Phosphorus (P) %:</strong> 0.05% - 0.2%</li>
+                            <li><strong>Potassium (K) %:</strong> 1.0% - 2.0%</li>
+                        </ul>
+                    </div>
+                    <div class="recommendations">
+                        <h4>Solutions for Cardamom Plantation</h4>
+                        <div class="solution" style="animation: float 3s infinite;">
+                            <h5>pH Level Adjustment</h5>
+                            <p>Apply lime to raise pH if < 5.5.</p>
                         </div>
-                    <?php endforeach; ?>
+                        <div class="solution" style="animation: float 3s infinite;">
+                            <h5>Nitrogen Adjustment</h5>
+                            <p>Apply compost for low nitrogen.</p>
+                        </div>
+                        <div class="solution" style="animation: float 3s infinite;">
+                            <h5>Phosphorus Adjustment</h5>
+                            <p>Add bone meal for low phosphorus.</p>
+                        </div>
+                        <div class="solution" style="animation: float 3s infinite;">
+                            <h5>Potassium Adjustment</h5>
+                            <p>Apply wood ash for low potassium.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <?php if ($message): ?>
+                    <div class="alert alert-success"><?php echo $message; ?></div>
                 <?php endif; ?>
-            </div>
 
-            <!-- New section for soil analysis and solutions -->
-            <div class="soil-analysis">
-                <h3>Soil Analysis & Recommendations</h3>
-                <div class="analysis-box">
-                    <h4>Ideal Soil Conditions for Cardamom</h4>
-                    <ul>
-                        <li><strong>pH Level:</strong> 5.5 - 6.5 (Slightly Acidic)</li>
-                        <li><strong>Nitrogen (N) %:</strong> 0.5% - 1.0%</li>
-                        <li><strong>Phosphorus (P) %:</strong> 0.05% - 0.2%</li>
-                        <li><strong>Potassium (K) %:</strong> 1.0% - 2.0%</li>
-                    </ul>
-                </div>
-                <div class="recommendations">
-                    <h4>Solutions for Cardamom Plantation</h4>
-                    <div class="solution" style="animation: float 3s infinite;">
-                        <h5>pH Level Adjustment</h5>
-                        <p>Apply lime to raise pH if < 5.5.</p>
+                <form method="POST" onsubmit="return validateForm()" novalidate>
+                    <div class="form-grid">
+                        <input type="hidden" name="farmer_id" value="<?php echo $_SESSION['user_id']; ?>">
+                        <div class="form-group">
+                            <i class="fas fa-vial"></i>
+                            <label>pH Level</label>
+                            <input type="number" name="ph_level" id="ph_level" step="0.1" required min="0" max="14">
+                            <span class="error-message">Please enter a valid pH level (0-14)</span>
+                            <div class="input-info">
+                                <p><strong>Optimal Range:</strong> 5.5 - 6.5</p>
+                                <p><strong>About:</strong> pH measures soil acidity or alkalinity. Cardamom prefers slightly acidic soil.</p>
+                                <ul>
+                                    <li>Below 5.5: Too acidic - Add lime</li>
+                                    <li>5.5-6.5: Optimal range</li>
+                                    <li>Above 6.5: Too alkaline - Add sulfur</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <i class="fas fa-leaf"></i>
+                            <label>Nitrogen (N) %</label>
+                            <input type="number" name="nitrogen_content" id="nitrogen_content" step="0.01" required min="0">
+                            <span class="error-message">Please enter a valid nitrogen percentage</span>
+                            <div class="input-info">
+                                <p><strong>Optimal Range:</strong> 0.5% - 1.0%</p>
+                                <p><strong>About:</strong> Nitrogen is essential for leaf growth and chlorophyll production.</p>
+                                <ul>
+                                    <li>Below 0.5%: Add nitrogen-rich fertilizers or compost</li>
+                                    <li>0.5-1.0%: Optimal range</li>
+                                    <li>Above 1.0%: Reduce nitrogen application</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <i class="fas fa-seedling"></i>
+                            <label>Phosphorus (P) %</label>
+                            <input type="number" name="phosphorus_content" id="phosphorus_content" step="0.01" required min="0">
+                            <span class="error-message">Please enter a valid phosphorus percentage</span>
+                            <div class="input-info">
+                                <p><strong>Optimal Range:</strong> 0.05% - 0.2%</p>
+                                <p><strong>About:</strong> Phosphorus promotes root development and flowering.</p>
+                                <ul>
+                                    <li>Below 0.05%: Add bone meal or rock phosphate</li>
+                                    <li>0.05-0.2%: Optimal range</li>
+                                    <li>Above 0.2%: Reduce phosphorus application</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <i class="fas fa-flask"></i>
+                            <label>Potassium (K) %</label>
+                            <input type="number" name="potassium_content" id="potassium_content" step="0.01" required min="0">
+                            <span class="error-message">Please enter a valid potassium percentage</span>
+                            <div class="input-info">
+                                <p><strong>Optimal Range:</strong> 1.0% - 2.0%</p>
+                                <p><strong>About:</strong> Potassium enhances disease resistance and fruit quality.</p>
+                                <ul>
+                                    <li>Below 1.0%: Add wood ash or potassium fertilizers</li>
+                                    <li>1.0-2.0%: Optimal range</li>
+                                    <li>Above 2.0%: Reduce potassium application</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-                    <div class="solution" style="animation: float 3s infinite;">
-                        <h5>Nitrogen Adjustment</h5>
-                        <p>Apply compost for low nitrogen.</p>
-                    </div>
-                    <div class="solution" style="animation: float 3s infinite;">
-                        <h5>Phosphorus Adjustment</h5>
-                        <p>Add bone meal for low phosphorus.</p>
-                    </div>
-                    <div class="solution" style="animation: float 3s infinite;">
-                        <h5>Potassium Adjustment</h5>
-                        <p>Apply wood ash for low potassium.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        
+                    <button type="submit" name="add_soil_test">Add Soil Test</button>
+                </form>
             </div>
         </div>
     </div>

@@ -723,24 +723,17 @@ mysqli_close($conn);
                 <i class="fas fa-home"></i>
                 <span>Dashboard</span>
             </a>
+
             
-            <a href="employee_farmer.php" class="sidebar-btn" style="--btn-index: 2">
-                <div class="hover-indicator"></div>
-                <i class="fas fa-users"></i>
-                <span>Farmers</span>
-            </a>
+            
             
             <a href="employe_varities.php" class="sidebar-btn" style="--btn-index: 3">
                 <div class="hover-indicator"></div>
                 <i class="fas fa-seedling"></i>
                 <span>Varieties</span>
             </a>
-            
-            <a href="soil_test.php" class="sidebar-btn" style="--btn-index: 4">
-                <div class="hover-indicator"></div>
-                <i class="fas fa-flask"></i>
-                <span>Soil Tests</span>
-            </a>
+           
+
             
             <a href="notifications.php" class="sidebar-btn" style="--btn-index: 5">
                 <div class="hover-indicator"></div>
@@ -753,6 +746,12 @@ mysqli_close($conn);
                 <div class="hover-indicator"></div>
                 <i class="fas fa-cog"></i>
                 <span>Settings</span>
+            </a>
+            
+            <a href="manage_products.php" class="sidebar-btn" style="--btn-index: 4">
+                <div class="hover-indicator"></div>
+                <i class="fas fa-shopping-basket"></i>
+                <span>Manage Products</span>
             </a>
             
             <a href="logout.php" class="sidebar-btn logout" style="--btn-index: 7">
@@ -774,9 +773,13 @@ mysqli_close($conn);
                 <div class="message-body">
                     <p>Your Cardamom Care Dashboard is ready 🌿</p>
                     <div class="quick-actions">
-                        <span><i class="fas fa-flask"></i> Analyze Soil & Weather</span>
-                        <span><i class="fas fa-leaf"></i> Fertilizer Recommendations</span>
-                        <span><i class="fas fa-comments"></i> Farmer Queries</span>
+                        <span onclick="window.location.href='soil_weather_analysis.php'" style="cursor: pointer;">
+                            <i class="fas fa-flask"></i> Analyze Soil & Weather
+                        </span>
+                        <span onclick="window.location.href='fertilizer_recommendations.php'" style="cursor: pointer;"><i class="fas fa-leaf"></i> Fertilizer Recommendations</span>
+                        <span onclick="window.location.href='farmer_queries.php'" style="cursor: pointer;">
+                            <i class="fas fa-comments"></i> Farmer Queries
+                        </span>
                     </div>
                 </div>
             </div>

@@ -26,56 +26,118 @@ $weather_api_key = "cc02c9dee7518466102e748f211bca05";
 
 // Get cardamom specific data
 $user_id = $_SESSION['user_id'];
-$stmt = $conn->prepare("
-    SELECT 
-        f.farmer_id,
-        u.username,
-        COALESCE(f.farm_size, 0) as farm_size,
-        COALESCE(f.farm_location, 'Not Set') as farm_location,
-        COALESCE(COUNT(c.crop_id), 0) as total_cardamom_plots,
-        COALESCE(SUM(c.area_planted), 0) as total_cardamom_area,
-        COALESCE(SUM(CASE 
-            WHEN c.status = 'harvested' THEN c.harvest_yield 
-            ELSE 0 
-        END), 0) as total_revenue,
-        COALESCE(p.soil_type, '') as soil_type,
-        COALESCE(p.soil_ph, 0) as soil_ph,
-        COALESCE(p.soil_moisture, 0) as soil_moisture,
-        0 as temperature,
-        0 as humidity,
-        0 as rainfall
-    FROM farmers f
-    LEFT JOIN crops c ON f.farmer_id = c.farmer_id AND c.crop_name LIKE '%cardamom%'
-    LEFT JOIN farmer_profiles p ON f.farmer_id = p.farmer_id
-    LEFT JOIN users u ON f.user_id = u.id
-    WHERE f.user_id = ?
-    GROUP BY f.farmer_id, u.username, f.farm_size, f.farm_location, p.soil_type, p.soil_ph, p.soil_moisture"
-);
 
+// First, verify the database connection
+if (!$conn) {
+    die("Database connection failed");
+}
+
+// Check if the required tables exist
+$tables_check = $conn->query("
+    SELECT TABLE_NAME 
+    FROM information_schema.TABLES 
+    WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME IN ('users', 'farmers', 'crops', 'farmer_profiles')
+");
+
+$existing_tables = [];
+while ($row = $tables_check->fetch_assoc()) {
+    $existing_tables[] = $row['TABLE_NAME'];
+}
+
+// Print missing tables for debugging
+$required_tables = ['users', 'farmers', 'crops', 'farmer_profiles'];
+$missing_tables = array_diff($required_tables, $existing_tables);
+if (!empty($missing_tables)) {
+    die("Missing required tables: " . implode(", ", $missing_tables));
+}
+
+// Simplify the query to debug the issue
+$query = "
+    SELECT 
+        u.id as user_id,
+        u.username,
+        COALESCE(f.farmer_id, 0) as farmer_id,
+        COALESCE(f.farm_size, 0) as farm_size,
+        COALESCE(f.farm_location, 'Not Set') as farm_location
+    FROM users u
+    LEFT JOIN farmers f ON u.id = f.user_id
+    WHERE u.id = ?";
+
+$stmt = $conn->prepare($query);
 if ($stmt === false) {
-    die("Error preparing statement: " . $conn->error);
+    die("Error preparing statement: " . $conn->error . "<br>Query: " . $query);
 }
 
 $stmt->bind_param("i", $user_id);
-$stmt->execute();
-$farmerData = $stmt->get_result()->fetch_assoc() ?: [
+if (!$stmt->execute()) {
+    die("Error executing statement: " . $stmt->error);
+}
+
+$result = $stmt->get_result();
+if (!$result) {
+    die("Error getting result: " . $stmt->error);
+}
+
+$farmerData = $result->fetch_assoc() ?: [
+    'farmer_id' => 0,
     'farm_size' => 0,
-    'total_cardamom_plots' => 0,
-    'total_cardamom_area' => 0,
-    'total_revenue' => 0
+    'farm_location' => 'Not Set',
+    'username' => isset($_SESSION['username']) ? $_SESSION['username'] : 'Farmer'
 ];
 
-// Get recent crops
-$stmt = $conn->prepare("
+// Get recent crops - remove debug information
+$table_check = $conn->query("SHOW TABLES LIKE 'crops'");
+if ($table_check->num_rows == 0) {
+    die("Error: 'crops' table does not exist in the database");
+}
+
+// Remove debug: Print connection status
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Remove debug: Check table structure
+$structure_check = $conn->query("DESCRIBE crops");
+if (!$structure_check) {
+    die("Error checking table structure: " . $conn->error);
+}
+
+$recent_crops_query = "
     SELECT crop_name, planted_date, status, area_planted, expected_harvest_date
     FROM crops 
     WHERE farmer_id = ?
     ORDER BY planted_date DESC
-    LIMIT 5
-");
-$stmt->bind_param("i", $farmerData['farmer_id']);
-$stmt->execute();
-$recentCrops = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    LIMIT 5";
+
+// Remove debug: Print the query and farmer_id
+$stmt = $conn->prepare($recent_crops_query);
+if ($stmt === false) {
+    die("Error preparing recent crops statement: " . $conn->error);
+}
+
+// Initialize $recentCrops as empty array by default
+$recentCrops = [];
+
+// Only try to execute if we have a valid statement and farmer_id
+if ($stmt && isset($farmerData['farmer_id'])) {
+    if (!$stmt->bind_param("i", $farmerData['farmer_id'])) {
+        die("Error binding parameters: " . $stmt->error);
+    }
+    
+    if (!$stmt->execute()) {
+        die("Error executing statement: " . $stmt->error);
+    }
+    
+    $result = $stmt->get_result();
+    if ($result) {
+        $recentCrops = $result->fetch_all(MYSQLI_ASSOC);
+    } else {
+        die("Error getting result: " . $stmt->error);
+    }
+} else {
+    echo "No valid farmer_id found or statement preparation failed<br>";
+}
 
 $username = isset($farmerData['username']) && !empty($farmerData['username']) 
     ? htmlspecialchars($farmerData['username']) 
@@ -91,45 +153,18 @@ $location_stmt->bind_param("i", $_SESSION['user_id']);
 $location_stmt->execute();
 $location_result = $location_stmt->get_result()->fetch_assoc();
 
-// Function to get coordinates from location name using OpenWeatherMap Geocoding API
-function getCoordinates($location, $api_key) {
-    $url = "http://api.openweathermap.org/geo/1.0/direct?q=" . urlencode($location) . "&limit=1&appid=" . $api_key;
-    $response = @file_get_contents($url);
-    if ($response) {
-        $data = json_decode($response, true);
-        if (!empty($data)) {
-            return [
-                'lat' => $data[0]['lat'],
-                'lon' => $data[0]['lon']
-            ];
-        }
-    }
-    return null;
-}
-
-// After database connection checks, add this array of Kerala districts
-$kerala_districts = [
-    'Alappuzha',
-    'Ernakulam',
-    'Idukki',
-    'Kannur',
-    'Kasaragod',
-    'Kollam',
-    'Kottayam',
-    'Kozhikode',
-    'Malappuram',
-    'Palakkad',
-    'Pathanamthitta',
-    'Thiruvananthapuram',
-    'Thrissur',
-    'Wayanad'
-];
-
 // Handle location form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_location'])) {
     $new_location = $_POST['farm_location'];
     
-    // Remove the Idukki/Wayanad restriction
+    // Add validation for empty location
+    if (empty($new_location)) {
+        $_SESSION['error'] = "Please select a valid location.";
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit();
+    }
+    
+    // Update the users table with the new location
     $update_stmt = $conn->prepare("UPDATE users SET farm_location = ? WHERE id = ?");
     if ($update_stmt === false) {
         $_SESSION['error'] = "Error preparing statement: " . $conn->error;
@@ -158,7 +193,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_location'])) {
 // Get weather data if location exists
 $weather_data = null;
 if ($location_result && isset($location_result['farm_location'])) {
-    $weather_url = "https://api.openweathermap.org/data/2.5/weather?q=" . urlencode($location_result['farm_location']) . "&units=metric&appid=" . $weather_api_key;
+    $weather_url = "https://api.openweathermap.org/data/2.5/weather?q=" . 
+                   urlencode($location_result['farm_location']) . 
+                   "&units=metric&appid=" . $weather_api_key;
     
     $weather_response = @file_get_contents($weather_url);
     if ($weather_response) {
@@ -166,17 +203,151 @@ if ($location_result && isset($location_result['farm_location'])) {
     }
 }
 
-// Add this after the database connection checks
+// Original getWeatherData function
 function getWeatherData($location) {
     $api_key = "cc02c9dee7518466102e748f211bca05";
-    $url = "https://api.openweathermap.org/data/2.5/weather?q=" . urlencode($location) . "&units=metric&appid=" . $api_key;
+    $url = "https://api.openweathermap.org/data/2.5/weather?q=" . 
+           urlencode($location) . 
+           "&units=metric&appid=" . $api_key;
     
     $response = @file_get_contents($url);
     if ($response) {
-        return json_decode($response, true);
+        $weather_data = json_decode($response, true);
+        
+        // Add weather condition handling
+        $weather_condition = $_POST['weather_condition'] ?? 'sunny'; // default to sunny if not set
+        
+        return [
+            'location' => $location,
+            'weather' => $weather_condition
+        ];
     }
     return null;
 }
+
+// Handle query submission
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_query'])) {
+    $query_text = trim($_POST['query_text']);
+    $query_type = trim($_POST['query_type']);
+    
+    if (!empty($query_text) && !empty($query_type)) {
+        $query_stmt = $conn->prepare("
+            INSERT INTO farmer_queries (farmer_id, query_type, query_text, status, created_at)
+            VALUES (?, ?, ?, 'pending', NOW())
+        ");
+        
+        if ($query_stmt === false) {
+            die("Error preparing query statement: " . $conn->error);
+        }
+
+        // Use user_id instead of farmer_id
+        $user_id = $_SESSION['user_id'];
+
+        // Bind parameters with error checking
+        if (!$query_stmt->bind_param("iss", $user_id, $query_type, $query_text)) {
+            die("Error binding parameters: " . $query_stmt->error);
+        }
+        
+        if ($query_stmt->execute()) {
+            $_SESSION['success'] = "Your query has been submitted successfully!";
+        } else {
+            $_SESSION['error'] = "Error submitting query: " . $query_stmt->error;
+        }
+        
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit();
+    } else {
+        $_SESSION['error'] = "Please fill in all fields.";
+    }
+}
+
+// Get recent queries - modify to use user_id instead of farmer_id
+$recent_queries_stmt = $conn->prepare("
+    SELECT query_type, query_text, status, created_at, response_text, responded_at
+    FROM farmer_queries
+    WHERE farmer_id = ?
+    ORDER BY created_at DESC
+    LIMIT 5
+");
+
+// Add error handling
+if ($recent_queries_stmt === false) {
+    die("Error preparing recent queries statement: " . $conn->error);
+}
+
+// Initialize $recent_queries as empty array by default
+$recent_queries = [];
+
+// Only try to execute if we have a valid statement and farmer_id
+if ($recent_queries_stmt && isset($farmerData['farmer_id'])) {
+    if (!$recent_queries_stmt->bind_param("i", $farmerData['farmer_id'])) {
+        die("Error binding parameters: " . $recent_queries_stmt->error);
+    }
+    
+    if (!$recent_queries_stmt->execute()) {
+        die("Error executing recent queries statement: " . $recent_queries_stmt->error);
+    }
+    
+    $result = $recent_queries_stmt->get_result();
+    if ($result) {
+        $recent_queries = $result->fetch_all(MYSQLI_ASSOC);
+    } else {
+        die("Error getting result: " . $recent_queries_stmt->error);
+    }
+}
+
+$username = isset($farmerData['username']) && !empty($farmerData['username']) 
+    ? htmlspecialchars($farmerData['username']) 
+    : (isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : 'Farmer');
+
+// Get farmer's location from users table instead of farmers table
+$location_stmt = $conn->prepare("
+    SELECT farm_location 
+    FROM users 
+    WHERE id = ?
+");
+$location_stmt->bind_param("i", $_SESSION['user_id']);
+$location_stmt->execute();
+$location_result = $location_stmt->get_result()->fetch_assoc();
+
+// Add this near the top of the file after database connection
+$notifications_sql = "SELECT * FROM notifications 
+                     WHERE user_id = ? AND is_read = 0 
+                     ORDER BY created_at DESC";
+$notify_stmt = mysqli_prepare($conn, $notifications_sql);
+mysqli_stmt_bind_param($notify_stmt, "i", $_SESSION['user_id']);
+mysqli_stmt_execute($notify_stmt);
+$notifications = mysqli_stmt_get_result($notify_stmt);
+
+// Add this near the top of the file
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_read'])) {
+    $notification_id = $_POST['notification_id'];
+    $update_sql = "UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?";
+    $update_stmt = mysqli_prepare($conn, $update_sql);
+    mysqli_stmt_bind_param($update_stmt, "ii", $notification_id, $_SESSION['user_id']);
+    mysqli_stmt_execute($update_stmt);
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit();
+}
+
+// Add this array before the HTML
+$kerala_districts = [
+    'Alappuzha',
+    'Ernakulam',
+    'Idukki',
+    'Kannur',
+    'Kasaragod',
+    'Kollam',
+    'Kottayam',
+    'Kozhikode',
+    'Malappuram',
+    'Palakkad',
+    'Pathanamthitta',
+    'Thiruvananthapuram',
+    'Thrissur',
+    'Wayanad'
+];
+
 ?>
 
 <!DOCTYPE html>
@@ -186,6 +357,23 @@ function getWeatherData($location) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GrowGuide - Farmer Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Add Google Translate Script -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement(
+                {
+                    pageLanguage: 'en',
+                    includedLanguages: 'en,ml', // en for English, ml for Malayalam
+                    layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                    autoDisplay: false
+                },
+                'google_translate_element'
+            );
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
     <style>
         :root {
             --primary-color: #2d6a4f;
@@ -371,8 +559,8 @@ function getWeatherData($location) {
         .nav-item i {
             margin-right: 10px;
             width: 20px;
-            text-align: center;
-        }
+    }
+}
 
         .nav-item.active {
             background: rgba(255,255,255,0.2);
@@ -1139,9 +1327,262 @@ function getWeatherData($location) {
                 justify-content: center;
             }
         }
+
+        .query-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .query-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .query-form {
+            background: var(--bg-color);
+            padding: 25px;
+            border-radius: 10px;
+        }
+
+        .query-form .input-group {
+            margin-bottom: 20px;
+        }
+
+        .query-form label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        .query-form select,
+        .query-form textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .query-form textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .submit-query-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .submit-query-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .recent-queries {
+            background: var(--bg-color);
+            padding: 25px;
+            border-radius: 10px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .query-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .query-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .query-type {
+            background: var(--primary-color);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+
+        .query-status {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+
+        .query-status.pending {
+            background: #ffd700;
+            color: #856404;
+        }
+
+        .query-status.answered {
+            background: #28a745;
+            color: white;
+        }
+
+        .query-text {
+            margin: 10px 0;
+            color: var(--text-color);
+        }
+
+        .query-meta {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .query-response {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .response-date {
+            display: block;
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        .no-queries {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .query-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Add styles for translate widget */
+        .translate-widget {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* Style the Google Translate widget */
+        .goog-te-gadget {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+        }
+
+        .goog-te-gadget-simple {
+            border: none !important;
+            padding: 8px !important;
+            border-radius: 4px !important;
+            background-color: #f8f9fa !important;
+        }
+
+        .goog-te-gadget-icon {
+            display: none;
+        }
+
+        .goog-te-menu-value {
+            color: var(--primary-color) !important;
+            text-decoration: none !important;
+        }
+
+        .goog-te-menu-value span {
+            text-decoration: none !important;
+        }
+
+        .notifications-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .notification-card {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .notification-icon {
+            background: var(--primary-color);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-content p {
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        .notification-content small {
+            color: #666;
+        }
+
+        .mark-read-btn {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            padding: 5px;
+            transition: transform 0.2s ease;
+        }
+
+        .mark-read-btn:hover {
+            transform: scale(1.2);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Add translate widget at the top of body -->
+    <div class="translate-widget">
+        <div id="google_translate_element"></div>
+    </div>
+
     <div class="layout-container">
         <div class="sidebar">
             <div class="sidebar-header">
@@ -1168,6 +1609,10 @@ function getWeatherData($location) {
                     
                     <a href="soil_test.php?farmer_id=<?php echo $farmerData['farmer_id']; ?>" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'soil_test.php' ? 'active' : ''; ?>">
                         <i class="fas fa-flask"></i> Soil Test
+                    </a>
+                    
+                    <a href="fertilizerrrr.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'fertilizer_recommendations.php' ? 'active' : ''; ?>">
+                        <i class="fas fa-leaf"></i> Fertilizer Guide
                     </a>
                     
                     <a href="farm_analysis.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'farm_analysis.php' ? 'active' : ''; ?>">
@@ -1280,7 +1725,7 @@ function getWeatherData($location) {
                         </button>
                     </div>
                     
-                    <form method="POST" id="locationUpdateForm" class="location-update-form">
+                    <form id="locationUpdateForm" method="POST" class="location-update-form">
                         <div class="form-content">
                             <div class="select-wrapper">
                                 <i class="fas fa-map-pin select-icon"></i>
@@ -1490,6 +1935,94 @@ function getWeatherData($location) {
                     </div>
                 </div>
             </div>
+
+            <!-- Add this section before the closing </div> of main-content -->
+            <div class="query-section">
+                <h2><i class="fas fa-question-circle"></i> Ask an Expert</h2>
+                <div class="query-container">
+                    <form method="POST" class="query-form">
+                        <div class="input-group">
+                            <label for="query_type">Query Type:</label>
+                            <select name="query_type" id="query_type" required>
+                                <option value="">Select Query Type</option>
+                                <option value="cultivation">Cultivation Advice</option>
+                                <option value="disease">Disease Management</option>
+                                <option value="harvest">Harvesting Tips</option>
+                                <option value="market">Market Information</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="query_text">Your Query:</label>
+                            <textarea name="query_text" id="query_text" rows="4" required placeholder="Type your question here..."></textarea>
+                        </div>
+                        <button type="submit" name="submit_query" class="submit-query-btn">
+                            <i class="fas fa-paper-plane"></i> Submit Query
+                        </button>
+                    </form>
+
+                    <div class="recent-queries">
+                        <h3>Recent Queries</h3>
+                        <?php if (!empty($recent_queries)): ?>
+                            <?php foreach ($recent_queries as $query): ?>
+                                <div class="query-card">
+                                    <div class="query-header">
+                                        <span class="query-type"><?php echo ucfirst(htmlspecialchars($query['query_type'])); ?></span>
+                                        <span class="query-status <?php echo $query['status']; ?>">
+                                            <?php echo ucfirst($query['status']); ?>
+                                        </span>
+                                    </div>
+                                    <p class="query-text"><?php echo htmlspecialchars($query['query_text']); ?></p>
+                                    <div class="query-meta">
+                                        <span class="query-date">
+                                            <i class="fas fa-calendar-alt"></i>
+                                            <?php echo date('M d, Y', strtotime($query['created_at'])); ?>
+                                        </span>
+                                    </div>
+                                    <?php if ($query['status'] === 'answered' && !empty($query['response_text'])): ?>
+                                        <div class="query-response">
+                                            <strong>Response:</strong>
+                                            <p><?php echo htmlspecialchars($query['response_text']); ?></p>
+                                            <span class="response-date">
+                                                <i class="fas fa-reply"></i>
+                                                Answered on <?php echo date('M d, Y', strtotime($query['responded_at'])); ?>
+                                            </span>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <p class="no-queries">No recent queries found.</p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add this in the HTML where you want to display notifications -->
+            <div class="notifications-section">
+                <h3><i class="fas fa-bell"></i> Notifications</h3>
+                <?php if (mysqli_num_rows($notifications) > 0): ?>
+                    <?php while ($notification = mysqli_fetch_assoc($notifications)): ?>
+                        <div class="notification-card">
+                            <div class="notification-icon">
+                                <i class="fas fa-envelope-open-text"></i>
+                            </div>
+                            <div class="notification-content">
+                                <p><?php echo htmlspecialchars($notification['message']); ?></p>
+                                <small><?php echo date('M d, Y H:i', strtotime($notification['created_at'])); ?></small>
+                            </div>
+                            <form method="POST" class="mark-read-form">
+                                <input type="hidden" name="notification_id" value="<?php echo $notification['id']; ?>">
+                                <button type="submit" name="mark_read" class="mark-read-btn">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </form>
+                        </div>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <p class="no-notifications">No new notifications</p>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 
@@ -1510,8 +2043,26 @@ function getWeatherData($location) {
     function toggleLocationUpdate() {
         const form = document.getElementById('locationUpdateForm');
         form.classList.toggle('show');
+        
+        // If the form is being shown, scroll it into view
+        if (form.classList.contains('show')) {
+            form.scrollIntoView({ behavior: 'smooth' });
+        }
     }
+
+    // Add form submission handling
+    document.addEventListener('DOMContentLoaded', function() {
+        const locationForm = document.getElementById('locationUpdateForm');
+        if (locationForm) {
+            locationForm.addEventListener('submit', function(e) {
+                const selectedLocation = document.getElementById('farm_location').value;
+                if (!selectedLocation) {
+                    e.preventDefault();
+                    alert('Please select a location before submitting.');
+                }
+            });
+        }
+    });
     </script>
 </body>
 </html>
-

@@ -1236,7 +1236,10 @@ function getGrowthRecommendations($analysis) {
         <div class="main-content">
             <div class="farm-info-card">
                 <div class="farm-info-header">
-                    <h2><i class="fas fa-cloud-sun"></i> Weather Dashboard</h2>
+                    <div class="header-controls">
+                        <h2><i class="fas fa-cloud-sun"></i> Weather Dashboard</h2>
+                    </div>
+                    
                     <?php if (isset($message) && !empty($message)): ?>
                         <div class="warning-banner">
                             <div class="warning-content">
@@ -1246,8 +1249,12 @@ function getGrowthRecommendations($analysis) {
                             </div>
                         </div>
                     <?php endif; ?>
+                    
                     <div class="welcome-message">
-                        <p style="font-size: 1.5rem; font-weight: bold; color: #2c5282;">Welcome back, <span style="color: #4299e1;"><?php echo $username; ?></span>! 🌱 Here's your personalized weather report for today.</p>
+                        <p style="font-size: 1.5rem; font-weight: bold; color: #2c5282;">
+                            Welcome back, 
+                            <span style="color: #4299e1;"><?php echo $username; ?></span>! 🌱
+                        </p>
                     </div>
                 </div>
                 
