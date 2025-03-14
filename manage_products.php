@@ -42,7 +42,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                      VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
             $stmt = $conn->prepare($query);
             $stmt->bind_param("ssdsiss", $name, $type, $price, $description, $stock, $unit, $image_path);
-            $stmt->execute();
+            
+            if ($stmt->execute()) {
+                // Add notification for farmers about new product
+                $notify_query = "INSERT INTO notifications (type, message, created_at) 
+                               VALUES ('new_product', 'New product \"$name\" has been added to the store.', NOW())";
+                mysqli_query($conn, $notify_query);
+                
+                // Redirect to prevent form resubmission
+                header("Location: " . $_SERVER['PHP_SELF'] . "?success=1");
+                exit();
+            }
         } elseif ($_POST['action'] === 'update') {
             $id = intval($_POST['id']);
             $stock = intval($_POST['stock']);
@@ -100,12 +110,21 @@ $products = mysqli_query($conn, $products_query);
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #4CAF50;  /* Green color */
+            --dark-color: #388E3C;     /* Darker green */
+            --primary-color-rgb: 76, 175, 80;  /* RGB values of primary color */
+        }
+
         .product-form {
             background: white;
-            padding: 20px;
+            padding: 30px;
             border-radius: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .form-group {
@@ -132,22 +151,95 @@ $products = mysqli_query($conn, $products_query);
 
         .product-card {
             background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+            position: relative;
+            border: 1px solid #eee;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .product-type-icon {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            color: var(--primary-color);
+        }
+
+        .form-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .form-group i {
+            position: absolute;
+            left: 10px;
+            top: 35px;
+            color: #666;
+        }
+
+        .form-group input, 
+        .form-group select, 
+        .form-group textarea {
+            padding-left: 35px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .section-title i {
+            font-size: 24px;
+            color: var(--primary-color);
         }
 
         .submit-btn {
+            background: #4CAF50;  /* Fallback if variable isn't working */
             background: var(--primary-color);
             color: white;
-            padding: 10px 20px;
+            padding: 12px 24px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            font-size: 16px;
         }
 
         .submit-btn:hover {
+            background: #388E3C;  /* Fallback */
             background: var(--dark-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .submit-btn:active {
+            transform: translateY(1px);
         }
 
         /* Update the existing update-btn styles */
@@ -174,28 +266,50 @@ $products = mysqli_query($conn, $products_query);
         .update-btn:active {
             transform: translateY(1px); /* Slight push effect when clicked */
         }
+
+        /* Update button styles */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .update-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
     </style>
 </head>
 <body>
     <div class="content">
-        <h1>Manage Products</h1>
+        <div class="section-title">
+            <i class="fas fa-box"></i>
+            <h1>Manage Products</h1>
+        </div>
         
-        <!-- Add Back to Dashboard button -->
-        <a href="employe.php" class="update-btn" style="display: inline-block; text-decoration: none; margin-bottom: 20px;">
+        <!-- Update the Back button -->
+        <a href="employe.php" class="update-btn" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; margin-bottom: 20px;">
             <i class="fas fa-arrow-left"></i> Back to Dashboard
         </a>
 
-        <!-- Add Product Form -->
+        <!-- Update Add Product Form -->
         <div class="product-form">
-            <h2>Add New Product</h2>
+            <div class="section-title">
+                <i class="fas fa-plus-circle"></i>
+                <h2>Add New Product</h2>
+            </div>
             <form method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="add">
                 <div class="form-group">
                     <label>Product Name</label>
+                    <i class="fas fa-tag"></i>
                     <input type="text" name="name" required>
                 </div>
                 <div class="form-group">
                     <label>Type</label>
+                    <i class="fas fa-sitemap"></i>
                     <select name="type" required>
                         <option value="fertilizer">Fertilizer</option>
                         <option value="pesticide">Pesticide</option>
@@ -204,6 +318,7 @@ $products = mysqli_query($conn, $products_query);
                 </div>
                 <div class="form-group">
                     <label>Price (₹)</label>
+                    <i class="fas fa-rupee-sign"></i>
                     <input type="number" name="price" step="0.01" required>
                 </div>
                 <div class="form-group">
@@ -222,44 +337,54 @@ $products = mysqli_query($conn, $products_query);
                     <label>Product Image</label>
                     <input type="file" name="image" accept="image/*" required>
                 </div>
-                <button type="submit" class="submit-btn">Add Product</button>
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-plus-circle"></i> Add Product
+                </button>
             </form>
         </div>
 
-        <!-- Products List -->
-        <h2>Current Products</h2>
+        <!-- Update Products List -->
+        <div class="section-title">
+            <i class="fas fa-list"></i>
+            <h2>Current Products</h2>
+        </div>
         <div class="products-grid">
             <?php while ($product = mysqli_fetch_assoc($products)): ?>
                 <div class="product-card">
+                    <!-- Add type-specific icons -->
+                    <div class="product-type-icon">
+                        <?php
+                        switch($product['type']) {
+                            case 'fertilizer':
+                                echo '<i class="fas fa-seedling"></i>';
+                                break;
+                            case 'pesticide':
+                                echo '<i class="fas fa-spray-can"></i>';
+                                break;
+                            case 'tools':
+                                echo '<i class="fas fa-tools"></i>';
+                                break;
+                        }
+                        ?>
+                    </div>
                     <h3><?php echo htmlspecialchars($product['name']); ?></h3>
-                    <p><strong>Type:</strong> <?php echo ucfirst($product['type']); ?></p>
-                    <p><strong>Price:</strong> ₹<?php echo number_format($product['price'], 2); ?></p>
-                    <p><strong>Stock:</strong> <?php echo $product['stock']; ?></p>
-                    <p><?php echo htmlspecialchars($product['description']); ?></p>
+                    <p><i class="fas fa-tag"></i> <strong>Type:</strong> <?php echo ucfirst($product['type']); ?></p>
+                    <p><i class="fas fa-rupee-sign"></i> <strong>Price:</strong> ₹<?php echo number_format($product['price'], 2); ?></p>
+                    <p><i class="fas fa-boxes"></i> <strong>Stock:</strong> <?php echo $product['stock']; ?></p>
+                    <p><i class="fas fa-info-circle"></i> <?php echo htmlspecialchars($product['description']); ?></p>
                     
-                    <!-- Quick Update Stock/Price Form -->
-                    <form method="POST" style="margin-top: 10px;">
-                        <input type="hidden" name="action" value="update">
-                        <input type="hidden" name="id" value="<?php echo $product['id']; ?>">
-                        <div class="form-group">
-                            <label>Update Stock</label>
-                            <input type="number" name="stock" value="<?php echo $product['stock']; ?>" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Update Price</label>
-                            <input type="number" name="price" step="0.01" value="<?php echo $product['price']; ?>" required>
-                        </div>
-                        <button type="submit" class="update-btn">Quick Update</button>
-                    </form>
-
-                    <!-- Full Update Button - Fix the JSON encoding -->
-                    <button onclick='showFullUpdateForm(<?php echo json_encode($product); ?>)' class="update-btn" style="margin-top: 10px;">Edit All Details</button>
+                    <!-- Update the buttons section -->
+                    <div class="action-buttons">
+                        <button type="button" onclick="showFullUpdateForm(<?php echo $product['id']; ?>, '<?php echo addslashes($product['name']); ?>', '<?php echo $product['type']; ?>', <?php echo $product['price']; ?>, '<?php echo addslashes($product['unit']); ?>', '<?php echo addslashes($product['description']); ?>', <?php echo $product['stock']; ?>, '<?php echo $product['image']; ?>')" class="update-btn">
+                            <i class="fas fa-edit"></i> Edit Details
+                        </button>
+                    </div>
                 </div>
             <?php endwhile; ?>
         </div>
 
         <!-- Full Update Modal Form -->
-        <div id="updateModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+        <div id="updateModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
             <div class="product-form" style="max-width: 600px; margin: 50px auto; position: relative;">
                 <span onclick="closeModal()" style="position: absolute; right: 20px; top: 10px; cursor: pointer; font-size: 24px;">&times;</span>
                 <h2>Update Product</h2>
@@ -300,25 +425,25 @@ $products = mysqli_query($conn, $products_query);
                         <label>Product Image (Leave empty to keep current image)</label>
                         <input type="file" name="image" accept="image/*">
                     </div>
-                    <button type="submit" class="update-btn">Update Product</button>
+                    <button type="submit" class="update-btn" style="width: 100%;">Update Product</button>
                 </form>
             </div>
         </div>
 
         <script>
-            function showFullUpdateForm(product) {
-                // Add console.log for debugging
-                console.log('Product data:', product);
+            function showFullUpdateForm(id, name, type, price, unit, description, stock, image) {
+                // Set values to form fields
+                document.getElementById('update_id').value = id;
+                document.getElementById('update_name').value = name;
+                document.getElementById('update_type').value = type;
+                document.getElementById('update_price').value = price;
+                document.getElementById('update_unit').value = unit;
+                document.getElementById('update_description').value = description;
+                document.getElementById('update_stock').value = stock;
+                document.getElementById('current_image').value = image || '';
                 
+                // Show the modal
                 document.getElementById('updateModal').style.display = 'block';
-                document.getElementById('update_id').value = product.id;
-                document.getElementById('update_name').value = product.name;
-                document.getElementById('update_type').value = product.type;
-                document.getElementById('update_price').value = product.price;
-                document.getElementById('update_unit').value = product.unit;
-                document.getElementById('update_description').value = product.description;
-                document.getElementById('update_stock').value = product.stock;
-                document.getElementById('current_image').value = product.image || '';
             }
 
             function closeModal() {
@@ -327,4 +452,4 @@ $products = mysqli_query($conn, $products_query);
         </script>
     </div>
 </body>
-</html> 
+</html>

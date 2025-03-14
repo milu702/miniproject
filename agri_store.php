@@ -9,77 +9,19 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'farmer') {
 }
 
 // Define products array with categories
-$products = [
-    'fertilizers' => [
-        [
-            'id' => 'F1',
-            'name' => 'Premium NPK 6:6:20',
-            'description' => 'Specialized NPK blend for cardamom cultivation',
-            'price' => 1200,
-            'unit' => 'per 50kg bag',
-            'stock' => 50,
-            'image' => 'img/npk.jpg'
-        ],
-        [
-            'id' => 'F2',
-            'name' => 'Organic Manure Plus',
-            'description' => 'Well-decomposed organic matter enriched with beneficial microbes',
-            'price' => 800,
-            'unit' => 'per 25kg bag',
-            'stock' => 100,
-            'image' => 'img/organic manure plus.jpg'
-        ],
-        [
-            'id' => 'F3',
-            'name' => 'Super Phosphate',
-            'description' => 'High-grade phosphate fertilizer for root development',
-            'price' => 950,
-            'unit' => 'per 50kg bag',
-            'stock' => 75,
-            'image' => 'img/Super Phosphate.jpg'
-        ]
-    ],
-    'pesticides' => [
-        [
-            'id' => 'P1',
-            'name' => 'Neem Oil Organic',
-            'description' => 'Natural pest control solution, safe for cardamom',
-            'price' => 450,
-            'unit' => 'per 1L bottle',
-            'stock' => 200,
-            'image' => 'img/neemoil.jpg'
-        ],
-        [
-            'id' => 'P2',
-            'name' => 'Bio-Fungicide',
-            'description' => 'Organic fungal disease control for cardamom plants',
-            'price' => 600,
-            'unit' => 'per 500ml bottle',
-            'stock' => 150,
-            'image' => 'img/bio.jpg'
-        ]
-    ],
-    'tools' => [
-        [
-            'id' => 'T1',
-            'name' => 'Sprayer Premium',
-            'description' => 'High-quality sprayer for pesticide application',
-            'price' => 1500,
-            'unit' => 'per piece',
-            'stock' => 30,
-            'image' => 'img/sprayer.jpg'
-        ],
-        [
-            'id' => 'T2',
-            'name' => 'Safety Kit',
-            'description' => 'Complete safety gear for pesticide application',
-            'price' => 800,
-            'unit' => 'per kit',
-            'stock' => 50,
-            'image' => 'img/Safety Kit.jpg'
-        ]
-    ]
-];
+$products_query = "SELECT * FROM products WHERE stock > 0 ORDER BY type, name";
+$products = mysqli_query($conn, $products_query);
+
+// Ensure products array is populated
+if (!$products) {
+    die("Query failed: " . mysqli_error($conn));
+}
+
+// Define products array with categories
+$products_array = [];
+while ($row = mysqli_fetch_assoc($products)) {
+    $products_array[$row['type']][] = $row;
+}
 
 ?>
 
@@ -390,6 +332,23 @@ $products = [
                 grid-template-columns: 1fr;
             }
         }
+
+        .new-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: var(--primary-green);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            z-index: 1;
+        }
+
+        .product-card {
+            position: relative;
+        }
     </style>
 </head>
 <body>
@@ -420,7 +379,45 @@ $products = [
     </nav>
 
     <div class="products-container">
-        <?php foreach ($products as $category => $items): ?>
+        <div class="category-section" id="new_products">
+            <h2 class="category-title">
+                <i class="fas fa-star"></i> New Arrivals
+            </h2>
+            <div class="products-grid">
+                <?php
+                // Display products marked as new (less than 30 days old)
+                $new_products = [];
+                foreach ($products_array as $category => $items) {
+                    foreach ($items as $product) {
+                        if (isset($product['is_new']) && $product['is_new']) {
+                            $new_products[] = $product;
+                        }
+                    }
+                }
+                
+                foreach ($new_products as $product): ?>
+                    <div class="product-card">
+                        <div class="new-badge">New!</div>
+                        <img src="<?php echo $product['image']; ?>" alt="<?php echo $product['name']; ?>" class="product-image">
+                        <div class="product-info">
+                            <h3 class="product-name"><?php echo $product['name']; ?></h3>
+                            <p class="product-description"><?php echo $product['description']; ?></p>
+                            <div class="product-price">
+                                ₹<?php echo number_format($product['price']); ?>
+                                <span class="product-unit"><?php echo $product['unit']; ?></span>
+                            </div>
+                            <div class="stock-status">
+                                <i class="fas fa-box"></i> In Stock: <?php echo $product['stock']; ?> units
+                            </div>
+                            <button class="buy-btn" onclick="buyNow('<?php echo $product['id']; ?>', '<?php echo $product['name']; ?>', <?php echo $product['price']; ?>)">
+                                <i class="fas fa-shopping-bag"></i> Buy Now
+                            </button>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php foreach ($products_array as $category => $items): ?>
         <div class="category-section" id="<?php echo $category; ?>">
             <h2 class="category-title">
                 <?php echo ucfirst($category); ?>
@@ -528,7 +525,7 @@ $products = [
         function showProductDetails(productId) {
             // Find the product details from the PHP products array
             <?php
-            echo "const allProducts = " . json_encode($products) . ";\n";
+            echo "const allProducts = " . json_encode($products_array) . ";\n";
             ?>
             
             // Find the product in the allProducts object

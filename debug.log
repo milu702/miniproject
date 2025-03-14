@@ -836,3 +836,9 @@
 [13-Mar-2025 19:42:59 Europe/Berlin] Login successful - User ID: 66, Role: employee
 [13-Mar-2025 20:24:18 Europe/Berlin] Login attempt - Email: annmaria@gmail.com, Role: farmer
 [13-Mar-2025 20:24:18 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[14-Mar-2025 01:49:47 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[14-Mar-2025 01:49:47 Europe/Berlin] Login successful - User ID: 66, Role: employee
+[14-Mar-2025 03:37:33 Europe/Berlin] Login attempt - Email: annmaria@gmail.com, Role: farmer
+[14-Mar-2025 03:37:33 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[14-Mar-2025 03:46:31 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[14-Mar-2025 03:46:31 Europe/Berlin] Password verification failed for email: amalajiji702@gmail.com
