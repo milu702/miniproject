@@ -276,198 +276,272 @@ $analysis = analyzeConditions($weather_data, $farmerData);
     <title>Farm Analysis - GrowGuide</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Copy the common styles from farmer.php */
-        /* Add these specific styles for the analysis page */
-        .analysis-container {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);  /* Changed to always show 3 columns */
-            gap: 30px;
-            margin: 30px 0;
+        /* Update root variables to match the green theme */
+        :root {
+            --primary-color: #2D5A27;  /* Cardamom green */
+            --primary-dark: #1A3A19;   /* Darker cardamom */
+            --accent-color: #8B9D83;   /* Muted cardamom */
+            --text-color: #333333;     /* Dark gray for text */
+            --bg-color: #FFFFFF;       /* White background */
+            --error-color: #dc3545;
+            --success-color: #28a745;
+            --button-color: #4A7A43;
+            --button-hover: #3D6337;
+            --sidebar-width: 250px;
         }
 
+        /* Update these specific styles */
+        .layout-container {
+            display: flex;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            background: #f5f7fa;  /* Light gray background for better contrast */
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 30px 40px;  /* Increased padding */
+            box-sizing: border-box;
+            background: #f5f7fa;
+            min-height: 100vh;
+            overflow-x: hidden;  /* Prevent horizontal scroll */
+        }
+
+        /* Update analysis container layout */
+        .analysis-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin: 25px 0;
+        }
+
+        /* Update analysis cards */
         .analysis-card {
             background: white;
             padding: 25px;
-            border-radius: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .analysis-card:hover {
+            transform: translateY(-3px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
-        .parameter-value {
-            font-size: 2em;
-            font-weight: bold;
-            color: var(--primary-color);
-            margin: 15px 0;
-        }
-
-        .status-indicator {
-            display: inline-block;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            margin-top: 10px;
-        }
-
-        .status-optimal {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .status-suboptimal {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .recommendations-card {
-            grid-column: 1 / -1;
-            background: linear-gradient(135deg, #2d6a4f, #40916c);
+        /* Update sidebar styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary-color), var(--primary-dark));
             color: white;
+            padding: 20px;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
         }
 
-        .recommendations-list {
-            list-style: none;
-            padding: 0;
+        /* Update welcome header */
+        .welcome-header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+
+        .welcome-header h1 {
+            margin: 0;
+            font-size: 1.8em;
+            color: var(--primary-color);
+        }
+
+        /* Update analysis summary */
+        .analysis-summary {
+            background: white;
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin: 25px 0;
+        }
+
+        /* Update back button */
+        .back-button {
+            background-color: white;
+            color: var(--primary-color);
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            font-weight: 600;
+        }
+
+        .back-button:hover {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateX(-5px);
+        }
+
+        /* Update section title */
+        .section-title {
+            margin: 35px 0 25px;
+        }
+
+        .section-title h2 {
+            margin: 0;
+            font-size: 1.5em;
+            color: var(--primary-color);
+        }
+
+        /* Update recommendations card */
+        .recommendations-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            padding: 30px;
+            margin-top: 35px;
         }
 
         .recommendations-list li {
             margin: 15px 0;
             padding-left: 25px;
+            line-height: 1.6;
+        }
+
+        /* Update parameter values */
+        .parameter-value {
+            font-size: 2.2em;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 15px 0;
+        }
+
+        /* Update status indicators */
+        .status-indicator {
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            .analysis-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .analysis-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .main-content {
+                padding: 20px;
+                margin-left: 0;
+            }
+        }
+
+        /* Update sidebar nav items */
+        .nav-menu-items {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 20px 0;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .nav-item i {
+            margin-right: 12px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(5px);
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+        }
+
+        /* District running message styles */
+        .district-banner {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            padding: 12px 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            overflow: hidden;
             position: relative;
         }
 
-        .recommendations-list li:before {
-            content: "•";
-            position: absolute;
-            left: 0;
-            color: var(--accent-color);
+        .district-text {
+            white-space: nowrap;
+            animation: scrollText 20s linear infinite;
+            display: inline-block;
         }
 
-        .parameter-icon {
-            font-size: 2em;
-            color: var(--primary-color);
-            margin-bottom: 15px;
-        }
-
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.9);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .loading-content {
-            text-align: center;
-            color: var(--primary-color);
-        }
-
-        .loading-spinner {
-            animation: spin 2s linear infinite;
-            font-size: 3em;
-            margin-bottom: 15px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .welcome-header {
-            margin-bottom: 30px;
-            color: var(--primary-color);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .analysis-section {
-            margin-bottom: 40px;
-        }
-
-        .section-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            color: var(--primary-color);
-        }
-
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .back-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 24px;
-            background-color: #2d6a4f;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            text-decoration: none;
-            margin-bottom: 30px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .back-button:hover {
-            background-color: #40916c;
-            transform: translateX(-5px);
-        }
-
-        .back-button i {
-            font-size: 1.1em;
-        }
-
-        .analysis-summary {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            margin: 20px 0;
-        }
-
-        .summary-message {
-            display: flex;
-            align-items: flex-start;
-            gap: 15px;
-            font-size: 1.1em;
-            line-height: 1.6;
-            color: #2d3748;
-        }
-
-        .summary-icon {
-            font-size: 1.8em;
-            color: var(--primary-color);
-            flex-shrink: 0;
-        }
-
-        .summary-text {
-            flex-grow: 1;
-        }
-
-        .highlight {
-            color: var(--primary-color);
-            font-weight: 600;
-        }
-
-        .running-message {
-            animation: runningText 20s linear infinite;
-        }
-        
-        @keyframes runningText {
+        @keyframes scrollText {
             0% { transform: translateX(100%); }
             100% { transform: translateX(-100%); }
+        }
+
+        /* Update logout button */
+        .logout-btn {
+            background: rgba(220, 53, 69, 0.1);
+            color: #ff6b6b !important;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+
+        .logout-btn:hover {
+            background: #ff6b6b !important;
+            color: white !important;
+            transform: translateX(5px);
+        }
+
+        /* Warning banner styles */
+        .warning-banner {
+            background: linear-gradient(135deg, #dc3545, #c53030);
+            color: white;
+            padding: 12px 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .warning-text {
+            white-space: nowrap;
+            animation: scrollWarning 25s linear infinite;
+            display: inline-block;
+            padding-right: 50px; /* Add space between repetitions */
+        }
+
+        @keyframes scrollWarning {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .warning-icon {
+            margin-right: 10px;
+            color: #ffd700;
         }
     </style>
 </head>
@@ -481,8 +555,63 @@ $analysis = analyzeConditions($weather_data, $farmerData);
     </div>
 
     <div class="layout-container">
-        <!-- Copy sidebar from farmer.php -->
-        
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-seedling"></i> GrowGuide</h2>
+            </div>
+            <div class="farmer-profile">
+                <div class="farmer-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h3><?php echo htmlspecialchars($farmerData['farmer_name'] ?? 'Farmer'); ?></h3>
+                <p>Cardamom Farmer</p>
+                <?php if (isset($farmerData['farm_location']) && !empty($farmerData['farm_location'])): ?>
+                    <div class="farmer-location">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <?php echo htmlspecialchars($farmerData['farm_location']); ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <nav class="nav-menu">
+                <div class="nav-menu-items">
+                    <a href="farmer.php" class="nav-item">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="soil_test.php" class="nav-item">
+                        <i class="fas fa-flask"></i>
+                        <span>Soil Test</span>
+                    </a>
+                    <a href="fertilizer.php" class="nav-item">
+                        <i class="fas fa-leaf"></i>
+                        <span>Fertilizer Guide</span>
+                    </a>
+                    <a href="farm_analysis.php" class="nav-item active">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Farm Analysis</span>
+                    </a>
+                    <a href="schedule.php" class="nav-item">
+                        <i class="fas fa-calendar"></i>
+                        <span>Schedule</span>
+                    </a>
+                    <a href="weather.php" class="nav-item">
+                        <i class="fas fa-cloud-sun"></i>
+                        <span>Weather</span>
+                    </a>
+                    <a href="settings.php" class="nav-item">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </div>
+                <div class="nav-menu-bottom">
+                    <a href="logout.php" class="nav-item logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </nav>
+        </div>
+
         <div class="main-content">
             <a href="farmer.php" class="back-button">
                 <i class="fas fa-arrow-left"></i>
@@ -494,15 +623,30 @@ $analysis = analyzeConditions($weather_data, $farmerData);
                 <h1>Welcome, <?php echo htmlspecialchars($farmerData['farmer_name'] ?? 'Farmer'); ?></h1>
             </div>
 
+            <!-- Add this district banner after the welcome header in the main content -->
+            <div class="district-banner fade-in">
+                <div class="district-text">
+                    <i class="fas fa-map-marker-alt"></i>
+                    Current District: <?php echo htmlspecialchars(ucfirst($farmerData['farm_location'])); ?> | 
+                    Elevation: 800-1500m | 
+                    Best Suited Crops: Cardamom, Coffee, Pepper | 
+                    Annual Rainfall: 2500-3500mm | 
+                    Temperature Range: 10-35°C | 
+                    Soil Type: Forest Loam
+                </div>
+            </div>
+
             <?php if (isset($analysis['unsuitable_location']) && $analysis['unsuitable_location']): ?>
-            <div class="analysis-summary fade-in">
-                <div class="summary-message" style="color: #c53030;">
-                    <i class="fas fa-exclamation-triangle summary-icon" style="color: #c53030;"></i>
-                    <div class="summary-text">
-                        <div class="running-message" style="white-space: nowrap; overflow: hidden;">
-                            ⚠️ Warning: <?php echo ucfirst($analysis['current_location']); ?>'s weather and soil conditions are not ideal for cardamom plantation. For optimal cardamom cultivation, consider locations in Idukki or Wayanad regions which offer the perfect climate and elevation. ⚠️
-                        </div>
-                    </div>
+            <div class="warning-banner fade-in">
+                <div class="warning-text">
+                    <i class="fas fa-exclamation-triangle warning-icon"></i>
+                    ⚠️ Warning: <?php echo ucfirst($analysis['current_location']); ?>'s weather and soil conditions are not ideal for cardamom plantation. For optimal cardamom cultivation, consider locations in Idukki or Wayanad regions which offer the perfect climate and elevation. ⚠️
+                    &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+                    <i class="fas fa-exclamation-triangle warning-icon"></i>
+                    Key Concerns: Unsuitable elevation, inadequate rainfall pattern, and suboptimal soil conditions for cardamom growth. 
+                    &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+                    <i class="fas fa-exclamation-triangle warning-icon"></i>
+                    Recommended Action: Consult with agricultural experts for guidance on relocation or alternative crop selection.
                 </div>
             </div>
             <?php endif; ?>

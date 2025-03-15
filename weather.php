@@ -344,99 +344,122 @@ function getGrowthRecommendations($analysis) {
     <title>GrowGuide - Weather</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Base styles */
+        /* Update the root variables to match the green theme */
         :root {
-            --primary-color: #2c5282;
-            --secondary-color: #4299e1;
-            --accent-color: #90cdf4;
+            --primary-color: #2D5A27;  /* Cardamom green */
+            --primary-dark: #1A3A19;   /* Darker cardamom */
+            --accent-color: #8B9D83;   /* Muted cardamom */
+            --error-color: #dc3545;
+            --success-color: #28a745;
+            --button-color: #4A7A43;   /* Cardamom button */
+            --button-hover: #3D6337;   /* Darker cardamom button */
+            --sidebar-width: 250px;
         }
 
-        body {
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            background: #f7fafc;
-        }
-
-        /* Sidebar styles */
+        /* Update sidebar styles */
         .sidebar {
-            background: linear-gradient(180deg, #2c5282, #4299e1);
-            width: 80px;
-            padding: 20px 0;
-            height: 100vh;
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            padding: 20px;
             position: fixed;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            height: 100vh;
+            left: 0;
+            top: 0;
             overflow-y: auto;
-            transition: width 0.3s ease;
-        }
-
-        .sidebar:hover {
-            width: 200px;
+            z-index: 1000;
         }
 
         .sidebar-header {
             text-align: center;
-            color: white;
-            margin-bottom: 30px;
-        }
-
-        .sidebar-header h2 {
-            font-size: 1.2rem;
-            margin: 0;
-            display: none;
-        }
-
-        .sidebar:hover .sidebar-header h2 {
-            display: block;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
         .nav-menu {
-            width: 100%;
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 250px);
+            justify-content: space-between;
+        }
+
+        .nav-menu-items {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }
 
         .nav-item {
+            padding: 15px;
             display: flex;
             align-items: center;
-            padding: 15px;
             color: white;
             text-decoration: none;
-            transition: background 0.3s;
-            width: 100%;
-            box-sizing: border-box;
+            transition: 0.3s;
+            border-radius: 8px;
+            margin-bottom: 5px;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
         }
 
         .nav-item i {
-            font-size: 1.5rem;
-            min-width: 40px;
-            text-align: center;
+            margin-right: 10px;
+            width: 20px;
         }
 
-        .nav-item span {
-            display: none;
-            margin-left: 10px;
-            white-space: nowrap;
+        .nav-item.active {
+            background: rgba(255,255,255,0.2);
         }
 
-        .sidebar:hover .nav-item span {
-            display: inline;
+        .nav-menu-bottom {
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: auto;
         }
 
-        .nav-item:hover, .nav-item.active {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        /* Main content */
-        .main-content {
-            flex: 1;
-            margin-left: 80px;
-            padding: 20px 20px 20px 0;
-        }
-
-        .layout-container {
+        .logout-btn {
+            color: #ff6b6b !important;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            width: 100%;
             display: flex;
-            min-height: 100vh;
+            align-items: center;
+        }
+
+        .logout-btn:hover {
+            background-color: #ff6b6b !important;
+            color: white !important;
+        }
+
+        /* Update the sidebar header styles */
+        .sidebar-header h2 {
+            color: white;
+            text-align: center;
+            margin-bottom: 0;
+            font-size: 1.8em;
+            text-shadow: none;
+        }
+
+        .sidebar-header i {
+            color: white;
+            margin-right: 8px;
+        }
+
+        /* Update main content margin */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+            width: calc(100% - var(--sidebar-width));
+            box-sizing: border-box;
+        }
+
+        /* Base styles */
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background: #f7fafc;
         }
 
         /* Weather specific styles */
@@ -1206,29 +1229,37 @@ function getGrowthRecommendations($analysis) {
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <h2><i class="fas fa-seedling"></i> <span>GrowGuide</span></h2>
+                <h2><i class="fas fa-seedling"></i> GrowGuide</h2>
             </div>
             <nav class="nav-menu">
-                <a href="farmer.php" class="nav-item">
-                    <i class="fas fa-home"></i>
-                    <span>Dashboard</span>
-                </a>
-                
-                
-                </a>
-                <a href="schedule.php" class="nav-item">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>Schedule</span>
-                </a>
-                <a href="weather.php" class="nav-item active">
-                    <i class="fas fa-cloud-sun"></i>
-                    <span>Weather</span>
-                </a>
-               
-                <a href="settings.php" class="nav-item">
-                    <i class="fas fa-cog"></i>
-                    <span>Settings</span>
-                </a>
+                <div class="nav-menu-items">
+                    <a href="farmer.php" class="nav-item">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    <a href="soil_test.php" class="nav-item">
+                        <i class="fas fa-flask"></i> Soil Test
+                    </a>
+                    <a href="fertilizerrrr.php" class="nav-item">
+                        <i class="fas fa-leaf"></i> Fertilizer Guide
+                    </a>
+                    <a href="farm_analysis.php" class="nav-item">
+                        <i class="fas fa-chart-bar"></i> Farm Analysis
+                    </a>
+                    <a href="schedule.php" class="nav-item">
+                        <i class="fas fa-calendar"></i> Schedule
+                    </a>
+                    <a href="weather.php" class="nav-item active">
+                        <i class="fas fa-cloud-sun"></i> Weather
+                    </a>
+                    <a href="settings.php" class="nav-item">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                </div>
+                <div class="nav-menu-bottom">
+                    <a href="logout.php" class="nav-item logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
             </nav>
         </div>
 

@@ -280,6 +280,14 @@ $products = mysqli_query($conn, $products_query);
             justify-content: center;
             gap: 8px;
         }
+
+        .form-group textarea {
+            padding-left: 10px;  /* Override the 35px padding for textarea */
+            white-space: pre-wrap;
+            min-height: 100px;
+            font-family: inherit;
+            line-height: 1.5;
+        }
     </style>
 </head>
 <body>
@@ -371,7 +379,7 @@ $products = mysqli_query($conn, $products_query);
                     <p><i class="fas fa-tag"></i> <strong>Type:</strong> <?php echo ucfirst($product['type']); ?></p>
                     <p><i class="fas fa-rupee-sign"></i> <strong>Price:</strong> ₹<?php echo number_format($product['price'], 2); ?></p>
                     <p><i class="fas fa-boxes"></i> <strong>Stock:</strong> <?php echo $product['stock']; ?></p>
-                    <p><i class="fas fa-info-circle"></i> <?php echo htmlspecialchars($product['description']); ?></p>
+                    <p><i class="fas fa-info-circle"></i> <?php echo nl2br(htmlspecialchars($product['description'])); ?></p>
                     
                     <!-- Update the buttons section -->
                     <div class="action-buttons">
@@ -438,7 +446,7 @@ $products = mysqli_query($conn, $products_query);
                 document.getElementById('update_type').value = type;
                 document.getElementById('update_price').value = price;
                 document.getElementById('update_unit').value = unit;
-                document.getElementById('update_description').value = description;
+                document.getElementById('update_description').value = description.replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n");
                 document.getElementById('update_stock').value = stock;
                 document.getElementById('current_image').value = image || '';
                 

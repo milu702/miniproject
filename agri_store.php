@@ -204,13 +204,18 @@ while ($row = mysqli_fetch_assoc($products)) {
             transform: translateX(-5px);
         }
 
-        @media (max-width: 768px) {
-            .category-buttons {
+        @media (max-width: 992px) {
+            .products-grid {
                 flex-wrap: wrap;
             }
-            
-            .products-grid {
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            .products-column {
+                flex: 0 0 calc(50% - 1rem);  /* 2 columns on tablets */
+            }
+        }
+
+        @media (max-width: 576px) {
+            .products-column {
+                flex: 0 0 100%;  /* 1 column on mobile */
             }
         }
 
@@ -410,7 +415,7 @@ while ($row = mysqli_fetch_assoc($products)) {
                                 <i class="fas fa-box"></i> In Stock: <?php echo $product['stock']; ?> units
                             </div>
                             <button class="buy-btn" onclick="buyNow('<?php echo $product['id']; ?>', '<?php echo $product['name']; ?>', <?php echo $product['price']; ?>)">
-                                <i class="fas fa-shopping-bag"></i> Buy Now
+                                <i class="fas fa-shopping-bag"></i> <a href="process_order.php">Buy Now</a>
                             </button>
                         </div>
                     </div>

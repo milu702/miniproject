@@ -20,15 +20,15 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
 // Get soil tests data from database
 $soil_tests = [];
 $query = "SELECT st.*, u.username as farmer_name 
-          FROM soil_tests st 
+    FROM soil_tests st 
           JOIN users u ON st.farmer_id = u.id 
           WHERE st.farmer_id = ? 
-          ORDER BY st.test_date DESC";
+    ORDER BY st.test_date DESC";
 
-$stmt = mysqli_prepare($conn, $query);
+    $stmt = mysqli_prepare($conn, $query);
 mysqli_stmt_bind_param($stmt, "i", $_SESSION['user_id']);
 mysqli_stmt_execute($stmt);
-$result = mysqli_stmt_get_result($stmt);
+    $result = mysqli_stmt_get_result($stmt);
 
 if ($result) {
     while ($row = mysqli_fetch_assoc($result)) {
@@ -132,789 +132,1037 @@ function getPotassiumStatus($value) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GrowGuide - Soil Tests</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <title>GrowGuide - Soil Test</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #2D5A27;  /* Cardamom green */
-            --primary-dark: #1A3A19;   /* Darker cardamom */
-            --accent-color: #8B9D83;   /* Muted cardamom */
-            --error-color: #dc3545;
-            --success-color: #28a745;
-            --button-color: #4A7A43;   /* Cardamom button */
-            --button-hover: #3D6337;   /* Darker cardamom button */
+            --primary-color: #2D5A27;
+            --primary-dark: #1A3A19;
+            --accent-color: #8B9D83;
+            --text-color: #333333;
+            --bg-color: #f5f5f5;
+            --sidebar-width: 250px;
         }
 
         body {
-            font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
-            background: #2D5A27; /* Changed to green background */
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            background-repeat: no-repeat;
-            position: relative;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-color);
+        }
+
+        .layout-container {
+            display: flex;
             min-height: 100vh;
         }
 
-        /* Updated overlay to be slightly darker for better readability */
-        body::before {
-            content: '';
+        /* Sidebar Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary-color), var(--primary-dark));
+            color: white;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(45, 90, 39, 0.8); /* Green tinted overlay */
-            z-index: 0;
+            height: 100vh;
+            overflow-y: auto;
         }
 
-        .content {
-            position: relative; /* Added */
-            z-index: 1; /* Added */
-            max-width: 1200px;
-            margin: 0 auto;
+        .sidebar-header {
             padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .farmer-profile {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .farmer-avatar {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+        }
+
+        .nav-menu {
+            padding: 20px 0;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .nav-item.active {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .nav-item i {
+            margin-right: 10px;
+            width: 20px;
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+        }
+
+        .content-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .soil-test-form {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-            margin-bottom: 30px;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
         }
 
-        .form-group {
-            position: relative;
-            margin-bottom: 40px; /* Increased to accommodate the info box */
-            padding: 20px;
-            border-radius: 15px;
-            background: linear-gradient(145deg, #ffffff, #f3f3f3);
-            border: 1px solid #e0e0e0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            transition: transform 0.3s ease;
-            animation: slideIn 0.5s ease-out;
-        }
-
-        .form-group:hover {
-            transform: translateY(-5px);
-        }
-
-        .form-group i {
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 24px;
-            color: var(--primary-color);
-            animation: bounce 2s infinite;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 12px;
-            color: var(--primary-dark);
-            font-weight: 600;
-            font-size: 16px;
-        }
-
-        .form-group input, 
-        .form-group select {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: all 0.3s;
-            box-sizing: border-box;
-            background: white;
-            color: #333;
-        }
-
-        .form-group input:focus, 
-        .form-group select:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
-        }
-
-        /* Update test results styling */
-        .test-results {
-            margin-top: 40px;
-        }
-
-        .test-card {
-            background: linear-gradient(145deg, #ffffff, #f8f9fa);
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-            border-left: 5px solid var(--primary-color);
-            position: relative;
-            overflow: hidden;
-            animation: fadeIn 0.5s ease-out;
-        }
-
-        .test-card h4 {
-            color: var(--primary-dark);
-            margin-top: 0;
+        .input-group {
             margin-bottom: 15px;
         }
 
-        .test-card p {
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .results-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .test-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .test-header {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .test-date {
             color: #666;
-            margin: 8px 0;
+            font-size: 0.9em;
+        }
+
+        .test-date i {
+            margin-right: 5px;
+            color: var(--primary-color);
+        }
+
+        .parameter-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .parameter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .parameter-label {
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .parameter-value {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            color: white;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+
+        .recommendation {
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        .recommendation i {
+            margin-right: 5px;
+        }
+
+        .recommendation ul {
+            margin: 5px 0 0 20px;
+            padding: 0;
+        }
+
+        .recommendation li {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        .fa-check-circle {
+            color: #28a745;
+        }
+
+        .fa-info-circle {
+            color: #17a2b8;
+        }
+
+        .fa-exclamation-circle {
+            color: #dc3545;
+        }
+
+        .optimal {
+            color: #28a745;
+        }
+
+        .low, .acidic {
+            color: #dc3545;
+        }
+
+        .high, .alkaline {
+            color: #17a2b8;
+        }
+
+        .submit-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+
+        .submit-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Add responsive design */
+        @media (max-width: 1024px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 60px;
+            }
+            .main-content {
+                margin-left: 60px;
+            }
+            .nav-item span {
+                display: none;
+            }
+            .sidebar-header h2, 
+            .farmer-profile h3, 
+            .farmer-profile p {
+                display: none;
+            }
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper input {
+            padding-right: 35px;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-icon {
+            position: absolute;
+            right: 10px;
+            display: none;
+        }
+
+        .success-icon {
+            color: #28a745;
+            display: none;
+        }
+
+        .error-icon {
+            color: #dc3545;
+            display: none;
+        }
+
+        .input-group.success .success-icon {
+            display: block;
+        }
+
+        .input-group.error .error-icon {
+            display: block;
+        }
+
+        .input-group.success input {
+            border-color: #28a745;
+        }
+
+        .input-group.error input {
+            border-color: #dc3545;
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-size: 0.8em;
+            margin-top: 5px;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .input-group.error .error-message {
+            display: block;
+        }
+
+        .input-info {
+            color: #666;
+            font-size: 0.8em;
+            margin-top: 5px;
         }
 
         .alert {
             padding: 15px;
-            border-radius: 6px;
             margin-bottom: 20px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease-out;
         }
 
         .alert-success {
-            background: linear-gradient(145deg, var(--success-color), #218838);
-            color: white;
-            border: none;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
 
-        .error-message {
-            color: var(--error-color);
-            font-size: 12px;
-            margin-top: 5px;
-            display: none;
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
 
-        .form-group input:invalid,
-        .form-group select:invalid {
-            border-color: var(--error-color);
-        }
-        .admin-dashboard-link {
-            display: flex;
-            align-items: center;
-            text-decoration: none;
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 12px 24px;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            margin: 10px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .admin-dashboard-link:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .icon-container {
-            margin-right: 12px;
-        }
-
-        .icon-container i {
-            color: #2c3e50;
-            font-size: 20px;
-        }
-
-        .text {
-            color: #2c3e50;
-            font-weight: 600;
-            font-size: 16px;
-        }
-
-        /* Background image styling for the page/container */
-        .dashboard-container {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-        }
-
-        /* Semi-transparent overlay */
-        .dashboard-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(255, 255, 255, 0.8); /* Adjust opacity here */
-            z-index: 1;
-        }
-
-        /* Ensure content stays above the overlay */
-        .dashboard-content {
-            position: relative;
-            z-index: 2;
-        }
-
-        /* Add submit button styling */
-        button[type="submit"] {
-            background-color: var(--button-color);
-            color: white;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: block;
-            margin: 20px auto;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            position: relative;
-            overflow: hidden;
-        }
-
-        button[type="submit"]:hover {
-            background-color: var(--button-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-
-        button[type="submit"]::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 5px;
-            height: 5px;
-            background: rgba(255, 255, 255, 0.5);
-            opacity: 0;
-            border-radius: 100%;
-            transform: scale(1, 1) translate(-50%);
-            transform-origin: 50% 50%;
-        }
-
-        button[type="submit"]:hover::after {
-            animation: ripple 1s ease-out;
-        }
-
-        @keyframes ripple {
-            0% {
-                transform: scale(0, 0);
-                opacity: 0.5;
-            }
-            100% {
-                transform: scale(40, 40);
+        @keyframes slideDown {
+            from {
                 opacity: 0;
+                transform: translateY(-10px);
             }
-        }
-
-        /* Add heading styles */
-        h2 {
-            color: var(--primary-dark);
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-        }
-
-        /* Add new icon animations */
-        @keyframes bounce {
-            0%, 100% { transform: translateY(-50%); }
-            50% { transform: translateY(-60%); }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         @keyframes slideIn {
-            from { 
+            from {
                 opacity: 0;
                 transform: translateX(-20px);
             }
-            to { 
+            to {
                 opacity: 1;
                 transform: translateX(0);
             }
         }
 
-        @keyframes floatIcon {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+        .submit-btn {
+            transition: transform 0.3s ease, background-color 0.3s ease;
         }
 
-        /* Add animated icons for test results */
-        .test-card::before {
-            content: '🌱';
-            position: absolute;
-            right: 20px;
-            top: 20px;
-            font-size: 24px;
-            opacity: 0.2;
-            animation: floatIcon 3s infinite ease-in-out;
+        .submit-btn:hover {
+            transform: translateY(-2px);
         }
 
-        .test-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        .input-group {
+            transition: all 0.3s ease;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        .input-group:hover {
+            transform: translateY(-2px);
         }
 
-        /* Add animated value indicators */
-        .value-indicator {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            margin-left: 10px;
-            font-size: 0.9em;
-            animation: pulse 2s infinite;
+        .input-wrapper input:focus {
+            box-shadow: 0 0 0 3px rgba(45, 90, 39, 0.2);
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
 
-        .welcome-banner {
-            background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(248, 249, 250, 0.95));
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            position: relative;
-            overflow: hidden;
-            animation: slideDown 0.8s ease-out;
-        }
-
-        .welcome-message {
-            color: var(--primary-dark);
-            font-size: 2em;
-            margin: 0;
-            padding: 10px;
+        .print-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 15px;
+            gap: 8px;
+            transition: all 0.3s ease;
         }
 
-        .welcome-message i {
-            font-size: 1.2em;
-            animation: wave 2s infinite;
-            color: var(--primary-color);
+        .print-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
         }
 
-        .farmer-name {
-            color: var(--button-color);
-            font-weight: bold;
-            position: relative;
-            display: inline-block;
-            animation: highlight 3s infinite;
-        }
-
-        @keyframes wave {
-            0%, 100% { transform: rotate(0deg); }
-            25% { transform: rotate(20deg); }
-            75% { transform: rotate(-15deg); }
-        }
-
-        @keyframes slideDown {
-            from { transform: translateY(-50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        @keyframes highlight {
-            0%, 100% { color: var(--button-color); }
-            50% { color: var(--primary-dark); }
-        }
-
-        .soil-analysis {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 20px;
-            border-radius: 15px;
-            margin-top: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        .analysis-box, .recommendations {
-            margin-bottom: 20px;
-        }
-
-        .solution {
-            background: rgba(240, 240, 240, 0.8);
-            border: 1px solid var(--primary-color);
-            border-radius: 8px;
-            padding: 10px;
-            margin: 10px 0;
-            transition: transform 0.3s;
-        }
-
-        @keyframes float {
-            0% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-            100% { transform: translateY(0); }
-        }
-
-        .soil-details {
+        .table-responsive {
+            overflow-x: auto;
             margin-top: 20px;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.7);
-            border-radius: 8px;
         }
 
-        .soil-parameter {
-            margin-bottom: 20px;
-            padding: 15px;
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        .soil-parameter h5 {
-            color: var(--primary-dark);
-            margin-top: 0;
-            margin-bottom: 10px;
+        .results-table th,
+        .results-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .results-table th {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 500;
+        }
+
+        .results-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .value-with-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            color: white;
+            font-size: 0.8em;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printableArea, #printableArea * {
+                visibility: visible;
+            }
+            #printableArea {
+                position: absolute;
+                left: 0;
+                top: 0;
+            }
+            .sidebar, .soil-test-form {
+                display: none;
+            }
+            .status-badge {
+                border: 1px solid #000;
+            }
+            .results-table th {
+                background-color: #f0f0f0 !important;
+                color: black !important;
+            }
+        }
+
+        .test-result-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .test-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .test-info h4 {
+            margin: 0;
             font-size: 1.1em;
         }
 
-        .recommendations-box {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid var(--primary-color);
-        }
-
-        .recommendations-box h5 {
-            color: var(--primary-dark);
-            margin-top: 0;
-        }
-
-        .recommendations-box ul {
-            margin: 0;
-            padding-left: 20px;
-        }
-
-        .recommendations-box li {
-            color: #666;
-            margin-bottom: 5px;
-        }
-
-        .recommendation {
-            font-style: italic;
-            color: #666;
-            margin-top: 5px;
-        }
-
-        .input-info {
-            margin-top: 15px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-left: 4px solid var(--primary-color);
-            border-radius: 4px;
+        .farmer-name {
+            margin: 5px 0 0;
             font-size: 0.9em;
+            opacity: 0.9;
         }
 
-        .input-info p {
-            margin: 5px 0;
-            color: #666;
+        .print-single-btn {
+            background: white;
+            color: var(--primary-color);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
         }
 
-        .input-info strong {
-            color: var(--primary-dark);
+        .print-single-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        .input-info ul {
-            margin: 10px 0;
-            padding-left: 20px;
-            color: #666;
+        @media print {
+            .test-result-card {
+                page-break-inside: avoid;
+            }
+            
+            .test-card-header {
+                background-color: #f0f0f0 !important;
+                color: black !important;
+            }
+            
+            .print-single-btn {
+                display: none;
+            }
         }
 
-        .input-info li {
-            margin: 5px 0;
+        .results-table th {
+            cursor: pointer;
+            position: relative;
+            padding-right: 20px;
+        }
+
+        .results-table th i.fa-sort {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.3;
+        }
+
+        .results-table th:hover i.fa-sort {
+            opacity: 1;
+        }
+
+        .print-btn-small {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .print-btn-small:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .action-btn {
+            margin: 0 2px;
+        }
+
+        .value-with-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        @media print {
+            .action-btn {
+                display: none;
+            }
+            
+            .results-table th i.fa-sort {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="content">
-        <div class="welcome-banner">
-            <h1 class="welcome-message">
-                <i class="fas fa-seedling"></i>
-                Welcome, <span class="farmer-name"><?php echo htmlspecialchars($farmers[0]['username']); ?></span>!
-                <i class="fas fa-hand-sparkles"></i>
-            </h1>
-        </div>
-        <div class="dashboard-container">
-            <div class="dashboard-content">
-                <a href="farmer.php" class="admin-dashboard-link">
-                    <div class="icon-container">
-                        <i class="fas fa-user-shield"></i>
-                    </div>
-                    <span class="text">BACK TO DASHBOARD</span>
+    <div class="layout-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-seedling"></i> GrowGuide</h2>
+            </div>
+            <div class="farmer-profile">
+                <div class="farmer-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h3><?php echo htmlspecialchars($farmers[0]['username']); ?></h3>
+                <p>Cardamom Farmer</p>
+            </div>
+            <nav class="nav-menu">
+                <a href="farmer.php" class="nav-item">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
                 </a>
-                <h2>Soil Test Analysis</h2>
+                <a href="soil_test.php" class="nav-item active">
+                    <i class="fas fa-flask"></i>
+                    <span>Soil Test</span>
+                </a>
+                <a href="fertilizerrrr.php" class="nav-item">
+                    <i class="fas fa-leaf"></i>
+                    <span>Fertilizer Guide</span>
+                </a>
+                <a href="farm_analysis.php" class="nav-item">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Farm Analysis</span>
+                </a>
+                <a href="schedule.php" class="nav-item">
+                    <i class="fas fa-calendar"></i>
+                    <span>Schedule</span>
+                </a>
+                <a href="weather.php" class="nav-item">
+                    <i class="fas fa-cloud-sun"></i>
+                    <span>Weather</span>
+                </a>
+                <a href="settings.php" class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+                <a href="logout.php" class="nav-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </div>
 
-                <div class="test-results">
-                    <h3>Recent Soil Tests</h3>
-                    <?php if (empty($soil_tests)): ?>
-                        <p>No soil tests found.</p>
-                    <?php else: ?>
-                        <?php foreach ($soil_tests as $test): ?>
-                            <div class="test-card">
-                                <h4>
-                                    <i class="fas fa-user-farmer" style="color: var(--primary-color);"></i>
-                                    Farmer: <?php echo htmlspecialchars($test['farmer_name']); ?>
-                                </h4>
-                                <p>Test Date: <?php echo date('F j, Y', strtotime($test['test_date'])); ?></p>
-                                
-                                <div class="soil-details">
-                                    <div class="soil-parameter">
-                                        <h5>pH Level Analysis</h5>
-                                        <p>Value: <?php echo $test['ph_level']; ?>
-                                            <span class="value-indicator" style="background-color: <?php echo getPHColor($test['ph_level']); ?>">
-                                                <?php echo getPHStatus($test['ph_level']); ?>
-                                            </span>
-                                        </p>
-                                    </div>
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-grid">
+                <!-- Results Section (Now First) -->
+                <div class="results-section">
+                    <div class="results-header">
+                        <h3><i class="fas fa-history"></i> Soil Test History</h3>
+                        <button onclick="printResults()" class="print-btn">
+                            <i class="fas fa-print"></i> Print Results
+                        </button>
+                    </div>
 
-                                    <div class="soil-parameter">
-                                        <h5>NPK Analysis</h5>
-                                        <?php 
-                                            $n_status = getNitrogenStatus($test['nitrogen_content']);
-                                            $p_status = getPhosphorusStatus($test['phosphorus_content']);
-                                            $k_status = getPotassiumStatus($test['potassium_content']);
-                                        ?>
-                                        <p>Nitrogen: <?php echo $test['nitrogen_content']; ?>%
-                                            <span class="value-indicator" style="background-color: <?php echo $n_status[1]; ?>">
-                                                <?php echo $n_status[0]; ?>
+                    <div class="table-responsive" id="printableArea">
+                        <table class="results-table">
+                            <thead>
+                                <tr>
+                                    <th onclick="sortTable(0)">Date <i class="fas fa-sort"></i></th>
+                                    <th onclick="sortTable(1)">Farmer Name <i class="fas fa-sort"></i></th>
+                                    <th onclick="sortTable(2)">pH Level <i class="fas fa-sort"></i></th>
+                                    <th onclick="sortTable(3)">Nitrogen (%) <i class="fas fa-sort"></i></th>
+                                    <th onclick="sortTable(4)">Phosphorus (%) <i class="fas fa-sort"></i></th>
+                                    <th onclick="sortTable(5)">Potassium (%) <i class="fas fa-sort"></i></th>
+                                    <th onclick="sortTable(6)">Overall Status <i class="fas fa-sort"></i></th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($soil_tests as $test): ?>
+                                    <tr>
+                                        <td><?php echo date('Y-m-d', strtotime($test['test_date'])); ?></td>
+                                        <td><?php echo htmlspecialchars($test['farmer_name']); ?></td>
+                                        <td>
+                                            <div class="value-with-status">
+                                                <?php echo $test['ph_level']; ?>
+                                                <span class="status-badge" style="background-color: <?php echo getPHColor($test['ph_level']); ?>">
+                                                    <?php echo getPHStatus($test['ph_level']); ?>
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <?php $n_status = getNitrogenStatus($test['nitrogen_content']); ?>
+                                            <div class="value-with-status">
+                                                <?php echo $test['nitrogen_content']; ?>%
+                                                <span class="status-badge" style="background-color: <?php echo $n_status[1]; ?>">
+                                                    <?php echo $n_status[0]; ?>
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <?php $p_status = getPhosphorusStatus($test['phosphorus_content']); ?>
+                                            <div class="value-with-status">
+                                                <?php echo $test['phosphorus_content']; ?>%
+                                                <span class="status-badge" style="background-color: <?php echo $p_status[1]; ?>">
+                                                    <?php echo $p_status[0]; ?>
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <?php $k_status = getPotassiumStatus($test['potassium_content']); ?>
+                                            <div class="value-with-status">
+                                                <?php echo $test['potassium_content']; ?>%
+                                                <span class="status-badge" style="background-color: <?php echo $k_status[1]; ?>">
+                                                    <?php echo $k_status[0]; ?>
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <?php
+                                            $optimal_count = 0;
+                                            if ($test['ph_level'] >= 5.5 && $test['ph_level'] <= 6.5) $optimal_count++;
+                                            if ($test['nitrogen_content'] >= 0.5 && $test['nitrogen_content'] <= 1.0) $optimal_count++;
+                                            if ($test['phosphorus_content'] >= 0.05 && $test['phosphorus_content'] <= 0.2) $optimal_count++;
+                                            if ($test['potassium_content'] >= 1.0 && $test['potassium_content'] <= 2.0) $optimal_count++;
+                                            
+                                            $status_color = $optimal_count == 4 ? '#28a745' : 
+                                                          ($optimal_count >= 2 ? '#ffc107' : '#dc3545');
+                                            $status_text = $optimal_count == 4 ? 'Excellent' : 
+                                                         ($optimal_count >= 2 ? 'Fair' : 'Poor');
+                                            ?>
+                                            <span class="status-badge" style="background-color: <?php echo $status_color; ?>">
+                                                <?php echo $status_text; ?>
                                             </span>
-                                        </p>
-                                        <p>Phosphorus: <?php echo $test['phosphorus_content']; ?>%
-                                            <span class="value-indicator" style="background-color: <?php echo $p_status[1]; ?>">
-                                                <?php echo $p_status[0]; ?>
-                                            </span>
-                                        </p>
-                                        <p>Potassium: <?php echo $test['potassium_content']; ?>%
-                                            <span class="value-indicator" style="background-color: <?php echo $k_status[1]; ?>">
-                                                <?php echo $k_status[0]; ?>
-                                            </span>
-                                        </p>
-                                    </div>
-                                </div>
+                                        </td>
+                                        <td>
+                                            <button onclick="printSingleResult(<?php echo strtotime($test['test_date']); ?>)" 
+                                                    class="action-btn print-btn-small" 
+                                                    title="Print this result">
+                                                <i class="fas fa-print"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
-                                <div class="recommendations-box">
-                                    <h5>Solutions & Recommendations</h5>
-                                    <ul>
-                                        <?php if ($test['ph_level'] < 5.5): ?>
-                                            <li>pH is too acidic - Add lime to increase pH level</li>
-                                        <?php elseif ($test['ph_level'] > 6.5): ?>
-                                            <li>pH is too alkaline - Add sulfur to decrease pH level</li>
-                                        <?php endif; ?>
-                                        
-                                        <?php if ($n_status[0] === 'Low'): ?>
-                                            <li>Add nitrogen-rich organic matter or compost</li>
-                                        <?php elseif ($n_status[0] === 'High'): ?>
-                                            <li>Reduce nitrogen application</li>
-                                        <?php endif; ?>
-                                        
-                                        <?php if ($p_status[0] === 'Low'): ?>
-                                            <li>Apply bone meal or rock phosphate</li>
-                                        <?php elseif ($p_status[0] === 'High'): ?>
-                                            <li>Reduce phosphorus application</li>
-                                        <?php endif; ?>
-                                        
-                                        <?php if ($k_status[0] === 'Low'): ?>
-                                            <li>Add wood ash or potassium-rich fertilizers</li>
-                                        <?php elseif ($k_status[0] === 'High'): ?>
-                                            <li>Reduce potassium application</li>
-                                        <?php endif; ?>
-                                        
-                                        <?php if ($n_status[0] === 'Optimal' && $p_status[0] === 'Optimal' && 
-                                                $k_status[0] === 'Optimal' && $test['ph_level'] >= 5.5 && 
-                                                $test['ph_level'] <= 6.5): ?>
-                                            <li>All soil parameters are optimal. Maintain current practices.</li>
-                                        <?php endif; ?>
-                                    </ul>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
+                <!-- Soil Test Form Section (Now Second) -->
+                <div class="soil-test-form">
+                    <h2><i class="fas fa-flask"></i> Soil Test Analysis</h2>
+                    <?php if ($message): ?>
+                        <div class="alert <?php echo strpos($message, 'success') !== false ? 'alert-success' : 'alert-error'; ?>">
+                            <i class="fas <?php echo strpos($message, 'success') !== false ? 'fa-check-circle' : 'fa-exclamation-circle'; ?>"></i>
+                            <?php echo $message; ?>
+                        </div>
                     <?php endif; ?>
+                    
+                    <form method="POST" id="soilTestForm" onsubmit="return validateSoilTestForm()">
+                        <div class="form-grid">
+                            <div class="input-group">
+                                <label for="ph_level">
+                                    <i class="fas fa-vial"></i> pH Level
+                                </label>
+                                <div class="input-wrapper">
+                                    <input type="number" 
+                                           id="ph_level" 
+                                           name="ph_level" 
+                                           step="0.1" 
+                                           placeholder="Enter pH level"
+                                           data-min="0"
+                                           data-max="14">
+                                    <div class="input-icon">
+                                        <i class="fas fa-check-circle success-icon"></i>
+                                        <i class="fas fa-exclamation-circle error-icon"></i>
+                                    </div>
+                                </div>
+                                <small class="input-info">Optimal range: 5.5 - 6.5</small>
+                                <div class="error-message"></div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="nitrogen_content">
+                                    <i class="fas fa-leaf"></i> Nitrogen (%)
+                                </label>
+                                <div class="input-wrapper">
+                                    <input type="number" 
+                                           id="nitrogen_content" 
+                                           name="nitrogen_content" 
+                                           step="0.01"
+                                           placeholder="Enter nitrogen content"
+                                           data-min="0"
+                                           data-max="5">
+                                    <div class="input-icon">
+                                        <i class="fas fa-check-circle success-icon"></i>
+                                        <i class="fas fa-exclamation-circle error-icon"></i>
+                                    </div>
+                                </div>
+                                <small class="input-info">Optimal range: 0.5% - 1.0%</small>
+                                <div class="error-message"></div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="phosphorus_content">
+                                    <i class="fas fa-seedling"></i> Phosphorus (%)
+                                </label>
+                                <div class="input-wrapper">
+                                    <input type="number" 
+                                           id="phosphorus_content" 
+                                           name="phosphorus_content" 
+                                           step="0.01"
+                                           placeholder="Enter phosphorus content"
+                                           data-min="0"
+                                           data-max="1">
+                                    <div class="input-icon">
+                                        <i class="fas fa-check-circle success-icon"></i>
+                                        <i class="fas fa-exclamation-circle error-icon"></i>
+                                    </div>
+                                </div>
+                                <small class="input-info">Optimal range: 0.05% - 0.2%</small>
+                                <div class="error-message"></div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="potassium_content">
+                                    <i class="fas fa-flask"></i> Potassium (%)
+                                </label>
+                                <div class="input-wrapper">
+                                    <input type="number" 
+                                           id="potassium_content" 
+                                           name="potassium_content" 
+                                           step="0.01"
+                                           placeholder="Enter potassium content"
+                                           data-min="0"
+                                           data-max="5">
+                                    <div class="input-icon">
+                                        <i class="fas fa-check-circle success-icon"></i>
+                                        <i class="fas fa-exclamation-circle error-icon"></i>
+                                    </div>
+                                </div>
+                                <small class="input-info">Optimal range: 1.0% - 2.0%</small>
+                                <div class="error-message"></div>
+                            </div>
+                        </div>
+                        <button type="submit" name="add_soil_test" class="submit-btn">
+                            <i class="fas fa-save"></i> Submit Soil Test
+                        </button>
+                    </form>
                 </div>
-
-                <div class="soil-analysis">
-                    <h3>Soil Analysis & Recommendations</h3>
-                    <div class="analysis-box">
-                        <h4>Ideal Soil Conditions for Cardamom</h4>
-                        <ul>
-                            <li><strong>pH Level:</strong> 5.5 - 6.5 (Slightly Acidic)</li>
-                            <li><strong>Nitrogen (N) %:</strong> 0.5% - 1.0%</li>
-                            <li><strong>Phosphorus (P) %:</strong> 0.05% - 0.2%</li>
-                            <li><strong>Potassium (K) %:</strong> 1.0% - 2.0%</li>
-                        </ul>
-                    </div>
-                    <div class="recommendations">
-                        <h4>Solutions for Cardamom Plantation</h4>
-                        <div class="solution" style="animation: float 3s infinite;">
-                            <h5>pH Level Adjustment</h5>
-                            <p>Apply lime to raise pH if < 5.5.</p>
-                        </div>
-                        <div class="solution" style="animation: float 3s infinite;">
-                            <h5>Nitrogen Adjustment</h5>
-                            <p>Apply compost for low nitrogen.</p>
-                        </div>
-                        <div class="solution" style="animation: float 3s infinite;">
-                            <h5>Phosphorus Adjustment</h5>
-                            <p>Add bone meal for low phosphorus.</p>
-                        </div>
-                        <div class="solution" style="animation: float 3s infinite;">
-                            <h5>Potassium Adjustment</h5>
-                            <p>Apply wood ash for low potassium.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <?php if ($message): ?>
-                    <div class="alert alert-success"><?php echo $message; ?></div>
-                <?php endif; ?>
-
-                <form method="POST" onsubmit="return validateForm()" novalidate>
-                    <div class="form-grid">
-                        <input type="hidden" name="farmer_id" value="<?php echo $_SESSION['user_id']; ?>">
-                        <div class="form-group">
-                            <i class="fas fa-vial"></i>
-                            <label>pH Level</label>
-                            <input type="number" name="ph_level" id="ph_level" step="0.1" required min="0" max="14">
-                            <span class="error-message">Please enter a valid pH level (0-14)</span>
-                            <div class="input-info">
-                                <p><strong>Optimal Range:</strong> 5.5 - 6.5</p>
-                                <p><strong>About:</strong> pH measures soil acidity or alkalinity. Cardamom prefers slightly acidic soil.</p>
-                                <ul>
-                                    <li>Below 5.5: Too acidic - Add lime</li>
-                                    <li>5.5-6.5: Optimal range</li>
-                                    <li>Above 6.5: Too alkaline - Add sulfur</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <i class="fas fa-leaf"></i>
-                            <label>Nitrogen (N) %</label>
-                            <input type="number" name="nitrogen_content" id="nitrogen_content" step="0.01" required min="0">
-                            <span class="error-message">Please enter a valid nitrogen percentage</span>
-                            <div class="input-info">
-                                <p><strong>Optimal Range:</strong> 0.5% - 1.0%</p>
-                                <p><strong>About:</strong> Nitrogen is essential for leaf growth and chlorophyll production.</p>
-                                <ul>
-                                    <li>Below 0.5%: Add nitrogen-rich fertilizers or compost</li>
-                                    <li>0.5-1.0%: Optimal range</li>
-                                    <li>Above 1.0%: Reduce nitrogen application</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <i class="fas fa-seedling"></i>
-                            <label>Phosphorus (P) %</label>
-                            <input type="number" name="phosphorus_content" id="phosphorus_content" step="0.01" required min="0">
-                            <span class="error-message">Please enter a valid phosphorus percentage</span>
-                            <div class="input-info">
-                                <p><strong>Optimal Range:</strong> 0.05% - 0.2%</p>
-                                <p><strong>About:</strong> Phosphorus promotes root development and flowering.</p>
-                                <ul>
-                                    <li>Below 0.05%: Add bone meal or rock phosphate</li>
-                                    <li>0.05-0.2%: Optimal range</li>
-                                    <li>Above 0.2%: Reduce phosphorus application</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <i class="fas fa-flask"></i>
-                            <label>Potassium (K) %</label>
-                            <input type="number" name="potassium_content" id="potassium_content" step="0.01" required min="0">
-                            <span class="error-message">Please enter a valid potassium percentage</span>
-                            <div class="input-info">
-                                <p><strong>Optimal Range:</strong> 1.0% - 2.0%</p>
-                                <p><strong>About:</strong> Potassium enhances disease resistance and fruit quality.</p>
-                                <ul>
-                                    <li>Below 1.0%: Add wood ash or potassium fertilizers</li>
-                                    <li>1.0-2.0%: Optimal range</li>
-                                    <li>Above 2.0%: Reduce potassium application</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    <button type="submit" name="add_soil_test">Add Soil Test</button>
-                </form>
             </div>
         </div>
     </div>
 
     <script>
-        function validateForm() {
-            const fields = [
-                { id: 'farmer_id', message: 'Please select a farmer' },
-                { id: 'ph_level', message: 'Please enter a valid pH level (0-14)' },
-                { id: 'nitrogen_content', message: 'Please enter a valid nitrogen percentage' },
-                { id: 'phosphorus_content', message: 'Please enter a valid phosphorus percentage' },
-                { id: 'potassium_content', message: 'Please enter a valid potassium percentage' }
-            ];
-
+        const validateSoilTestForm = () => {
             let isValid = true;
+            const inputs = {
+                ph_level: {
+                    min: 0,
+                    max: 14,
+                    name: 'pH level',
+                    optimal: {min: 5.5, max: 6.5}
+                },
+                nitrogen_content: {
+                    min: 0,
+                    max: 5,
+                    name: 'Nitrogen content',
+                    optimal: {min: 0.5, max: 1.0}
+                },
+                phosphorus_content: {
+                    min: 0,
+                    max: 1,
+                    name: 'Phosphorus content',
+                    optimal: {min: 0.05, max: 0.2}
+                },
+                potassium_content: {
+                    min: 0,
+                    max: 5,
+                    name: 'Potassium content',
+                    optimal: {min: 1.0, max: 2.0}
+                }
+            };
 
-            // Hide all error messages first
-            document.querySelectorAll('.error-message').forEach(error => {
-                error.style.display = 'none';
+            // Reset all fields
+            Object.keys(inputs).forEach(inputId => {
+                const inputGroup = document.getElementById(inputId).closest('.input-group');
+                inputGroup.classList.remove('success', 'error');
             });
 
             // Validate each field
-            fields.forEach(field => {
-                const element = document.getElementById(field.id);
-                const errorElement = element.nextElementSibling;
+            Object.entries(inputs).forEach(([inputId, config]) => {
+                const input = document.getElementById(inputId);
+                const value = parseFloat(input.value);
+                const inputGroup = input.closest('.input-group');
+                const errorDiv = inputGroup.querySelector('.error-message');
 
-                if (!element.value) {
-                    errorElement.style.display = 'block';
+                if (!input.value) {
                     isValid = false;
-                } else if (field.id === 'ph_level') {
-                    const value = parseFloat(element.value);
-                    if (value < 0 || value > 14) {
-                        errorElement.style.display = 'block';
-                        isValid = false;
-                    }
-                } else if (['nitrogen_content', 'phosphorus_content', 'potassium_content'].includes(field.id)) {
-                    const value = parseFloat(element.value);
-                    if (value < 0) {
-                        errorElement.style.display = 'block';
-                        isValid = false;
+                    inputGroup.classList.add('error');
+                    errorDiv.textContent = `${config.name} is required`;
+                    shakeElement(inputGroup);
+                } else if (isNaN(value) || value < config.min || value > config.max) {
+                    isValid = false;
+                    inputGroup.classList.add('error');
+                    errorDiv.textContent = `${config.name} must be between ${config.min} and ${config.max}`;
+                    shakeElement(inputGroup);
+                } else {
+                    inputGroup.classList.add('success');
+                    // Add warning if outside optimal range
+                    if (value < config.optimal.min || value > config.optimal.max) {
+                        errorDiv.textContent = `Warning: ${config.name} is outside optimal range (${config.optimal.min} - ${config.optimal.max})`;
+                        errorDiv.style.color = '#856404';
+                        errorDiv.style.display = 'block';
                     }
                 }
             });
 
             return isValid;
-        }
+        };
+
+        const shakeElement = (element) => {
+            element.style.animation = 'none';
+            element.offsetHeight; // Trigger reflow
+            element.style.animation = 'shake 0.5s ease-in-out';
+        };
 
         // Add real-time validation
-        document.querySelectorAll('input, select').forEach(element => {
-            element.addEventListener('blur', function() {
-                const errorElement = this.nextElementSibling;
+        document.querySelectorAll('#soilTestForm input').forEach(input => {
+            input.addEventListener('input', () => {
+                const inputGroup = input.closest('.input-group');
+                const errorDiv = inputGroup.querySelector('.error-message');
                 
-                if (!this.value) {
-                    errorElement.style.display = 'block';
+                if (!input.value) {
+                    inputGroup.classList.remove('success');
+                    inputGroup.classList.add('error');
+                    errorDiv.textContent = 'This field is required';
                 } else {
-                    errorElement.style.display = 'none';
-                }
-
-                if (this.id === 'ph_level' && this.value) {
-                    const value = parseFloat(this.value);
-                    if (value < 0 || value > 14) {
-                        errorElement.style.display = 'block';
-                    }
-                }
-
-                if (['nitrogen_content', 'phosphorus_content', 'potassium_content'].includes(this.id) && this.value) {
-                    const value = parseFloat(this.value);
-                    if (value < 0) {
-                        errorElement.style.display = 'block';
-                    }
+                    inputGroup.classList.remove('error');
+                    inputGroup.classList.add('success');
+                    errorDiv.style.display = 'none';
                 }
             });
         });
+
+        // Add this CSS animation
+        document.head.insertAdjacentHTML('beforeend', `
+            <style>
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    20%, 60% { transform: translateX(-5px); }
+                    40%, 80% { transform: translateX(5px); }
+                }
+            </style>
+        `);
+
+        function sortTable(column) {
+            const table = document.querySelector('.results-table');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            const sortedRows = rows.sort((a, b) => {
+                let aCol = a.cells[column].textContent.trim();
+                let bCol = b.cells[column].textContent.trim();
+                
+                // Remove % symbol and status text for numeric columns
+                if (column >= 2 && column <= 5) {
+                    aCol = parseFloat(aCol.replace('%', ''));
+                    bCol = parseFloat(bCol.replace('%', ''));
+                } else if (column === 0) {
+                    // Sort dates
+                    return new Date(aCol) - new Date(bCol);
+                } else {
+                    // Sort strings
+                    return aCol.localeCompare(bCol);
+                }
+                
+                return aCol - bCol;
+            });
+            
+            // Clear the table
+            while (tbody.firstChild) {
+                tbody.removeChild(tbody.firstChild);
+            }
+            
+            // Add sorted rows
+            sortedRows.forEach(row => tbody.appendChild(row));
+        }
+
+        function printSingleResult(timestamp) {
+            const row = document.querySelector(`tr[data-timestamp="${timestamp}"]`);
+            const table = document.querySelector('.results-table').cloneNode(true);
+            const tbody = table.querySelector('tbody');
+            
+            // Clear table body and add only the selected row
+            tbody.innerHTML = '';
+            tbody.appendChild(row.cloneNode(true));
+            
+            const printContent = `
+                <div style="padding: 20px;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h2>Soil Test Report</h2>
+                        <p>Generated on: ${new Date().toLocaleDateString()}</p>
+                    </div>
+                    ${table.outerHTML}
+                </div>
+            `;
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        function printResults() {
+            window.print();
+        }
     </script>
 </body>
-</html> 
+</html>

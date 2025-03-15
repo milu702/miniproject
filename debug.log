@@ -842,3 +842,61 @@
 [14-Mar-2025 03:37:33 Europe/Berlin] Login successful - User ID: 67, Role: farmer
 [14-Mar-2025 03:46:31 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
 [14-Mar-2025 03:46:31 Europe/Berlin] Password verification failed for email: amalajiji702@gmail.com
+[14-Mar-2025 04:10:31 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[14-Mar-2025 04:10:31 Europe/Berlin] Login successful - User ID: 66, Role: employee
+[14-Mar-2025 04:13:10 Europe/Berlin] Login attempt - Email: annmaria@gmail.com, Role: farmer
+[14-Mar-2025 04:13:10 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[14-Mar-2025 06:02:10 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[14-Mar-2025 06:02:10 Europe/Berlin] Login successful - User ID: 66, Role: employee
+[14-Mar-2025 06:03:48 Europe/Berlin] Login attempt - Email: annmaria@gmail.com, Role: farmer
+[14-Mar-2025 06:03:48 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[14-Mar-2025 06:20:31 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[14-Mar-2025 06:20:32 Europe/Berlin] Login successful - User ID: 66, Role: employee
+[14-Mar-2025 08:52:09 Europe/Berlin] Login attempt - Email: annmaria@gmail.com, Role: farmer
+[14-Mar-2025 08:52:09 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[14-Mar-2025 08:54:15 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[14-Mar-2025 08:54:16 Europe/Berlin] Login successful - User ID: 66, Role: employee
+[14-Mar-2025 09:03:13 Europe/Berlin] Login attempt - Email: annmaria@gmail.com, Role: farmer
+[14-Mar-2025 09:03:13 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[14-Mar-2025 09:09:53 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[14-Mar-2025 09:09:53 Europe/Berlin] Login successful - User ID: 66, Role: employee
+[14-Mar-2025 09:12:00 Europe/Berlin] Login attempt - Email: annmaria@gmail.com, Role: farmer
+[14-Mar-2025 09:12:00 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[14-Mar-2025 09:19:21 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[14-Mar-2025 09:19:21 Europe/Berlin] Login successful - User ID: 66, Role: employee
+[14-Mar-2025 09:20:53 Europe/Berlin] Login attempt - Email: annmaria@gmail.com, Role: farmer
+[14-Mar-2025 09:20:53 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[14-Mar-2025 09:20:56 Europe/Berlin] Login attempt - Email: annmaria@gmail.com, Role: farmer
+[14-Mar-2025 09:20:56 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[15-Mar-2025 06:02:57 Europe/Berlin] Login attempt - Email: annmaria@gmail.com, Role: farmer
+[15-Mar-2025 06:02:57 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[15-Mar-2025 12:52:38 Europe/Berlin] PHP Fatal error:  Uncaught Error: Call to undefined method PDOStatement::bind_param() in C:\xampp\htdocs\mini\login.php:36
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\mini\login.php on line 36
+[15-Mar-2025 12:54:19 Europe/Berlin] PHP Fatal error:  Uncaught Error: Call to undefined method PDOStatement::bind_param() in C:\xampp\htdocs\mini\login.php:36
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\mini\login.php on line 36
+[15-Mar-2025 12:54:26 Europe/Berlin] PHP Fatal error:  Uncaught Error: Call to undefined method PDOStatement::bind_param() in C:\xampp\htdocs\mini\login.php:36
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\mini\login.php on line 36
+[15-Mar-2025 12:55:33 Europe/Berlin] PHP Fatal error:  Uncaught Error: Call to undefined method PDOStatement::bind_param() in C:\xampp\htdocs\mini\login.php:36
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\mini\login.php on line 36
+[15-Mar-2025 12:55:55 Europe/Berlin] PHP Fatal error:  Uncaught Error: Call to undefined method PDOStatement::bind_param() in C:\xampp\htdocs\mini\login.php:36
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\mini\login.php on line 36
+[15-Mar-2025 12:59:40 Europe/Berlin] PHP Fatal error:  Uncaught Error: Call to undefined method PDOStatement::bind_param() in C:\xampp\htdocs\mini\login.php:36
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\mini\login.php on line 36
+[15-Mar-2025 13:00:01 Europe/Berlin] PHP Fatal error:  Uncaught Error: Call to undefined method PDOStatement::bind_param() in C:\xampp\htdocs\mini\login.php:36
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\mini\login.php on line 36
+[15-Mar-2025 13:01:18 Europe/Berlin] Login attempt - Email: annmaria@gmail.com, Role: farmer
+[15-Mar-2025 13:01:18 Europe/Berlin] Login successful - User ID: 67, Role: farmer
