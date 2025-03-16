@@ -376,11 +376,11 @@ $kerala_districts = [
 
     <style>
         :root {
-            --primary-color: #2d6a4f;
-            --secondary-color: #40916c;
-            --accent-color: #95d5b2;
-            --bg-color: #f0f7f4;
-            --text-color: #1b4332;
+            --primary-color: #2D5A27;
+            --primary-dark: #1A3A19;
+            --accent-color: #8B9D83;
+            --text-color: #333333;
+            --bg-color: #f5f5f5;
             --sidebar-width: 250px;
         }
         
@@ -398,7 +398,7 @@ $kerala_districts = [
         }
 
         .dashboard-header {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             color: white;
             padding: 30px;
             border-radius: 15px;
@@ -416,7 +416,12 @@ $kerala_districts = [
             background: white;
             padding: 20px;
             border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .cardamom-card:hover {
+            transform: translateY(-5px);
         }
 
         .cardamom-card h3 {
@@ -457,6 +462,7 @@ $kerala_districts = [
             background: white;
             padding: 20px;
             border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             margin-top: 20px;
         }
 
@@ -464,6 +470,11 @@ $kerala_districts = [
             margin-bottom: 15px;
             padding-left: 20px;
             border-left: 3px solid var(--accent-color);
+            transition: transform 0.3s ease;
+        }
+
+        .tip-item:hover {
+            transform: translateX(5px);
         }
 
         .layout-container {
@@ -476,7 +487,7 @@ $kerala_districts = [
 
         .sidebar {
             width: var(--sidebar-width);
-            background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
+            background: linear-gradient(180deg, var(--primary-color), var(--primary-dark));
             color: white;
             padding: 20px;
             position: fixed;
@@ -488,21 +499,21 @@ $kerala_districts = [
         }
 
         .sidebar-header {
+            padding: 20px;
             text-align: center;
-            padding: 20px 0;
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
         .farmer-profile {
+            padding: 20px;
             text-align: center;
-            padding: 20px 0;
         }
 
         .farmer-avatar {
             width: 80px;
             height: 80px;
+            background: rgba(255,255,255,0.1);
             border-radius: 50%;
-            background: var(--accent-color);
             margin: 0 auto 10px;
             display: flex;
             align-items: center;
@@ -528,7 +539,6 @@ $kerala_districts = [
         }
 
         .nav-menu {
-            margin-top: 30px;
             display: flex;
             flex-direction: column;
             height: calc(100vh - 250px);
@@ -542,36 +552,34 @@ $kerala_districts = [
         }
 
         .nav-item {
-            padding: 15px;
+            padding: 15px 20px;
             display: flex;
             align-items: center;
             color: white;
             text-decoration: none;
             transition: 0.3s;
             border-radius: 8px;
-            margin-bottom: 5px;
+            margin: 0 10px;
         }
 
         .nav-item:hover {
             background: rgba(255,255,255,0.1);
+            transform: translateX(5px);
+        }
+
+        .nav-item.active {
+            background: rgba(255,255,255,0.2);
         }
 
         .nav-item i {
             margin-right: 10px;
             width: 20px;
-    }
-}
-
-        .nav-item.active {
-            background: rgba(255,255,255,0.2);
         }
 
         .main-content {
             flex: 1;
             margin-left: var(--sidebar-width);
             padding: 20px;
-            width: calc(100% - var(--sidebar-width));
-            box-sizing: border-box;
         }
 
         .farm-info-card {
@@ -624,12 +632,21 @@ $kerala_districts = [
         }
 
         .input-group input,
-        .input-group select {
+        .input-group select,
+        .input-group textarea {
             width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
             font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus,
+        .input-group textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1);
         }
 
         .submit-btn {
@@ -644,13 +661,14 @@ $kerala_districts = [
         }
 
         .submit-btn:hover {
-            background: var(--secondary-color);
+            background: var(--primary-dark);
         }
 
         .alert {
             padding: 15px;
             margin-bottom: 20px;
-            border-radius: 8px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             display: flex;
             align-items: center;
         }
@@ -668,7 +686,7 @@ $kerala_districts = [
         }
 
         .welcome-section {
-            background: linear-gradient(135deg, #2d6a4f, #40916c);
+            background: linear-gradient(180deg, var(--primary-color), var(--primary-dark));
             color: white;
             padding: 30px;
             border-radius: 15px;
@@ -694,6 +712,11 @@ $kerala_districts = [
             border-radius: 10px;
             backdrop-filter: blur(5px);
             text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .welcome-card:hover {
+            transform: translateY(-5px);
         }
 
         .welcome-card i {
@@ -718,8 +741,8 @@ $kerala_districts = [
             background: white;
             padding: 30px;
             border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             margin-bottom: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
         .guide-grid {
@@ -739,6 +762,7 @@ $kerala_districts = [
 
         .guide-item:hover {
             transform: translateY(-5px);
+            background: rgba(139, 157, 131, 0.1);
         }
 
         .guide-item i {
@@ -840,7 +864,8 @@ $kerala_districts = [
             margin-top: 20px;
             padding: 15px;
             background: var(--bg-color);
-            border-radius: 10px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
         .weather-details {
@@ -855,10 +880,15 @@ $kerala_districts = [
             align-items: center;
             gap: 10px;
             font-size: 1.1em;
+            transition: transform 0.3s ease;
         }
 
         .weather-details i {
             color: var(--primary-color);
+        }
+
+        .weather-details p:hover {
+            transform: translateX(5px);
         }
 
         .location-btn {
@@ -866,17 +896,20 @@ $kerala_districts = [
             color: white;
             border: none;
             padding: 10px 20px;
-            border-radius: 5px;
+            border-radius: 25px;
             cursor: pointer;
             margin-top: 15px;
             display: inline-flex;
             align-items: center;
             gap: 8px;
             font-size: 1em;
+            transition: all 0.3s ease;
         }
 
         .location-btn:hover {
-            background: var(--secondary-color);
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
         .location-form {
@@ -909,20 +942,28 @@ $kerala_districts = [
             margin-top: 20px;
             padding: 20px;
             background: #f8f9fa;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
+        /* Update the soil test alert styling */
         .alert-soil-test {
-            background: linear-gradient(135deg, #2d6a4f, #40916c);
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             color: white;
-            padding: 20px;
+            padding: 25px;
             border-radius: 15px;
-            margin-bottom: 20px;
+            margin: 20px 0;
             display: flex;
             align-items: center;
             gap: 20px;
-            animation: pulse 2s infinite;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            transform: translateY(0);
+            transition: all 0.3s ease;
+            animation: pulseAlert 2s infinite;
+        }
+
+        .alert-soil-test:hover {
+            transform: translateY(-5px);
         }
 
         .soil-test-icon {
@@ -933,11 +974,13 @@ $kerala_districts = [
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
         }
 
         .soil-test-icon i {
-            font-size: 24px;
+            font-size: 28px;
             color: white;
+            animation: bounce 2s infinite;
         }
 
         .soil-test-message {
@@ -945,34 +988,54 @@ $kerala_districts = [
         }
 
         .soil-test-message strong {
-            font-size: 1.2em;
+            font-size: 1.3em;
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
         }
 
         .soil-test-message p {
             margin: 0;
+            font-size: 1.1em;
+            opacity: 0.9;
         }
 
         .soil-test-message a {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.2);
             color: white;
             text-decoration: none;
-            font-weight: bold;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 5px 15px;
-            border-radius: 20px;
-            margin-left: 10px;
-            transition: background 0.3s ease;
+            padding: 8px 20px;
+            border-radius: 25px;
+            margin-left: 15px;
+            transition: all 0.3s ease;
         }
 
         .soil-test-message a:hover {
             background: rgba(255, 255, 255, 0.3);
+            transform: translateX(5px);
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-            100% { transform: scale(1); }
+        @keyframes pulseAlert {
+            0% {
+                box-shadow: 0 4px 20px rgba(45, 90, 39, 0.2);
+            }
+            50% {
+                box-shadow: 0 4px 30px rgba(45, 90, 39, 0.4);
+            }
+            100% {
+                box-shadow: 0 4px 20px rgba(45, 90, 39, 0.2);
+            }
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-5px);
+            }
         }
 
         .nav-menu-bottom {
@@ -983,10 +1046,7 @@ $kerala_districts = [
 
         .logout-btn {
             color: #ff6b6b !important;
-            transition: background-color 0.3s ease, color 0.3s ease;
-            width: 100%;
-            display: flex;
-            align-items: center;
+            transition: all 0.3s ease;
         }
 
         .logout-btn:hover {
@@ -995,7 +1055,7 @@ $kerala_districts = [
         }
 
         .weather-banner {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            background: linear-gradient(180deg, var(--primary-color), var(--primary-dark));
             color: white;
             padding: 20px;
             border-radius: 15px;
@@ -1186,7 +1246,7 @@ $kerala_districts = [
         .location-icon-wrapper {
             width: 60px;
             height: 60px;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -1226,7 +1286,7 @@ $kerala_districts = [
         }
 
         .update-location-toggle:hover {
-            background: var(--secondary-color);
+            background: var(--primary-dark);
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
@@ -1302,7 +1362,7 @@ $kerala_districts = [
         }
 
         .submit-location-btn:hover {
-            background: var(--secondary-color);
+            background: var(--primary-dark);
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
@@ -1332,8 +1392,8 @@ $kerala_districts = [
             background: white;
             padding: 30px;
             border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             margin-bottom: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
         .query-container {
@@ -1388,7 +1448,7 @@ $kerala_districts = [
         }
 
         .submit-query-btn:hover {
-            background: var(--secondary-color);
+            background: var(--primary-dark);
             transform: translateY(-2px);
         }
 
@@ -1406,6 +1466,11 @@ $kerala_districts = [
             border-radius: 8px;
             margin-bottom: 15px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .query-card:hover {
+            transform: translateY(-2px);
         }
 
         .query-header {
@@ -1419,13 +1484,13 @@ $kerala_districts = [
             background: var(--primary-color);
             color: white;
             padding: 4px 12px;
-            border-radius: 15px;
+            border-radius: 25px;
             font-size: 0.9em;
         }
 
         .query-status {
             padding: 4px 12px;
-            border-radius: 15px;
+            border-radius: 25px;
             font-size: 0.9em;
         }
 
@@ -1513,10 +1578,10 @@ $kerala_districts = [
 
         .notifications-section {
             background: white;
-            border-radius: 10px;
+            border-radius: 15px;
             padding: 20px;
             margin: 20px 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
 
         .notification-card {
@@ -1525,6 +1590,11 @@ $kerala_districts = [
             padding: 15px;
             border-bottom: 1px solid #eee;
             animation: slideIn 0.3s ease-out;
+            transition: transform 0.3s ease;
+        }
+
+        .notification-card:hover {
+            transform: translateX(5px);
         }
 
         .notification-icon {
@@ -1573,6 +1643,216 @@ $kerala_districts = [
             to {
                 opacity: 1;
                 transform: translateX(0);
+            }
+        }
+
+        /* Add smooth animations */
+        .main-content > * {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { 
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Update root variables to match soil test theme */
+        :root {
+            --primary-color: #2D5A27;
+            --primary-dark: #1A3A19;
+            --accent-color: #8B9D83;
+            --text-color: #333333;
+            --bg-color: #f5f5f5;
+            --sidebar-width: 250px;
+        }
+
+        /* Update sidebar styling */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .farmer-profile {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .farmer-avatar {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+        }
+
+        /* Update navigation menu */
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 250px);
+            justify-content: space-between;
+        }
+
+        .nav-menu-items {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .nav-item {
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            transition: 0.3s;
+            border-radius: 8px;
+            margin: 0 10px;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateX(5px);
+        }
+
+        .nav-item.active {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .nav-item i {
+            margin-right: 10px;
+            width: 20px;
+        }
+
+        /* Update main content area */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+        }
+
+        /* Update card styles */
+        .recommendation-card, .weather-banner, .alert-soil-test, .quick-guide, .welcome-section {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        /* Update weather banner */
+        .weather-banner {
+            background: linear-gradient(180deg, var(--primary-color), var(--primary-dark));
+        }
+
+        /* Update buttons */
+        .submit-location-btn, .update-location-toggle, .shop-now-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-location-btn:hover, .update-location-toggle:hover, .shop-now-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        /* Update status badges */
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            color: white;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+
+        /* Remove back to dashboard button */
+        .back-button {
+            display: none;
+        }
+
+        /* Update icons */
+        .nutrient-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(45, 90, 39, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+        }
+
+        .nutrient-icon i {
+            color: var(--primary-color);
+            font-size: 20px;
+        }
+
+        /* Update welcome section */
+        .welcome-section {
+            background: linear-gradient(180deg, var(--primary-color), var(--primary-dark));
+            color: white;
+        }
+
+        /* Update guide items */
+        .guide-item {
+            background: var(--bg-color);
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .guide-item:hover {
+            transform: translateY(-5px);
+            background: rgba(139, 157, 131, 0.1);
+        }
+
+        /* Update logout button */
+        .logout-btn {
+            color: #ff6b6b !important;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background-color: #ff6b6b !important;
+            color: white !important;
+        }
+
+        /* Add animations */
+        .animate-fadeInUp {
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
     </style>
@@ -1748,13 +2028,19 @@ $kerala_districts = [
                 </div>
             </div>
 
-            <div class="alert alert-soil-test">
+            <!-- Update the soil test alert section -->
+            <div class="alert-soil-test">
                 <div class="soil-test-icon">
                     <i class="fas fa-flask"></i>
                 </div>
                 <div class="soil-test-message">
-                    <strong>Time to Test Your Soil!</strong>
-                    <p>Ensure optimal cardamom growth with regular soil testing. <a href="soil_test.php">Test Now <i class="fas fa-arrow-right"></i></a></p>
+                    <strong>Regular Soil Testing Required!</strong>
+                    <p>
+                        Monitor your soil health for optimal cardamom growth. Regular testing helps maintain ideal nutrient levels.
+                        <a href="soil_test.php">
+                            Test Now <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </p>
                 </div>
             </div>
 

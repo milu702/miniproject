@@ -154,9 +154,10 @@ function getPotassiumStatus($value) {
         .layout-container {
             display: flex;
             min-height: 100vh;
+            margin: 0;
+            padding: 0;
         }
 
-        /* Sidebar Styles */
         .sidebar {
             width: var(--sidebar-width);
             background: linear-gradient(180deg, var(--primary-color), var(--primary-dark));
@@ -190,16 +191,27 @@ function getPotassiumStatus($value) {
         }
 
         .nav-menu {
-            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 250px);
+            justify-content: space-between;
+        }
+
+        .nav-menu-items {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }
 
         .nav-item {
-            padding: 12px 20px;
+            padding: 15px 20px;
             display: flex;
             align-items: center;
             color: white;
             text-decoration: none;
             transition: 0.3s;
+            border-radius: 8px;
+            margin: 0 10px;
         }
 
         .nav-item:hover {
@@ -215,7 +227,6 @@ function getPotassiumStatus($value) {
             width: 20px;
         }
 
-        /* Main Content Styles */
         .main-content {
             flex: 1;
             margin-left: var(--sidebar-width);
@@ -746,6 +757,123 @@ function getPotassiumStatus($value) {
                 display: none;
             }
         }
+
+        .logout-btn {
+            color: #ff6b6b !important;
+        }
+
+        .logout-btn:hover {
+            background-color: #ff6b6b !important;
+            color: white !important;
+        }
+
+        .test-date-cell {
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .test-date-cell:hover {
+            background-color: #f5f5f5;
+        }
+
+        .date-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-wrapper i {
+            transition: transform 0.3s ease;
+        }
+
+        .date-wrapper.active i {
+            transform: rotate(180deg);
+        }
+
+        .recommendation-content {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 10px;
+        }
+
+        .recommendation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .recommendation-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .recommendation-item h5 {
+            color: var(--primary-color);
+            margin: 0 0 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .recommendation-item ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .recommendation-item li {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        .recommendation-item i {
+            width: 20px;
+        }
+
+        .fa-arrow-up { color: #dc3545; }
+        .fa-arrow-down { color: #17a2b8; }
+        .fa-check-circle { color: #28a745; }
+        .fa-exclamation-triangle { color: #ffc107; }
+        .fa-exclamation-circle { color: #dc3545; }
+
+        .hidden-row {
+            display: none;
+        }
+
+        .show-more-container {
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+        }
+
+        .show-more-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .show-more-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .show-more-btn i {
+            transition: transform 0.3s ease;
+        }
+
+        .show-more-btn.active i {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 <body>
@@ -763,45 +891,41 @@ function getPotassiumStatus($value) {
                 <p>Cardamom Farmer</p>
             </div>
             <nav class="nav-menu">
-                <a href="farmer.php" class="nav-item">
-                    <i class="fas fa-home"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="soil_test.php" class="nav-item active">
-                    <i class="fas fa-flask"></i>
-                    <span>Soil Test</span>
-                </a>
-                <a href="fertilizerrrr.php" class="nav-item">
-                    <i class="fas fa-leaf"></i>
-                    <span>Fertilizer Guide</span>
-                </a>
-                <a href="farm_analysis.php" class="nav-item">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Farm Analysis</span>
-                </a>
-                <a href="schedule.php" class="nav-item">
-                    <i class="fas fa-calendar"></i>
-                    <span>Schedule</span>
-                </a>
-                <a href="weather.php" class="nav-item">
-                    <i class="fas fa-cloud-sun"></i>
-                    <span>Weather</span>
-                </a>
-                <a href="settings.php" class="nav-item">
-                    <i class="fas fa-cog"></i>
-                    <span>Settings</span>
-                </a>
-                <a href="logout.php" class="nav-item">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </a>
+                <div class="nav-menu-items">
+                    <a href="farmer.php" class="nav-item">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    <a href="soil_test.php" class="nav-item active">
+                        <i class="fas fa-flask"></i> Soil Test
+                    </a>
+                    <a href="fertilizerrrr.php" class="nav-item">
+                        <i class="fas fa-leaf"></i> Fertilizer Guide
+                    </a>
+                    <a href="farm_analysis.php" class="nav-item">
+                        <i class="fas fa-chart-bar"></i> Farm Analysis
+                    </a>
+                    <a href="schedule.php" class="nav-item">
+                        <i class="fas fa-calendar"></i> Schedule
+                    </a>
+                    <a href="weather.php" class="nav-item">
+                        <i class="fas fa-cloud-sun"></i> Weather
+                    </a>
+                    <a href="settings.php" class="nav-item">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                </div>
+                <div class="nav-menu-bottom">
+                    <a href="logout.php" class="nav-item logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
             </nav>
         </div>
 
         <!-- Main Content -->
         <div class="main-content">
             <div class="content-grid">
-                <!-- Results Section (Now First) -->
+                <!-- Results Section -->
                 <div class="results-section">
                     <div class="results-header">
                         <h3><i class="fas fa-history"></i> Soil Test History</h3>
@@ -825,9 +949,19 @@ function getPotassiumStatus($value) {
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($soil_tests as $test): ?>
-                                    <tr>
-                                        <td><?php echo date('Y-m-d', strtotime($test['test_date'])); ?></td>
+                                <?php 
+                                $total_tests = count($soil_tests);
+                                foreach ($soil_tests as $index => $test): 
+                                    $is_hidden = $index >= 5;
+                                ?>
+                                    <tr class="test-row <?php echo $is_hidden ? 'hidden-row' : ''; ?>" 
+                                        data-timestamp="<?php echo strtotime($test['test_date']); ?>">
+                                        <td class="test-date-cell" onclick="toggleRecommendation(<?php echo strtotime($test['test_date']); ?>)">
+                                            <div class="date-wrapper">
+                                                <span><?php echo date('Y-m-d', strtotime($test['test_date'])); ?></span>
+                                                <i class="fas fa-chevron-down"></i>
+                                            </div>
+                                        </td>
                                         <td><?php echo htmlspecialchars($test['farmer_name']); ?></td>
                                         <td>
                                             <div class="value-with-status">
@@ -889,13 +1023,119 @@ function getPotassiumStatus($value) {
                                             </button>
                                         </td>
                                     </tr>
+                                    <tr class="recommendation-row <?php echo $is_hidden ? 'hidden-row' : ''; ?>" 
+                                        id="recommendation-<?php echo strtotime($test['test_date']); ?>" 
+                                        style="display: none;">
+                                        <td colspan="8">
+                                            <div class="recommendation-content">
+                                                <h4><i class="fas fa-lightbulb"></i> Recommendations</h4>
+                                                <div class="recommendation-grid">
+                                                    <!-- pH Recommendations -->
+                                                    <div class="recommendation-item">
+                                                        <h5>pH Level (<?php echo $test['ph_level']; ?>)</h5>
+                                                        <?php if ($test['ph_level'] < 5.5): ?>
+                                                            <p><i class="fas fa-arrow-up"></i> Increase pH by:</p>
+                                                            <ul>
+                                                                <li>Apply agricultural lime (2-3 tons/ha)</li>
+                                                                <li>Mix with soil thoroughly</li>
+                                                                <li>Allow 2-3 weeks before planting</li>
+                                                            </ul>
+                                                        <?php elseif ($test['ph_level'] > 6.5): ?>
+                                                            <p><i class="fas fa-arrow-down"></i> Decrease pH by:</p>
+                                                            <ul>
+                                                                <li>Apply agricultural sulfur (1-2 tons/ha)</li>
+                                                                <li>Add organic matter</li>
+                                                                <li>Use acidifying fertilizers</li>
+                                                            </ul>
+                                                        <?php else: ?>
+                                                            <p><i class="fas fa-check-circle"></i> pH level is optimal</p>
+                                                            <ul>
+                                                                <li>Maintain current soil management practices</li>
+                                                            </ul>
+                                                        <?php endif; ?>
+                                                    </div>
+
+                                                    <!-- Nitrogen Recommendations -->
+                                                    <div class="recommendation-item">
+                                                        <h5>Nitrogen (<?php echo $test['nitrogen_content']; ?>%)</h5>
+                                                        <?php if ($test['nitrogen_content'] < 0.5): ?>
+                                                            <p><i class="fas fa-exclamation-triangle"></i> Low Nitrogen:</p>
+                                                            <ul>
+                                                                <li>Apply NPK fertilizer (ratio 6:6:20)</li>
+                                                                <li>Add organic compost</li>
+                                                                <li>Consider cover crops</li>
+                                                            </ul>
+                                                        <?php elseif ($test['nitrogen_content'] > 1.0): ?>
+                                                            <p><i class="fas fa-exclamation-circle"></i> High Nitrogen:</p>
+                                                            <ul>
+                                                                <li>Reduce nitrogen fertilizer application</li>
+                                                                <li>Plant nitrogen-consuming crops</li>
+                                                            </ul>
+                                                        <?php else: ?>
+                                                            <p><i class="fas fa-check-circle"></i> Nitrogen level is optimal</p>
+                                                        <?php endif; ?>
+                                                    </div>
+
+                                                    <!-- Phosphorus Recommendations -->
+                                                    <div class="recommendation-item">
+                                                        <h5>Phosphorus (<?php echo $test['phosphorus_content']; ?>%)</h5>
+                                                        <?php if ($test['phosphorus_content'] < 0.05): ?>
+                                                            <p><i class="fas fa-exclamation-triangle"></i> Low Phosphorus:</p>
+                                                            <ul>
+                                                                <li>Apply rock phosphate</li>
+                                                                <li>Add bone meal</li>
+                                                                <li>Use phosphorus-rich organic matter</li>
+                                                            </ul>
+                                                        <?php elseif ($test['phosphorus_content'] > 0.2): ?>
+                                                            <p><i class="fas fa-exclamation-circle"></i> High Phosphorus:</p>
+                                                            <ul>
+                                                                <li>Avoid phosphorus fertilizers</li>
+                                                                <li>Plant phosphorus-consuming crops</li>
+                                                            </ul>
+                                                        <?php else: ?>
+                                                            <p><i class="fas fa-check-circle"></i> Phosphorus level is optimal</p>
+                                                        <?php endif; ?>
+                                                    </div>
+
+                                                    <!-- Potassium Recommendations -->
+                                                    <div class="recommendation-item">
+                                                        <h5>Potassium (<?php echo $test['potassium_content']; ?>%)</h5>
+                                                        <?php if ($test['potassium_content'] < 1.0): ?>
+                                                            <p><i class="fas fa-exclamation-triangle"></i> Low Potassium:</p>
+                                                            <ul>
+                                                                <li>Apply potash fertilizer</li>
+                                                                <li>Add wood ash</li>
+                                                                <li>Use compost rich in banana peels</li>
+                                                            </ul>
+                                                        <?php elseif ($test['potassium_content'] > 2.0): ?>
+                                                            <p><i class="fas fa-exclamation-circle"></i> High Potassium:</p>
+                                                            <ul>
+                                                                <li>Reduce potassium fertilizer use</li>
+                                                                <li>Improve soil drainage</li>
+                                                            </ul>
+                                                        <?php else: ?>
+                                                            <p><i class="fas fa-check-circle"></i> Potassium level is optimal</p>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
+
+                    <?php if (count($soil_tests) > 5): ?>
+                        <div class="show-more-container">
+                            <button id="showMoreBtn" class="show-more-btn">
+                                <i class="fas fa-chevron-down"></i> Show More Tests
+                            </button>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
-                <!-- Soil Test Form Section (Now Second) -->
+                <!-- Soil Test Form Section -->
                 <div class="soil-test-form">
                     <h2><i class="fas fa-flask"></i> Soil Test Analysis</h2>
                     <?php if ($message): ?>
@@ -1163,6 +1403,58 @@ function getPotassiumStatus($value) {
         function printResults() {
             window.print();
         }
+
+        function toggleRecommendation(timestamp) {
+            const recommendationRow = document.getElementById(`recommendation-${timestamp}`);
+            const dateWrapper = event.currentTarget.querySelector('.date-wrapper');
+            const allRecommendations = document.querySelectorAll('.recommendation-row');
+            const allDateWrappers = document.querySelectorAll('.date-wrapper');
+            
+            // Hide all other recommendations
+            allRecommendations.forEach(row => {
+                if (row.id !== `recommendation-${timestamp}`) {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Remove active class from all date wrappers
+            allDateWrappers.forEach(wrapper => {
+                wrapper.classList.remove('active');
+            });
+            
+            // Toggle current recommendation
+            if (recommendationRow.style.display === 'none') {
+                recommendationRow.style.display = 'table-row';
+                dateWrapper.classList.add('active');
+            } else {
+                recommendationRow.style.display = 'none';
+                dateWrapper.classList.remove('active');
+            }
+        }
+
+        function toggleShowMore() {
+            const hiddenRows = document.querySelectorAll('.hidden-row');
+            const showMoreBtn = document.getElementById('showMoreBtn');
+            
+            hiddenRows.forEach(row => {
+                if (row.style.display === 'none' || !row.style.display) {
+                    row.style.display = row.classList.contains('recommendation-row') ? 'none' : 'table-row';
+                    showMoreBtn.innerHTML = '<i class="fas fa-chevron-up"></i> Show Less Tests';
+                    showMoreBtn.classList.add('active');
+                } else {
+                    row.style.display = 'none';
+                    showMoreBtn.innerHTML = '<i class="fas fa-chevron-down"></i> Show More Tests';
+                    showMoreBtn.classList.remove('active');
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const showMoreBtn = document.getElementById('showMoreBtn');
+            if (showMoreBtn) {
+                showMoreBtn.addEventListener('click', toggleShowMore);
+            }
+        });
     </script>
 </body>
 </html>
