@@ -348,6 +348,30 @@ $kerala_districts = [
     'Wayanad'
 ];
 
+// Add this array after the $kerala_districts array
+$district_places = [
+    'Idukki' => [
+        'Munnar',
+        'Thekkady',
+        'Vagamon',
+        'Peermade',
+        'Adimali',
+        'Thodupuzha',
+        'Kattappana',
+        'Nedumkandam'
+    ],
+    'Wayanad' => [
+        'Sulthan Bathery',
+        'Kalpetta',
+        'Mananthavady',
+        'Vythiri',
+        'Meenangadi',
+        'Ambalavayal',
+        'Pulpally',
+        'Meppadi'
+    ]
+];
+
 ?>
 
 <!DOCTYPE html>
@@ -1855,6 +1879,233 @@ $kerala_districts = [
                 transform: translateY(0);
             }
         }
+
+        /* Add these styles to your existing CSS */
+        .notifications-panel {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .panel-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .panel-header h3 {
+            margin: 0;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notifications-content {
+            padding: 15px;
+        }
+
+        .notification-item {
+            display: flex;
+            align-items: start;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+
+        .notification-item:hover {
+            transform: translateX(5px);
+            background: #f0f1f2;
+        }
+
+        .notification-item i {
+            font-size: 20px;
+            margin-right: 15px;
+            margin-top: 3px;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-content h4 {
+            margin: 0 0 5px 0;
+            color: var(--primary-color);
+        }
+
+        .notification-content p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .weather i {
+            color: #f39c12;
+        }
+
+        .harvest i {
+            color: #27ae60;
+        }
+
+        .market i {
+            color: #2980b9;
+        }
+
+        .no-notifications {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+        }
+
+        .no-notifications i {
+            font-size: 40px;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
+        /* Add these styles in the <style> section */
+        .running-message {
+            position: fixed;
+            bottom: 20px;
+            right: -300px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            padding: 15px 25px;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 1000;
+            animation: slideInOut 15s linear infinite;
+            cursor: pointer;
+        }
+
+        .running-message i {
+            font-size: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        .running-message-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .running-message-text {
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        .running-message-link {
+            color: white;
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .running-message-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateX(5px);
+        }
+
+        @keyframes slideInOut {
+            0% {
+                right: -300px;
+            }
+            10% {
+                right: 20px;
+            }
+            90% {
+                right: 20px;
+            }
+            100% {
+                right: -300px;
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .suitability-message {
+            margin: 15px 0;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .suitability-indicator {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .suitability-indicator.suitable {
+            background: linear-gradient(to right, #e3f5e1, #f0f9ef);
+            border-left: 4px solid #2D5A27;
+        }
+
+        .suitability-indicator.unsuitable {
+            background: linear-gradient(to right, #ffe5e5, #fff0f0);
+            border-left: 4px solid #dc3545;
+        }
+
+        .suitability-indicator i {
+            font-size: 24px;
+            margin-top: 3px;
+        }
+
+        .suitability-indicator.suitable i {
+            color: #2D5A27;
+        }
+
+        .suitability-indicator.unsuitable i {
+            color: #dc3545;
+        }
+
+        .suitability-content h4 {
+            margin: 0 0 10px 0;
+            color: var(--text-color);
+            font-size: 1.1em;
+        }
+
+        .suitability-content p {
+            margin: 5px 0;
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Also remove any related styles */
+        .back-button-container,
+        .dashboard-link {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -2009,7 +2260,7 @@ $kerala_districts = [
                         <div class="form-content">
                             <div class="select-wrapper">
                                 <i class="fas fa-map-pin select-icon"></i>
-                                <select id="farm_location" name="farm_location" required>
+                                <select id="farm_location" name="farm_location" required onchange="handleDistrictChange(this.value)">
                                     <option value="">Select your district</option>
                                     <?php foreach ($kerala_districts as $district): ?>
                                         <option value="<?php echo htmlspecialchars($district); ?>" 
@@ -2020,9 +2271,26 @@ $kerala_districts = [
                                     <?php endforeach; ?>
                                 </select>
                             </div>
+                            
+                            <!-- Add sub-place selector (initially hidden) -->
+                            <div class="select-wrapper" id="subPlaceWrapper" style="display: none;">
+                                <i class="fas fa-map-marker-alt select-icon"></i>
+                                <select id="sub_place" name="sub_place" onchange="getWeatherForLocation(this.value)">
+                                    <option value="">Select location</option>
+                                </select>
+                            </div>
+
                             <button type="submit" name="update_location" class="submit-location-btn">
                                 <i class="fas fa-check-circle"></i> Confirm Location
                             </button>
+                        </div>
+
+                        <!-- Add weather info container -->
+                        <div id="weatherInfo" class="weather-info" style="display: none;">
+                            <h3>Current Weather</h3>
+                            <div class="weather-details" id="weatherDetails">
+                                <!-- Weather details will be populated here -->
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -2284,30 +2552,67 @@ $kerala_districts = [
                 </div>
             </div>
 
-            <!-- Add this in the HTML where you want to display notifications -->
-            <div class="notifications-section">
-                <h3><i class="fas fa-bell"></i> Notifications</h3>
-                <?php if (mysqli_num_rows($notifications) > 0): ?>
-                    <?php while ($notification = mysqli_fetch_assoc($notifications)): ?>
-                        <div class="notification-card">
-                            <div class="notification-icon">
-                                <i class="fas fa-envelope-open-text"></i>
-                            </div>
-                            <div class="notification-content">
-                                <p><?php echo htmlspecialchars($notification['message']); ?></p>
-                                <small><?php echo date('M d, Y H:i', strtotime($notification['created_at'])); ?></small>
-                            </div>
-                            <form method="POST" class="mark-read-form">
-                                <input type="hidden" name="notification_id" value="<?php echo $notification['id']; ?>">
-                                <button type="submit" name="mark_read" class="mark-read-btn">
-                                    <i class="fas fa-check"></i>
-                                </button>
-                            </form>
-                        </div>
-                    <?php endwhile; ?>
-                <?php else: ?>
-                    <p class="no-notifications">No new notifications</p>
-                <?php endif; ?>
+            <!-- Add this section where you want to display notifications -->
+            <div class="notifications-panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-bell"></i> Notifications</h3>
+                </div>
+                <div class="notifications-content">
+                    <?php
+                    // Get user's notification preferences
+                    $stmt = $conn->prepare("
+                        SELECT notification_preferences 
+                        FROM farmers 
+                        WHERE user_id = ?
+                    ");
+                    $stmt->bind_param("i", $_SESSION['user_id']);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    $preferences = $result->fetch_assoc();
+                    
+                    if ($preferences && $preferences['notification_preferences']) {
+                        $notifications = json_decode($preferences['notification_preferences'], true);
+                        
+                        // Display active notifications based on preferences
+                        foreach ($notifications as $type) {
+                            switch ($type) {
+                                case 'weather_alerts':
+                                    echo '<div class="notification-item weather">
+                                            <i class="fas fa-cloud-sun"></i>
+                                            <div class="notification-content">
+                                                <h4>Weather Alert</h4>
+                                                <p>Check today\'s weather forecast for your farm.</p>
+                                            </div>
+                                        </div>';
+                                    break;
+                                case 'harvest_reminders':
+                                    echo '<div class="notification-item harvest">
+                                            <i class="fas fa-seedling"></i>
+                                            <div class="notification-content">
+                                                <h4>Harvest Reminder</h4>
+                                                <p>Your next harvest is scheduled in 2 weeks.</p>
+                                            </div>
+                                        </div>';
+                                    break;
+                                case 'market_updates':
+                                    echo '<div class="notification-item market">
+                                            <i class="fas fa-chart-line"></i>
+                                            <div class="notification-content">
+                                                <h4>Market Update</h4>
+                                                <p>Current market price for cardamom: ₹850/kg</p>
+                                            </div>
+                                        </div>';
+                                    break;
+                            }
+                        }
+                    } else {
+                        echo '<div class="no-notifications">
+                                <i class="fas fa-bell-slash"></i>
+                                <p>No notifications enabled. Configure them in settings.</p>
+                              </div>';
+                    }
+                    ?>
+                </div>
             </div>
         </div>
     </div>
@@ -2349,6 +2654,137 @@ $kerala_districts = [
             });
         }
     });
+
+    function handleDistrictChange(district) {
+        const subPlaceWrapper = document.getElementById('subPlaceWrapper');
+        const subPlaceSelect = document.getElementById('sub_place');
+        const weatherInfo = document.getElementById('weatherInfo');
+        
+        // Clear previous weather info
+        weatherInfo.style.display = 'none';
+        
+        // Reset sub-place dropdown
+        subPlaceSelect.innerHTML = '<option value="">Select location</option>';
+        
+        // Show suitability message
+        const suitabilityMessage = document.createElement('div');
+        suitabilityMessage.className = 'suitability-message';
+        
+        if (district === 'Idukki' || district === 'Wayanad') {
+            suitabilityMessage.innerHTML = `
+                <div class="suitability-indicator suitable">
+                    <i class="fas fa-check-circle"></i>
+                    <div class="suitability-content">
+                        <h4>${district} - Highly Suitable for Cardamom Cultivation</h4>
+                        <p>Ideal conditions: High altitude, suitable climate, and optimal rainfall pattern.</p>
+                        ${district === 'Idukki' ? 
+                            '<p>Best areas: Vandanmedu, Kumily, Udumbanchola regions</p>' : 
+                            '<p>Best areas: Vythiri, Meppadi, Sultan Bathery regions</p>'
+                        }
+                    </div>
+                </div>
+            `;
+            
+            // Get places for selected district
+            const places = <?php echo json_encode($district_places); ?>[district];
+            
+            // Populate sub-place dropdown
+            places.forEach(place => {
+                const option = document.createElement('option');
+                option.value = place;
+                option.textContent = place;
+                subPlaceSelect.appendChild(option);
+            });
+            
+            subPlaceWrapper.style.display = 'block';
+        } else {
+            suitabilityMessage.innerHTML = `
+                <div class="suitability-indicator unsuitable">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <div class="suitability-content">
+                        <h4>${district} - Not Recommended for Cardamom Cultivation</h4>
+                        <p>This region may not provide optimal conditions for cardamom growth.</p>
+                        <p>Consider selecting areas in Idukki or Wayanad districts for better results.</p>
+                    </div>
+                </div>
+            `;
+            subPlaceWrapper.style.display = 'none';
+        }
+        
+        // Add or update suitability message
+        const existingMessage = document.querySelector('.suitability-message');
+        if (existingMessage) {
+            existingMessage.replaceWith(suitabilityMessage);
+        } else {
+            subPlaceWrapper.parentNode.insertBefore(suitabilityMessage, subPlaceWrapper);
+        }
+    }
+
+    function getWeatherForLocation(location) {
+        if (!location) return;
+        
+        const weatherInfo = document.getElementById('weatherInfo');
+        const weatherDetails = document.getElementById('weatherDetails');
+        
+        // Show loading state
+        weatherDetails.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Loading weather data...</p>';
+        weatherInfo.style.display = 'block';
+        
+        // Fetch weather data using the OpenWeatherMap API
+        fetch(`https://api.openweathermap.org/data/2.5/weather?q=${location},IN&units=metric&appid=<?php echo $weather_api_key; ?>`)
+            .then(response => response.json())
+            .then(data => {
+                weatherDetails.innerHTML = `
+                    <p><i class="fas fa-temperature-high"></i> Temperature: ${Math.round(data.main.temp)}°C</p>
+                    <p><i class="fas fa-tint"></i> Humidity: ${data.main.humidity}%</p>
+                    <p><i class="fas fa-wind"></i> Wind: ${data.wind.speed} m/s</p>
+                    <p><i class="fas fa-cloud"></i> Weather: ${data.weather[0].description}</p>
+                `;
+            })
+            .catch(error => {
+                weatherDetails.innerHTML = '<p><i class="fas fa-exclamation-circle"></i> Unable to fetch weather data</p>';
+            });
+    }
     </script>
 </body>
 </html>
+
+<!-- Add this before closing body tag -->
+<?php
+// Check if soil test is needed (you can modify this condition based on your requirements)
+$last_soil_test_date = strtotime("2024-01-01"); // Replace with actual date from database
+$days_since_last_test = floor((time() - $last_soil_test_date) / (60 * 60 * 24));
+$soil_test_needed = $days_since_last_test > 90; // If more than 90 days since last test
+
+if ($soil_test_needed):
+?>
+<div class="running-message" onclick="window.location.href='soil_test.php'">
+    <i class="fas fa-flask"></i>
+    <div class="running-message-content">
+        <span class="running-message-text">Soil Test Required!</span>
+        <a href="soil_test.php" class="running-message-link">
+            Test Now <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const runningMessage = document.querySelector('.running-message');
+    if (runningMessage) {
+        // Restart animation when it ends
+        runningMessage.addEventListener('animationend', function() {
+            this.style.animation = 'none';
+            this.offsetHeight; // Trigger reflow
+            this.style.animation = 'slideInOut 15s linear infinite';
+        });
+
+        // Make entire message clickable
+        runningMessage.style.cursor = 'pointer';
+        runningMessage.addEventListener('click', function() {
+            window.location.href = 'soil_test.php';
+        });
+    }
+});
+</script>
+<?php endif; ?>

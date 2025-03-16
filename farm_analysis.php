@@ -370,22 +370,6 @@ $analysis = analyzeConditions($weather_data, $farmerData);
             margin: 25px 0;
         }
 
-        /* Update back button */
-        .back-button {
-            background-color: white;
-            color: var(--primary-color);
-            padding: 12px 24px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            font-weight: 600;
-        }
-
-        .back-button:hover {
-            background-color: var(--primary-color);
-            color: white;
-            transform: translateX(-5px);
-        }
-
         /* Update section title */
         .section-title {
             margin: 35px 0 25px;
@@ -582,7 +566,7 @@ $analysis = analyzeConditions($weather_data, $farmerData);
                         <i class="fas fa-flask"></i>
                         <span>Soil Test</span>
                     </a>
-                    <a href="fertilizer.php" class="nav-item">
+                    <a href="fertilizerrrr.php" class="nav-item">
                         <i class="fas fa-leaf"></i>
                         <span>Fertilizer Guide</span>
                     </a>
@@ -613,11 +597,6 @@ $analysis = analyzeConditions($weather_data, $farmerData);
         </div>
 
         <div class="main-content">
-            <a href="farmer.php" class="back-button">
-                <i class="fas fa-arrow-left"></i>
-                Back to Dashboard
-            </a>
-
             <div class="welcome-header fade-in">
                 <i class="fas fa-user-farmer"></i>
                 <h1>Welcome, <?php echo htmlspecialchars($farmerData['farmer_name'] ?? 'Farmer'); ?></h1>

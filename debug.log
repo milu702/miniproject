@@ -900,3 +900,11 @@ Stack trace:
   thrown in C:\xampp\htdocs\mini\login.php on line 36
 [15-Mar-2025 13:01:18 Europe/Berlin] Login attempt - Email: annmaria@gmail.com, Role: farmer
 [15-Mar-2025 13:01:18 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[16-Mar-2025 08:19:15 Europe/Berlin] Login attempt - Email: annmaria@gmail.com, Role: farmer
+[16-Mar-2025 08:19:15 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[16-Mar-2025 08:21:43 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[16-Mar-2025 08:21:43 Europe/Berlin] Login successful - User ID: 66, Role: employee
+[16-Mar-2025 15:35:29 Europe/Berlin] Login attempt - Email: annmaria@gmail.com, Role: farmer
+[16-Mar-2025 15:35:29 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[16-Mar-2025 16:27:28 Europe/Berlin] Login attempt - Email: annmaria@gmail.com, Role: farmer
+[16-Mar-2025 16:27:28 Europe/Berlin] Login successful - User ID: 67, Role: farmer

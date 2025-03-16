@@ -19,7 +19,16 @@ try {
 
 // Get user data
 $user_id = $_SESSION['user_id'];
-$username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : 'Farmer';
+try {
+    $stmt = $pdo->prepare("SELECT username, farm_location FROM users WHERE id = ?");
+    $stmt->execute([$user_id]);
+    $user = $stmt->fetch();
+    $username = htmlspecialchars($user['username'] ?? 'Farmer');
+    $farm_location = htmlspecialchars($user['farm_location'] ?? 'Idukki');
+} catch(PDOException $e) {
+    $username = 'Farmer';
+    $farm_location = 'Idukki';
+}
 ?>
 
 <!DOCTYPE html>
@@ -31,11 +40,14 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/main.min.css">
     <style>
-        /* Base styles from settings.php */
+        /* Updated Sidebar Styles */
         :root {
-            --primary-color: #2c5282;
-            --secondary-color: #4299e1;
-            --accent-color: #90cdf4;
+            --primary-color: #2D5A27;
+            --primary-dark: #1A3A19;
+            --accent-color: #8B9D83;
+            --text-color: #333333;
+            --bg-color: #f5f5f5;
+            --sidebar-width: 250px;
         }
 
         body {
@@ -46,16 +58,13 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
 
         /* Include all sidebar and layout styles from settings.php */
         .sidebar {
-            background: linear-gradient(180deg, #2c5282, #4299e1);
-            width: 80px;  /* Reduced width */
-            padding: 20px 0;
-            height: 100vh;
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             position: fixed;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            overflow-y: auto;
+            height: 100vh;
+            padding: 0;
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
             transition: width 0.3s ease;
         }
 
@@ -63,67 +72,203 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
             width: 200px;
         }
 
+        /* Logo Header */
         .sidebar-header {
-            text-align: center;
-            color: white;
-            margin-bottom: 30px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
         }
 
         .sidebar-header h2 {
-            font-size: 1.2rem;
+            color: white;
+            font-size: 24px;
+            font-weight: 600;
             margin: 0;
-            display: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .sidebar:hover .sidebar-header h2 {
-            display: block;
+        /* Farmer Profile Section */
+        .farmer-profile {
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin: 0 15px 20px 15px;
         }
 
+        .farmer-avatar {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .farmer-avatar i {
+            font-size: 32px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .farmer-profile h3 {
+            color: white;
+            margin: 0 0 5px 0;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .farmer-profile p {
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .farmer-location {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .farmer-location i {
+            color: #4CAF50;
+            font-size: 12px;
+        }
+
+        /* Navigation Menu */
         .nav-menu {
-            width: 100%;
+            padding: 10px 0;
         }
 
         .nav-item {
             display: flex;
             align-items: center;
-            padding: 15px;
-            color: white;
+            padding: 12px 25px;
+            color: rgba(255, 255, 255, 0.9);
             text-decoration: none;
-            transition: background 0.3s;
-            width: 100%;
-            box-sizing: border-box;
+            transition: all 0.3s ease;
+            margin: 4px 15px 4px 0;
+            border-radius: 0 25px 25px 0;
         }
 
         .nav-item i {
-            font-size: 1.5rem;
-            min-width: 40px;
-            text-align: center;
+            width: 24px;
+            font-size: 18px;
+            margin-right: 12px;
+            transition: all 0.3s ease;
         }
 
         .nav-item span {
-            display: none;
-            margin-left: 10px;
-            white-space: nowrap;
+            font-size: 15px;
         }
 
-        .sidebar:hover .nav-item span {
-            display: inline;
+        /* Active State */
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
-        .nav-item:hover, .nav-item.active {
+        /* Hover Effects */
+        .nav-item:hover {
             background: rgba(255, 255, 255, 0.1);
+            transform: translateX(8px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .nav-item:hover i {
+            transform: rotate(10deg) scale(1.2);
+            color: var(--accent-color);
+        }
+
+        /* Custom Icons Colors */
+        .nav-item[href="farmer.php"] i { color: #4CAF50; }
+        .nav-item[href="soil_test.php"] i { color: #2196F3; }
+        .nav-item[href="fertilizerrrr.php"] i { color: #8BC34A; }
+        .nav-item[href="farm_analysis.php"] i { color: #FF9800; }
+        .nav-item[href="schedule.php"] i { color: #9C27B0; }
+        .nav-item[href="weather.php"] i { color: #03A9F4; }
+        .nav-item[href="settings.php"] i { color: #607D8B; }
+
+        /* Active item overrides icon color */
+        .nav-item.active i {
+            color: white !important;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 60px;
+            }
+
+            .farmer-profile {
+                padding: 10px;
+                margin: 0 5px 10px 5px;
+            }
+
+            .farmer-avatar {
+                width: 40px;
+                height: 40px;
+                margin-bottom: 10px;
+            }
+
+            .farmer-avatar i {
+                font-size: 20px;
+            }
+
+            .farmer-profile h3,
+            .farmer-profile p,
+            .farmer-location {
+                display: none;
+            }
+
+            .nav-item {
+                padding: 15px;
+                justify-content: center;
+            }
+
+            .nav-item i {
+                margin: 0;
+                font-size: 20px;
+            }
+
+            .nav-item:hover {
+                padding-left: 15px;
+            }
+
+            .main-content {
+                margin-left: 60px;
+            }
+        }
+
+        /* Animation for icon bounce */
+        @keyframes iconBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        .nav-item:hover i {
+            animation: iconBounce 0.5s ease infinite;
         }
 
         /* Update main content margin */
         .main-content {
             flex: 1;
-            margin-left: 80px;  /* Match sidebar width */
+            margin-left: 250px;
             padding: 20px;
-        }
-
-        /* Remove farmer profile styles as it's no longer needed */
-        .farmer-profile {
-            display: none;
         }
 
         /* Include all other styles from settings.php */
@@ -291,8 +436,6 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
             font-size: 1rem;
         }
 
-        /* Include all sidebar and nav styles from settings.php */
-
         /* Add these priority-based styles */
         @keyframes importantPulse {
             0% { transform: translateX(0); }
@@ -318,15 +461,39 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <h2><i class="fas fa-seedling"></i> <span>GrowGuide</span></h2>
+                <i class="fas fa-seedling"></i>
+                <h2>GrowGuide</h2>
             </div>
+            
+            <div class="farmer-profile">
+                <div class="farmer-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h3><?php echo htmlspecialchars($username); ?></h3>
+                <p>Cardamom Farmer</p>
+                <div class="farmer-location">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span><?php echo htmlspecialchars($farm_location); ?></span>
+                </div>
+            </div>
+
             <nav class="nav-menu">
                 <a href="farmer.php" class="nav-item">
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>
-                
-              
+                <a href="soil_test.php" class="nav-item">
+                    <i class="fas fa-flask"></i>
+                    <span>Soil Test</span>
+                </a>
+                <a href="fertilizerrrr.php" class="nav-item">
+                    <i class="fas fa-leaf"></i>
+                    <span>Fertilizer Guide</span>
+                </a>
+                <a href="farm_analysis.php" class="nav-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Farm Analysis</span>
+                </a>
                 <a href="schedule.php" class="nav-item active">
                     <i class="fas fa-calendar-alt"></i>
                     <span>Schedule</span>
@@ -335,7 +502,6 @@ $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'
                     <i class="fas fa-cloud-sun"></i>
                     <span>Weather</span>
                 </a>
-              
                 <a href="settings.php" class="nav-item">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
