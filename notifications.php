@@ -120,15 +120,154 @@ mysqli_close($conn);
         .unread {
             border-left: 4px solid #2B7A30;
         }
+
+        :root {
+            --primary-color: #2B7A30;
+            --primary-dark: #1a4a1d;
+            --hover-color: #3c8c40;
+            --text-light: #ffffff;
+            --sidebar-width: 250px;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f7fa;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background: linear-gradient(to bottom, var(--primary-color), var(--primary-dark));
+            color: var(--text-light);
+            z-index: 1000;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-container {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-container i {
+            font-size: 24px;
+            color: var(--text-light);
+        }
+
+        .logo-container span {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .nav-menu {
+            margin-top: 30px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            color: var(--text-light);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            gap: 12px;
+        }
+
+        .nav-item:hover {
+            background: var(--hover-color);
+            padding-left: 25px;
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.1);
+            border-left: 4px solid var(--text-light);
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .nav-item span {
+            font-size: 16px;
+        }
+
+        .logout-btn {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(220, 53, 69, 0.1);
+            color: #ff6b6b;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        /* Update main content to accommodate sidebar */
+        .notifications-container {
+            margin-left: var(--sidebar-width) !important;
+            max-width: calc(100% - var(--sidebar-width) - 40px) !important;
+            padding: 20px;
+        }
+
+        /* Remove the back to dashboard button since we have sidebar */
+        .notifications-container .btn-view[href="employe.php"] {
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <div class="notifications-container">
-        <div style="margin-bottom: 20px;">
-            <a href="employe.php" class="btn-view" style="display: inline-block;">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </a>
+    <div class="sidebar">
+        <div class="logo-container">
+            <i class="fas fa-seedling"></i>
+            <span>GrowGuide</span>
         </div>
+        
+        <nav class="nav-menu">
+            <a href="dashboard.php" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="varieties.php" class="nav-item">
+                <i class="fas fa-seedling"></i>
+                <span>Varieties</span>
+            </a>
+            <a href="notifications.php" class="nav-item active">
+                <i class="fas fa-bell"></i>
+                <span>Notifications</span>
+            </a>
+            <a href="settings.php" class="nav-item">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+            <a href="manage_products.php" class="nav-item">
+                <i class="fas fa-shopping-basket"></i>
+                <span>Manage Products</span>
+            </a>
+            
+            <a href="logout.php" class="nav-item logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </nav>
+    </div>
+    <div class="notifications-container">
         <h1><i class="fas fa-bell"></i> Notifications</h1>
         
         <?php if (mysqli_num_rows($notifications) > 0): ?>

@@ -908,3 +908,9 @@ Stack trace:
 [16-Mar-2025 15:35:29 Europe/Berlin] Login successful - User ID: 67, Role: farmer
 [16-Mar-2025 16:27:28 Europe/Berlin] Login attempt - Email: annmaria@gmail.com, Role: farmer
 [16-Mar-2025 16:27:28 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[16-Mar-2025 17:37:41 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[16-Mar-2025 17:37:41 Europe/Berlin] Login successful - User ID: 66, Role: employee
+[16-Mar-2025 17:50:18 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[16-Mar-2025 17:50:19 Europe/Berlin] Login successful - User ID: 66, Role: employee
+[16-Mar-2025 17:58:23 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[16-Mar-2025 17:58:23 Europe/Berlin] Login successful - User ID: 66, Role: employee

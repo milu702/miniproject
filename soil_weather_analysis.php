@@ -81,107 +81,298 @@ function getSoilStatus($ph, $n, $p, $k) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #2D5A27;
-            --secondary-color: #4A7A43;
-            --accent-color: #8B9D83;
-            --warning-color: #FFA500;
-            --danger-color: #FF4444;
-            --success-color: #28a745;
+            --primary-dark: #1a4a1d;
+            --primary-color: #2B7A30;
+            --hover-color: #3c8c40;
+            --text-light: #ffffff;
+            --sidebar-width: 250px;
+            --card-bg: #ffffff;
+            --badge-success: #2B7A30;
+            --badge-warning: #ffa500;
+            --badge-danger: #dc3545;
         }
 
         body {
-            font-family: Arial, sans-serif;
             margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f7fa;
+            overflow: hidden;
+        }
+
+        /* Compact Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: var(--text-light);
+            z-index: 1000;
+        }
+
+        .sidebar-header {
             padding: 20px;
-            background-color: #f5f5f5;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
+        .sidebar-header i {
+            font-size: 24px;
+        }
+
+        .sidebar-header h2 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 24px;
+            color: var(--text-light);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            gap: 12px;
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            padding-left: 28px;
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .nav-item span {
+            font-size: 16px;
+        }
+
+        .logout-btn {
+            margin-top: auto;
+            background: rgba(220, 53, 69, 0.1);
+            color: #ff6b6b;
+            border: none;
+            cursor: pointer;
+            margin: 20px;
+            border-radius: 8px;
+        }
+
+        .logout-btn:hover {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        /* Main Content Optimization */
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
+            margin-left: var(--sidebar-width);
+            padding: 15px;
+            height: 100vh;
+            overflow-y: auto;
+            box-sizing: border-box;
         }
 
+        h1 {
+            margin: 0 0 15px 0;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Grid Layout Optimization */
         .analysis-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            padding-bottom: 20px;
         }
 
+        /* Compact Card Design */
         .farmer-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .farmer-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
         }
 
         .farmer-header {
             display: flex;
             align-items: center;
-            margin-bottom: 15px;
+            gap: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
         }
 
-        .farmer-header i {
-            font-size: 24px;
-            color: var(--primary-color);
-            margin-right: 10px;
+        .farmer-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            flex: 1;
         }
 
+        /* Compact Status Badges */
         .status-badge {
             padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            margin-left: 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 500;
         }
 
-        .warning { background-color: var(--warning-color); color: white; }
-        .success { background-color: var(--success-color); color: white; }
-        .danger { background-color: var(--danger-color); color: white; }
+        .success { background: var(--badge-success); color: white; }
+        .warning { background: var(--badge-warning); color: white; }
+        .danger { background: var(--badge-danger); color: white; }
 
+        /* Soil Parameters Grid */
         .soil-params {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 15px;
+            gap: 8px;
         }
 
         .param-item {
-            padding: 10px;
             background: #f8f9fa;
-            border-radius: 5px;
-        }
-
-        .weather-info {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
-        }
-
-        .back-button {
-            display: inline-flex;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            padding: 10px 20px;
-            background-color: var(--primary-color);
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            margin-bottom: 20px;
         }
 
-        .back-button i {
-            margin-right: 10px;
+        .param-item strong {
+            font-size: 0.8rem;
+        }
+
+        /* Weather Info Section */
+        .weather-info {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 8px;
+        }
+
+        .weather-info h4 {
+            margin: 0 0 8px 0;
+            font-size: 0.9rem;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .weather-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            font-size: 0.85rem;
+        }
+
+        .weather-details p {
+            margin: 0;
+        }
+
+        .last-test {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* Scrollbar Styling */
+        .container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .container::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .analysis-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .weather-details {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
     </style>
 </head>
 <body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-seedling"></i>
+            <h2>GrowGuide</h2>
+        </div>
+        
+        <nav class="nav-menu">
+            <a href="employe.php" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="farmers_list.php" class="nav-item">
+                <i class="fas fa-users"></i>
+                <span>Farmers</span>
+            </a>
+            <a href="soil_weather_analysis.php" class="nav-item active">
+                <i class="fas fa-microscope"></i>
+                <span>Analysis</span>
+            </a>
+            <a href="recommendations.php" class="nav-item">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Recommendations</span>
+            </a>
+            <a href="settings.php" class="nav-item">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+            
+            <a href="logout.php" class="nav-item logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </nav>
+    </div>
+
     <div class="container">
-        <a href="employe.php" class="back-button">
-            <i class="fas fa-arrow-left"></i>
-            Back to Dashboard
-        </a>
-
-        <h1><i class="fas fa-microscope"></i> Soil & Weather Analysis</h1>
-
+        <h1>
+            <i class="fas fa-microscope"></i>
+            Soil & Weather Analysis
+        </h1>
+        
         <div class="analysis-grid">
             <?php foreach ($farmers as $farmer): ?>
                 <div class="farmer-card">

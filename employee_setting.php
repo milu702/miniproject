@@ -44,15 +44,105 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #2c5282;
-            --secondary-color: #4299e1;
-            --accent-color: #90cdf4;
-            --success-color: #48bb78;
-            --error-color: #f56565;
+            --primary-dark: #1a4a1d;
+            --primary-color: #2B7A30;
+            --hover-color: #3c8c40;
+            --text-light: #ffffff;
+            --sidebar-width: 250px;
         }
 
-        /* Copy all the styles from settings.php and modify the color scheme */
-        /* ... (include all the styles from settings.php) ... */
+        /* Updated Sidebar Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: var(--text-light);
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-header i {
+            font-size: 24px;
+        }
+
+        .sidebar-header h2 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 24px;
+            color: var(--text-light);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            gap: 12px;
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            padding-left: 28px;
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .nav-item span {
+            font-size: 16px;
+        }
+
+        /* Logout button specific styles */
+        .logout-btn {
+            margin-top: auto;
+            background: rgba(220, 53, 69, 0.1);
+            color: #ff6b6b;
+            border: none;
+            cursor: pointer;
+            margin: 20px;
+            border-radius: 8px;
+        }
+
+        .logout-btn:hover {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        /* Update main content to accommodate sidebar */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 30px;
+            min-height: 100vh;
+            background: #f5f7fa;
+        }
+
+        /* Remove the back button since we have sidebar navigation */
+        .back-button {
+            display: none;
+        }
 
         /* Add these employee-specific styles */
         .employee-info-card {
@@ -112,28 +202,35 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <h2><i class="fas fa-user-tie"></i> <span><?php echo $employeeName; ?></span></h2>
+                <i class="fas fa-seedling"></i>
+                <h2>GrowGuide</h2>
             </div>
+            
             <nav class="nav-menu">
-                <a href="employe.php" class="nav-item">
+                <a href="dashboard.php" class="nav-item">
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="farmers_list.php" class="nav-item">
-                    <i class="fas fa-users"></i>
-                    <span>Farmers</span>
+                <a href="varieties.php" class="nav-item">
+                    <i class="fas fa-seedling"></i>
+                    <span>Varieties</span>
                 </a>
-                <a href="soil_tests.php" class="nav-item">
-                    <i class="fas fa-flask"></i>
-                    <span>Soil Tests</span>
+                <a href="notifications.php" class="nav-item">
+                    <i class="fas fa-bell"></i>
+                    <span>Notifications</span>
                 </a>
-                <a href="recommendations.php" class="nav-item">
-                    <i class="fas fa-clipboard-list"></i>
-                    <span>Recommendations</span>
-                </a>
-                <a href="employee_settings.php" class="nav-item active">
+                <a href="settings.php" class="nav-item active">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
+                </a>
+                <a href="manage_products.php" class="nav-item">
+                    <i class="fas fa-shopping-basket"></i>
+                    <span>Manage Products</span>
+                </a>
+                
+                <a href="logout.php" class="nav-item logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
                 </a>
             </nav>
         </div>

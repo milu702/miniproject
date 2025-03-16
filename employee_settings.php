@@ -42,6 +42,11 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
+            --primary-dark: #1a4a1d;
+            --primary-color: #2B7A30;
+            --hover-color: #3c8c40;
+            --text-light: #ffffff;
+            --sidebar-width: 250px;
             --primary-color: #2d6a4f;  /* Dark green */
             --secondary-color: #40916c; /* Medium green */
             --accent-color: #95d5b2;   /* Light green */
@@ -49,26 +54,122 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
             --dark-color: #1B4D1E;     /* Very dark green */
         }
 
-        /* Copy all the base styles from employe.php */
-        /* ... (include all the base styles from employe.php) ... */
+        /* Updated Sidebar Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: var(--text-light);
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-header i {
+            font-size: 24px;
+        }
+
+        .sidebar-header h2 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 24px;
+            color: var(--text-light);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            gap: 12px;
+            font-size: 0.95rem;
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            padding-left: 28px;
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .nav-item span {
+            font-size: 16px;
+        }
+
+        /* Logout button specific styles */
+        .logout-btn {
+            margin-top: auto;
+            background: rgba(220, 53, 69, 0.1);
+            color: #ff6b6b;
+            border: none;
+            cursor: pointer;
+            margin: 20px;
+            border-radius: 8px;
+        }
+
+        .logout-btn:hover {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        /* Update main content to accommodate sidebar */
+        .content {
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+            min-height: 100vh;
+            background: #f5f7fa;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Remove the back button since we have sidebar navigation */
+        .back-to-dashboard {
+            display: none;
+        }
 
         /* Add these employee-specific styles */
         .employee-info-card {
             background: linear-gradient(145deg, #ffffff, #f0f7ff);
             border-radius: 15px;
             box-shadow: 0 8px 16px rgba(43, 122, 48, 0.1);
-            padding: 25px;
-            margin-bottom: 30px;
+            padding: 15px;
+            margin-bottom: 15px;
             border: 1px solid rgba(43, 122, 48, 0.1);
             animation: fadeIn 0.5s ease-out;
         }
 
         .form-group {
             background: white;
-            padding: 30px;
+            padding: 20px;
             border-radius: 15px;
             box-shadow: 0 8px 20px rgba(45, 106, 79, 0.08);  /* Green tinted shadow */
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 0;
         }
 
         .form-group:hover {
@@ -78,15 +179,15 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
 
         .input-group {
             position: relative;
-            margin-bottom: 25px;
+            margin-bottom: 15px;
         }
 
         .input-group input {
             width: 100%;
-            padding: 12px 40px;
+            padding: 8px 35px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 0.95rem;
             transition: all 0.3s ease;
         }
 
@@ -98,7 +199,7 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
         .input-group i {
             position: absolute;
             left: 12px;
-            top: 40px;
+            top: 33px;
             color: var(--primary-color);
         }
 
@@ -106,7 +207,7 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
             background: linear-gradient(135deg, #2d6a4f, #40916c);
             color: white;
             border: none;
-            padding: 12px 25px;
+            padding: 8px 20px;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 500;
@@ -127,13 +228,14 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
         }
 
         .alert {
-            padding: 15px 20px;
+            padding: 10px 15px;
             border-radius: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
             gap: 10px;
             animation: slideIn 0.3s ease-out;
+            font-size: 0.9rem;
         }
 
         .alert-success {
@@ -153,6 +255,8 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
             align-items: center;
             gap: 5px;
             transition: all 0.3s ease;
+            font-size: 0.8rem;
+            margin-top: 3px;
         }
 
         .input-group input:focus {
@@ -177,147 +281,146 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
         .running-message {
             background: linear-gradient(135deg, #2d6a4f, #40916c);
             color: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
         }
 
-        .validation-message i.fa-check-circle {
-            color: #2d6a4f;
-        }
-
-        /* Add these new styles for better visual hierarchy */
-        .form-group h3 {
-            color: var(--primary-color);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 25px;
-            font-size: 1.2em;
-        }
-
-        .form-group h3 i {
-            color: var(--primary-color);
-            font-size: 1.2em;
-        }
-
-        .input-group label {
-            color: #2d6a4f;
-            font-weight: 500;
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        /* Password requirements styling */
-        .password-requirements {
-            background: #f8f9fa;
-            border-left: 4px solid var(--primary-color);
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 0 8px 8px 0;
-        }
-
-        .password-requirements ul {
-            list-style: none;
-            padding: 0;
+        .welcome-header h2 {
+            font-size: 1.4rem;
             margin: 0;
         }
 
-        .password-requirements li {
-            color: #2d6a4f;
-            margin: 5px 0;
+        .message-body p {
+            margin: 5px 0 0 0;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Add these new styles for better organization */
+        .settings-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .form-group h3 {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+
+        .button-group {
             display: flex;
-            align-items: center;
-            gap: 8px;
+            gap: 10px;
+            margin-top: 15px;
         }
 
-        .password-requirements li i {
-            color: var(--primary-color);
+        /* Update button styles */
+        .submit-btn {
+            padding: 8px 20px;
+            font-size: 0.95rem;
         }
 
-        .back-to-dashboard {
-            margin-bottom: 20px;
+        /* Add smooth scrolling */
+        html {
+            scroll-behavior: smooth;
         }
 
-        .dashboard-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
-            background: white;
-            border: 2px solid var(--primary-color);
-            border-radius: 8px;
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
+        /* Make the layout more responsive */
+        @media (max-width: 768px) {
+            .content {
+                padding: 15px;
+            }
 
-        .dashboard-link:hover {
-            background: var(--primary-color);
-            color: white;
-            transform: translateX(-5px);
-            box-shadow: 0 4px 12px rgba(45, 106, 79, 0.2);
-        }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
 
-        .dashboard-link i {
-            font-size: 1.1em;
+            .settings-container {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Sidebar (copy from employe.php) -->
+    <!-- Replace the existing sidebar HTML with this (right after <body> tag) -->
     <div class="sidebar">
-        <div class="sidebar-logo">
-            <i class="fas fa-leaf"></i>
-            <h1>GrowGuide</h1>
+        <div class="sidebar-header">
+            <i class="fas fa-seedling"></i>
+            <h2>GrowGuide</h2>
         </div>
         
-        
+        <nav class="nav-menu">
+            <a href="employe.php" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="farmers_list.php" class="nav-item">
+                <i class="fas fa-users"></i>
+                <span>Farmers</span>
+            </a>
+            <a href="soil_tests.php" class="nav-item">
+                <i class="fas fa-flask"></i>
+                <span>Soil Tests</span>
+            </a>
+            <a href="recommendations.php" class="nav-item">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Recommendations</span>
+            </a>
+            <a href="employee_settings.php" class="nav-item active">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+            
+            <a href="logout.php" class="nav-item logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </nav>
+    </div>
 
     <div class="content">
-        <div class="back-to-dashboard">
-            <a href="employe.php" class="dashboard-link">
-                <i class="fas fa-arrow-left"></i>
-                <span>Back to Dashboard</span>
-            </a>
-        </div>
-
         <div class="running-message">
             <div class="message-content">
                 <div class="welcome-header">
-                    <i class="fas fa-user-cog"></i>
-                    <h2>Account Settings</h2>
-                </div>
-                <div class="message-body">
+                    <h2><i class="fas fa-user-cog"></i> Account Settings</h2>
                     <p>Manage your profile and preferences</p>
                 </div>
             </div>
         </div>
 
-        <?php if (isset($_SESSION['success'])): ?>
-            <div class="alert alert-success">
-                <i class="fas fa-check-circle"></i>
-                <?php 
-                echo $_SESSION['success']; 
-                unset($_SESSION['success']);
-                ?>
-            </div>
-        <?php endif; ?>
-        
-        <?php if (isset($_SESSION['error'])): ?>
-            <div class="alert alert-error">
-                <i class="fas fa-exclamation-circle"></i>
-                <?php 
-                echo $_SESSION['error']; 
-                unset($_SESSION['error']);
-                ?>
-            </div>
+        <?php if (isset($_SESSION['success']) || isset($_SESSION['error'])): ?>
+            <?php if (isset($_SESSION['success'])): ?>
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <?php echo $_SESSION['success']; unset($_SESSION['success']); ?>
+                </div>
+            <?php endif; ?>
+            
+            <?php if (isset($_SESSION['error'])): ?>
+                <div class="alert alert-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <?php echo $_SESSION['error']; unset($_SESSION['error']); ?>
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
 
         <div class="employee-info-card">
-            <form action="update_employee_settings.php" method="POST" class="data-form" id="settingsForm" onsubmit="return validateForm()">
-                <div class="form-grid">
+            <form action="update_employee_settings.php" method="POST" class="data-form" id="settingsForm">
+                <div class="settings-container">
+                    <!-- Profile Information -->
                     <div class="form-group">
                         <h3><i class="fas fa-user-circle"></i> Profile Information</h3>
                         <div class="input-group">
@@ -337,6 +440,7 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
                         </div>
                     </div>
 
+                    <!-- Security Settings -->
                     <div class="form-group">
                         <h3><i class="fas fa-shield-alt"></i> Security</h3>
                         <div class="input-group">
@@ -350,7 +454,7 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
                             <i class="fas fa-key"></i>
                         </div>
                         <div class="input-group">
-                            <label for="confirm_password">Confirm New Password</label>
+                            <label for="confirm_password">Confirm Password</label>
                             <input type="password" id="confirm_password" name="confirm_password">
                             <i class="fas fa-check-circle"></i>
                         </div>

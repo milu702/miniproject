@@ -727,7 +727,7 @@ mysqli_close($conn);
             
             
             
-            <a href="employe_varities.php" class="sidebar-btn" style="--btn-index: 3">
+            <a href="varieties.php" class="sidebar-btn" style="--btn-index: 3">
                 <div class="hover-indicator"></div>
                 <i class="fas fa-seedling"></i>
                 <span>Varieties</span>

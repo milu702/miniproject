@@ -102,6 +102,110 @@ $varieties = [
     <title>GrowGuide - Cardamom Varieties</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        /* Add these root variables at the start of your existing styles */
+        :root {
+            --primary-color: #2E7D32;
+            --primary-dark: #1B5E20;
+            --accent-color: #81C784;
+            --text-color: #333333;
+            --sidebar-width: 250px;
+        }
+
+        /* Add the new sidebar styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background: linear-gradient(180deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            padding: 20px 0;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 20px;
+            margin-bottom: 30px;
+        }
+
+        .sidebar-header i {
+            font-size: 24px;
+        }
+
+        .sidebar-header h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: calc(100% - 100px);
+        }
+
+        .nav-menu-items {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-right: 4px solid white;
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Update main-content styles */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 30px;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* Update logout button styles */
+        .nav-menu-bottom .logout-btn {
+            margin: 20px;
+            background: rgba(220, 53, 69, 0.1);
+            border-radius: 8px;
+            color: #ff6b6b;
+        }
+
+        .nav-menu-bottom .logout-btn:hover {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        /* Hide the admin dashboard link */
+        .admin-dashboard-link {
+            display: none;
+        }
+
         /* Remove sidebar styles and update main-content */
         .main-content {
             width: 100%;
@@ -421,13 +525,45 @@ $varieties = [
     </style>
 </head>
 <body>
-<a href="admin.php" class="admin-dashboard-link">
-    <div class="icon-container">
-        <i class="fas fa-user-shield"></i>
+    <!-- Add sidebar HTML right after body tag -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-seedling"></i>
+            <h2>GrowGuide</h2>
+        </div>
+        
+        <nav class="nav-menu">
+            <div class="nav-menu-items">
+                <a href="employe.php" class="nav-item">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="varieties.php" class="nav-item active">
+                    <i class="fas fa-seedling"></i>
+                    <span>Varieties</span>
+                </a>
+                <a href="notifications.php" class="nav-item">
+                    <i class="fas fa-bell"></i>
+                    <span>Notifications</span>
+                </a>
+                <a href="settings.php" class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+                <a href="manage_products.php" class="nav-item">
+                    <i class="fas fa-shopping-basket"></i>
+                    <span>Manage Products</span>
+                </a>
+            </div>
+            <div class="nav-menu-bottom">
+                <a href="logout.php" class="nav-item logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </nav>
     </div>
-    <span class="text">Admin Dashboard</span>
-</a>
-    
+
     <!-- Main Content -->
     <div class="main-content" id="main-content">
         <div class="page-header">
