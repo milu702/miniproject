@@ -334,7 +334,7 @@ $analysis = analyzeConditions($weather_data, $farmerData);
         /* Update sidebar styles */
         .sidebar {
             width: var(--sidebar-width);
-            background: linear-gradient(180deg, var(--primary-color), var(--primary-dark));
+            background: #2D5A27; /* Solid dark green background */
             color: white;
             padding: 20px;
             position: fixed;
@@ -343,7 +343,101 @@ $analysis = analyzeConditions($weather_data, $farmerData);
             top: 0;
             overflow-y: auto;
             z-index: 1000;
-            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+        }
+
+        /* Logo/Header styles */
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            padding: 10px 0 20px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.5rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Farmer profile section */
+        .farmer-profile {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .farmer-avatar {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .farmer-avatar i {
+            font-size: 2rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .farmer-profile h3 {
+            margin: 0 0 5px;
+            font-size: 1.2rem;
+        }
+
+        .farmer-profile p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Navigation menu */
+        .nav-menu-items {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+
+        .nav-item i {
+            width: 24px;
+            margin-right: 12px;
+            font-size: 1.1rem;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.15);
+            font-weight: 500;
+        }
+
+        .nav-item span {
+            font-size: 0.95rem;
+        }
+
+        /* Bottom navigation items */
+        .nav-menu-bottom {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         /* Update welcome header */
@@ -428,41 +522,6 @@ $analysis = analyzeConditions($weather_data, $farmerData);
             }
         }
 
-        /* Update sidebar nav items */
-        .nav-menu-items {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            padding: 20px 0;
-        }
-
-        .nav-item {
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            color: white;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            border-radius: 8px;
-            font-weight: 500;
-        }
-
-        .nav-item i {
-            margin-right: 12px;
-            width: 20px;
-            text-align: center;
-        }
-
-        .nav-item:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateX(5px);
-        }
-
-        .nav-item.active {
-            background: rgba(255, 255, 255, 0.2);
-            font-weight: 600;
-        }
-
         /* District running message styles */
         .district-banner {
             background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
@@ -543,19 +602,15 @@ $analysis = analyzeConditions($weather_data, $farmerData);
             <div class="sidebar-header">
                 <h2><i class="fas fa-seedling"></i> GrowGuide</h2>
             </div>
+            
             <div class="farmer-profile">
                 <div class="farmer-avatar">
                     <i class="fas fa-user"></i>
                 </div>
                 <h3><?php echo htmlspecialchars($farmerData['farmer_name'] ?? 'Farmer'); ?></h3>
                 <p>Cardamom Farmer</p>
-                <?php if (isset($farmerData['farm_location']) && !empty($farmerData['farm_location'])): ?>
-                    <div class="farmer-location">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <?php echo htmlspecialchars($farmerData['farm_location']); ?>
-                    </div>
-                <?php endif; ?>
             </div>
+
             <nav class="nav-menu">
                 <div class="nav-menu-items">
                     <a href="farmer.php" class="nav-item">
@@ -566,7 +621,7 @@ $analysis = analyzeConditions($weather_data, $farmerData);
                         <i class="fas fa-flask"></i>
                         <span>Soil Test</span>
                     </a>
-                    <a href="fertilizerrrr.php" class="nav-item">
+                    <a href="fertilizer.php" class="nav-item">
                         <i class="fas fa-leaf"></i>
                         <span>Fertilizer Guide</span>
                     </a>
@@ -581,16 +636,6 @@ $analysis = analyzeConditions($weather_data, $farmerData);
                     <a href="weather.php" class="nav-item">
                         <i class="fas fa-cloud-sun"></i>
                         <span>Weather</span>
-                    </a>
-                    <a href="settings.php" class="nav-item">
-                        <i class="fas fa-cog"></i>
-                        <span>Settings</span>
-                    </a>
-                </div>
-                <div class="nav-menu-bottom">
-                    <a href="logout.php" class="nav-item logout-btn">
-                        <i class="fas fa-sign-out-alt"></i>
-                        <span>Logout</span>
                     </a>
                 </div>
             </nav>

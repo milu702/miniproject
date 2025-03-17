@@ -519,11 +519,11 @@ function getPotassiumStatus($value) {
         }
 
         @keyframes slideIn {
-            from {
+            from { 
                 opacity: 0;
                 transform: translateX(-20px);
             }
-            to {
+            to { 
                 opacity: 1;
                 transform: translateX(0);
             }
@@ -882,11 +882,11 @@ function getPotassiumStatus($value) {
         <div class="sidebar">
             <div class="sidebar-header">
                 <h2><i class="fas fa-seedling"></i> GrowGuide</h2>
-            </div>
+        </div>
             <div class="farmer-profile">
                 <div class="farmer-avatar">
                     <i class="fas fa-user"></i>
-                </div>
+                    </div>
                 <h3><?php echo htmlspecialchars($farmers[0]['username']); ?></h3>
                 <p>Cardamom Farmer</p>
             </div>
@@ -960,47 +960,47 @@ function getPotassiumStatus($value) {
                                             <div class="date-wrapper">
                                                 <span><?php echo date('Y-m-d', strtotime($test['test_date'])); ?></span>
                                                 <i class="fas fa-chevron-down"></i>
-                                            </div>
+                            </div>
                                         </td>
                                         <td><?php echo htmlspecialchars($test['farmer_name']); ?></td>
                                         <td>
                                             <div class="value-with-status">
                                                 <?php echo $test['ph_level']; ?>
                                                 <span class="status-badge" style="background-color: <?php echo getPHColor($test['ph_level']); ?>">
-                                                    <?php echo getPHStatus($test['ph_level']); ?>
-                                                </span>
-                                            </div>
+                                            <?php echo getPHStatus($test['ph_level']); ?>
+                                        </span>
+                                    </div>
                                         </td>
                                         <td>
                                             <?php $n_status = getNitrogenStatus($test['nitrogen_content']); ?>
                                             <div class="value-with-status">
                                                 <?php echo $test['nitrogen_content']; ?>%
                                                 <span class="status-badge" style="background-color: <?php echo $n_status[1]; ?>">
-                                                    <?php echo $n_status[0]; ?>
-                                                </span>
-                                            </div>
+                                            <?php echo $n_status[0]; ?>
+                                        </span>
+                                    </div>
                                         </td>
                                         <td>
                                             <?php $p_status = getPhosphorusStatus($test['phosphorus_content']); ?>
                                             <div class="value-with-status">
                                                 <?php echo $test['phosphorus_content']; ?>%
                                                 <span class="status-badge" style="background-color: <?php echo $p_status[1]; ?>">
-                                                    <?php echo $p_status[0]; ?>
-                                                </span>
-                                            </div>
+                                            <?php echo $p_status[0]; ?>
+                                        </span>
+                                    </div>
                                         </td>
                                         <td>
                                             <?php $k_status = getPotassiumStatus($test['potassium_content']); ?>
                                             <div class="value-with-status">
                                                 <?php echo $test['potassium_content']; ?>%
                                                 <span class="status-badge" style="background-color: <?php echo $k_status[1]; ?>">
-                                                    <?php echo $k_status[0]; ?>
-                                                </span>
-                                            </div>
+                                            <?php echo $k_status[0]; ?>
+                                        </span>
+                                    </div>
                                         </td>
                                         <td>
-                                            <?php
-                                            $optimal_count = 0;
+                                                    <?php
+                                                        $optimal_count = 0;
                                             if ($test['ph_level'] >= 5.5 && $test['ph_level'] <= 6.5) $optimal_count++;
                                             if ($test['nitrogen_content'] >= 0.5 && $test['nitrogen_content'] <= 1.0) $optimal_count++;
                                             if ($test['phosphorus_content'] >= 0.05 && $test['phosphorus_content'] <= 0.2) $optimal_count++;
@@ -1013,7 +1013,7 @@ function getPotassiumStatus($value) {
                                             ?>
                                             <span class="status-badge" style="background-color: <?php echo $status_color; ?>">
                                                 <?php echo $status_text; ?>
-                                            </span>
+                                                    </span>
                                         </td>
                                         <td>
                                             <button onclick="printSingleResult(<?php echo strtotime($test['test_date']); ?>)" 
@@ -1033,14 +1033,14 @@ function getPotassiumStatus($value) {
                                                     <!-- pH Recommendations -->
                                                     <div class="recommendation-item">
                                                         <h5>pH Level (<?php echo $test['ph_level']; ?>)</h5>
-                                                        <?php if ($test['ph_level'] < 5.5): ?>
+                                        <?php if ($test['ph_level'] < 5.5): ?>
                                                             <p><i class="fas fa-arrow-up"></i> Increase pH by:</p>
                                                             <ul>
                                                                 <li>Apply agricultural lime (2-3 tons/ha)</li>
                                                                 <li>Mix with soil thoroughly</li>
                                                                 <li>Allow 2-3 weeks before planting</li>
                                                             </ul>
-                                                        <?php elseif ($test['ph_level'] > 6.5): ?>
+                                        <?php elseif ($test['ph_level'] > 6.5): ?>
                                                             <p><i class="fas fa-arrow-down"></i> Decrease pH by:</p>
                                                             <ul>
                                                                 <li>Apply agricultural sulfur (1-2 tons/ha)</li>
@@ -1052,7 +1052,7 @@ function getPotassiumStatus($value) {
                                                             <ul>
                                                                 <li>Maintain current soil management practices</li>
                                                             </ul>
-                                                        <?php endif; ?>
+                                        <?php endif; ?>
                                                     </div>
 
                                                     <!-- Nitrogen Recommendations -->
@@ -1073,7 +1073,7 @@ function getPotassiumStatus($value) {
                                                             </ul>
                                                         <?php else: ?>
                                                             <p><i class="fas fa-check-circle"></i> Nitrogen level is optimal</p>
-                                                        <?php endif; ?>
+                                        <?php endif; ?>
                                                     </div>
 
                                                     <!-- Phosphorus Recommendations -->
@@ -1094,7 +1094,7 @@ function getPotassiumStatus($value) {
                                                             </ul>
                                                         <?php else: ?>
                                                             <p><i class="fas fa-check-circle"></i> Phosphorus level is optimal</p>
-                                                        <?php endif; ?>
+                                        <?php endif; ?>
                                                     </div>
 
                                                     <!-- Potassium Recommendations -->
@@ -1106,7 +1106,7 @@ function getPotassiumStatus($value) {
                                                                 <li>Apply potash fertilizer</li>
                                                                 <li>Add wood ash</li>
                                                                 <li>Use compost rich in banana peels</li>
-                                                            </ul>
+                                    </ul>
                                                         <?php elseif ($test['potassium_content'] > 2.0): ?>
                                                             <p><i class="fas fa-exclamation-circle"></i> High Potassium:</p>
                                                             <ul>
@@ -1116,24 +1116,24 @@ function getPotassiumStatus($value) {
                                                         <?php else: ?>
                                                             <p><i class="fas fa-check-circle"></i> Potassium level is optimal</p>
                                                         <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                        </div>
+                                </div>
+                            </div>
                                         </td>
                                     </tr>
-                                <?php endforeach; ?>
+                    <?php endforeach; ?>
                             </tbody>
                         </table>
-                    </div>
+                </div>
 
                     <?php if (count($soil_tests) > 5): ?>
                         <div class="show-more-container">
                             <button id="showMoreBtn" class="show-more-btn">
                                 <i class="fas fa-chevron-down"></i> Show More Tests
                             </button>
-                        </div>
+                    </div>
                     <?php endif; ?>
-                </div>
+                                        </div>
 
                 <!-- Soil Test Form Section -->
                 <div class="soil-test-form">
@@ -1142,7 +1142,7 @@ function getPotassiumStatus($value) {
                         <div class="alert <?php echo strpos($message, 'success') !== false ? 'alert-success' : 'alert-error'; ?>">
                             <i class="fas <?php echo strpos($message, 'success') !== false ? 'fa-check-circle' : 'fa-exclamation-circle'; ?>"></i>
                             <?php echo $message; ?>
-                        </div>
+                                        </div>
                     <?php endif; ?>
                     
                     <form method="POST" id="soilTestForm" onsubmit="return validateSoilTestForm()">
@@ -1162,11 +1162,11 @@ function getPotassiumStatus($value) {
                                     <div class="input-icon">
                                         <i class="fas fa-check-circle success-icon"></i>
                                         <i class="fas fa-exclamation-circle error-icon"></i>
+                                        </div>
                                     </div>
-                                </div>
                                 <small class="input-info">Optimal range: 5.5 - 6.5</small>
                                 <div class="error-message"></div>
-                            </div>
+                                </div>
 
                             <div class="input-group">
                                 <label for="nitrogen_content">
@@ -1183,11 +1183,11 @@ function getPotassiumStatus($value) {
                                     <div class="input-icon">
                                         <i class="fas fa-check-circle success-icon"></i>
                                         <i class="fas fa-exclamation-circle error-icon"></i>
-                                    </div>
-                                </div>
+                        </div>
+                        </div>
                                 <small class="input-info">Optimal range: 0.5% - 1.0%</small>
                                 <div class="error-message"></div>
-                            </div>
+                        </div>
 
                             <div class="input-group">
                                 <label for="phosphorus_content">
@@ -1204,11 +1204,11 @@ function getPotassiumStatus($value) {
                                     <div class="input-icon">
                                         <i class="fas fa-check-circle success-icon"></i>
                                         <i class="fas fa-exclamation-circle error-icon"></i>
+                                        </div>
                                     </div>
-                                </div>
                                 <small class="input-info">Optimal range: 0.05% - 0.2%</small>
                                 <div class="error-message"></div>
-                            </div>
+                </div>
 
                             <div class="input-group">
                                 <label for="potassium_content">
@@ -1225,8 +1225,8 @@ function getPotassiumStatus($value) {
                                     <div class="input-icon">
                                         <i class="fas fa-check-circle success-icon"></i>
                                         <i class="fas fa-exclamation-circle error-icon"></i>
-                                    </div>
-                                </div>
+                            </div>
+                        </div>
                                 <small class="input-info">Optimal range: 1.0% - 2.0%</small>
                                 <div class="error-message"></div>
                             </div>
@@ -1234,7 +1234,7 @@ function getPotassiumStatus($value) {
                         <button type="submit" name="add_soil_test" class="submit-btn">
                             <i class="fas fa-save"></i> Submit Soil Test
                         </button>
-                    </form>
+                </form>
                 </div>
             </div>
         </div>
@@ -1289,7 +1289,7 @@ function getPotassiumStatus($value) {
                     errorDiv.textContent = `${config.name} is required`;
                     shakeElement(inputGroup);
                 } else if (isNaN(value) || value < config.min || value > config.max) {
-                    isValid = false;
+                        isValid = false;
                     inputGroup.classList.add('error');
                     errorDiv.textContent = `${config.name} must be between ${config.min} and ${config.max}`;
                     shakeElement(inputGroup);

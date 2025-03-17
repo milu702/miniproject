@@ -243,7 +243,6 @@ if (isset($_POST['process_upi_payment'])) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <style>
-        /* Update root variables to match soil test theme */
         :root {
             --primary-color: #2D5A27;
             --primary-dark: #1A3A19;
@@ -253,50 +252,47 @@ if (isset($_POST['process_upi_payment'])) {
             --sidebar-width: 250px;
         }
 
-        /* Updated Sidebar Styles */
+        /* Sidebar Base */
         .sidebar {
             width: var(--sidebar-width);
-            background: linear-gradient(180deg, #2D5A27 0%, #1A3A19 100%);
-            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
-            padding: 0;
+            background: var(--primary-color);
+            min-height: 100vh;
+            padding: 20px 0;
             position: fixed;
-            height: 100vh;
-            z-index: 1000;
             left: 0;
             top: 0;
         }
 
-        /* Logo Header */
+        /* Logo Section */
         .sidebar-header {
             padding: 20px;
             display: flex;
             align-items: center;
-            gap: 12px;
-            background: rgba(255, 255, 255, 0.1);
-            margin-bottom: 20px;
-        }
-
-        .sidebar-header h2 {
+            gap: 10px;
             color: white;
-            font-size: 24px;
-            font-weight: 600;
-            margin: 0;
+            margin-bottom: 30px;
         }
 
         .sidebar-header i {
             font-size: 24px;
         }
 
-        /* Farmer Profile */
+        .sidebar-header h2 {
+            font-size: 20px;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        /* Profile Section */
         .farmer-profile {
             padding: 20px;
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
 
         .farmer-avatar {
-            width: 80px;
-            height: 80px;
+            width: 60px;
+            height: 60px;
             background: rgba(255, 255, 255, 0.2);
             border-radius: 50%;
             margin: 0 auto 15px;
@@ -305,16 +301,22 @@ if (isset($_POST['process_upi_payment'])) {
             justify-content: center;
         }
 
+        .farmer-avatar i {
+            font-size: 24px;
+            color: white;
+        }
+
         .farmer-profile h3 {
             color: white;
+            font-size: 16px;
             margin: 0 0 5px 0;
-            font-size: 18px;
+            font-weight: 500;
         }
 
         .farmer-profile p {
             color: rgba(255, 255, 255, 0.8);
-            margin: 0;
             font-size: 14px;
+            margin: 0;
         }
 
         .farmer-location {
@@ -323,59 +325,45 @@ if (isset($_POST['process_upi_payment'])) {
             justify-content: center;
             gap: 5px;
             color: rgba(255, 255, 255, 0.8);
-            margin-top: 10px;
-            font-size: 14px;
+            font-size: 13px;
+            margin-top: 8px;
         }
 
         /* Navigation Menu */
         .nav-menu {
-            padding: 10px 0;
+            padding: 0 15px;
         }
 
         .nav-menu-items {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 8px;
         }
 
         .nav-item {
             display: flex;
             align-items: center;
-            padding: 12px 25px;
-            color: rgba(255, 255, 255, 0.9);
+            padding: 12px 15px;
+            color: white;
             text-decoration: none;
+            border-radius: 8px;
             transition: all 0.3s ease;
-            margin: 4px 15px 4px 0;
-            border-radius: 0 25px 25px 0;
+            font-size: 14px;
         }
 
         .nav-item i {
-            width: 24px;
-            font-size: 18px;
-            margin-right: 12px;
+            width: 20px;
+            margin-right: 10px;
+            font-size: 16px;
         }
 
-        .nav-item span {
-            font-size: 15px;
-        }
-
-        /* Active State */
-        .nav-item.active {
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
-            font-weight: 500;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Hover Effects */
         .nav-item:hover {
             background: rgba(255, 255, 255, 0.1);
-            color: white;
-            padding-left: 30px;
         }
 
-        .nav-item:hover i {
-            transform: scale(1.1);
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.15);
+            font-weight: 500;
         }
 
         /* Bottom Menu */
@@ -389,21 +377,20 @@ if (isset($_POST['process_upi_payment'])) {
         .logout-btn {
             display: flex;
             align-items: center;
-            padding: 12px 25px;
-            color: #ff6b6b;
+            padding: 12px 15px;
+            color: rgba(255, 255, 255, 0.8);
             text-decoration: none;
-            transition: all 0.3s ease;
             border-radius: 8px;
-            background: rgba(255, 99, 99, 0.1);
+            transition: all 0.3s ease;
+            font-size: 14px;
         }
 
         .logout-btn:hover {
-            background: rgba(255, 99, 99, 0.2);
-            color: #ff8585;
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .logout-btn i {
-            margin-right: 12px;
+            margin-right: 10px;
         }
 
         /* Custom Icons for Nav Items */
@@ -498,15 +485,15 @@ if (isset($_POST['process_upi_payment'])) {
             color: var(--primary-color);
             display: flex;
             align-items: center;
-            gap: 10px;
+                gap: 10px;
             margin-bottom: 20px;
             padding-bottom: 15px;
             border-bottom: 2px solid #eee;
-        }
+            }
 
         /* Make tables more compact */
         .fertilizer-table {
-            width: 100%;
+                width: 100%;
             border-collapse: collapse;
             margin-bottom: 0;
         }
@@ -1088,7 +1075,7 @@ if (isset($_POST['process_upi_payment'])) {
                                     }
                                     ?>
                                 </td>
-                            </tr>
+                                </tr>
                             <!-- Potassium -->
                             <tr>
                                 <td><strong>Potassium (K)</strong></td>
@@ -1116,9 +1103,9 @@ if (isset($_POST['process_upi_payment'])) {
                                 </td>
                             </tr>
                         <?php endif; ?>
-                    </tbody>
-                </table>
-
+                        </tbody>
+                    </table>
+                    
                 <!-- Fertilizer Recommendations -->
                 <?php if ($soil_data): ?>
                 <div class="recommendation-content">
@@ -1167,13 +1154,13 @@ if (isset($_POST['process_upi_payment'])) {
                                 <?php if ($soil_data['nitrogen_content'] < 0.5): ?>
                                     <li>Apply Urea (46-0-0) at 100-150 kg/ha</li>
                                     <li>Split into 3 applications</li>
-                                <?php endif; ?>
+                    <?php endif; ?>
                                 
                                 <?php if ($soil_data['phosphorus_content'] < 0.05): ?>
                                     <li>Apply Single Super Phosphate at 200-250 kg/ha</li>
                                     <li>Apply during soil preparation</li>
-                                <?php endif; ?>
-                                
+                <?php endif; ?>
+                
                                 <?php if ($soil_data['potassium_content'] < 1.0): ?>
                                     <li>Apply Muriate of Potash at 150-200 kg/ha</li>
                                     <li>Split into 2-3 applications</li>
@@ -1185,8 +1172,8 @@ if (isset($_POST['process_upi_payment'])) {
                                     <li>Maintain current fertilization program</li>
                                     <li>Monitor nutrient levels quarterly</li>
                                 <?php endif; ?>
-                            </ul>
-                        </div>
+                    </ul>
+            </div>
 
                         <!-- Application Schedule -->
                         <div class="recommendation-item">
@@ -1198,8 +1185,8 @@ if (isset($_POST['process_upi_payment'])) {
                                 <li>Final Application: Spring (March-April)</li>
                                 <li>Note: Adjust timing based on local weather conditions</li>
                             </ul>
-                        </div>
                     </div>
+                        </div>
                 </div>
                 <?php endif; ?>
             </div>
@@ -1252,7 +1239,7 @@ if (isset($_POST['process_upi_payment'])) {
                         <?php endif; ?>
                     </tbody>
                 </table>
-            </div>
+    </div>
 
             <!-- Add Pesticide Recommendations -->
             <div class="recommendation-card">

@@ -51,15 +51,30 @@ $kerala_districts = [
     ]
 ];
 
-// Add these coordinates at the top of the file after the kerala_districts array
+// Update the district_coordinates array to include sub-places
 $district_coordinates = [
     'Wayanad' => [
         'lat' => 11.6854,
-        'lon' => 76.1320
+        'lon' => 76.1320,
+        'Kalpetta' => ['lat' => 11.6087, 'lon' => 76.0832],
+        'Sulthan Bathery' => ['lat' => 11.6633, 'lon' => 76.2593],
+        'Mananthavady' => ['lat' => 11.8002, 'lon' => 76.0027],
+        'Meenangadi' => ['lat' => 11.5062, 'lon' => 76.2362],
+        'Vythiri' => ['lat' => 11.5645, 'lon' => 76.0410],
+        'Pulpally' => ['lat' => 11.8031, 'lon' => 76.1410],
+        'Panamaram' => ['lat' => 11.7403, 'lon' => 76.0735]
     ],
     'Idukki' => [
         'lat' => 9.9189,
-        'lon' => 77.1025
+        'lon' => 77.1025,
+        'Thodupuzha' => ['lat' => 9.8959, 'lon' => 76.7184],
+        'Munnar' => ['lat' => 10.0889, 'lon' => 77.0595],
+        'Adimali' => ['lat' => 10.0050, 'lon' => 76.9634],
+        'Devikulam' => ['lat' => 10.0518, 'lon' => 77.1027],
+        'Kattappana' => ['lat' => 9.7503, 'lon' => 77.1152],
+        'Nedumkandam' => ['lat' => 9.8957, 'lon' => 77.1609],
+        'Peermade' => ['lat' => 9.5768, 'lon' => 77.0273],
+        'Vagamon' => ['lat' => 9.6857, 'lon' => 76.9026]
     ]
 ];
 
@@ -73,8 +88,15 @@ $message = '';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $selected_district = isset($_POST['district']) ? $_POST['district'] : '';
+    $selected_subplace = isset($_POST['subplace']) ? $_POST['subplace'] : '';
+    
     if (!empty($selected_district)) {
-        $location = $selected_district . ', Kerala, India';
+        $location = '';
+        if (!empty($selected_subplace)) {
+            $location = $selected_subplace . ', ' . $selected_district . ', Kerala, India';
+        } else {
+            $location = $selected_district . ', Kerala, India';
+        }
         
         // Initialize arrays before passing them
         $weather_data = [];
@@ -87,6 +109,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         // Add debug logging
         error_log('Selected District: ' . $selected_district);
+        error_log('Selected Subplace: ' . $selected_subplace);
         error_log('Weather Data: ' . print_r($weather_data, true));
         
         // Set message for non-cardamom districts
@@ -99,6 +122,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 // Function to get weather data
 function getWeatherData($location, &$weather_data, &$forecast_data, &$soil_moisture, &$solar_radiation, $api_key) {
     global $district_coordinates;
+    
+    // Initialize weather_data with default values
+    $weather_data = [
+        'main' => [
+            'temp' => null,
+            'feels_like' => null,
+            'humidity' => null,
+            'pressure' => null
+        ],
+        'wind' => [
+            'speed' => null
+        ],
+        'weather' => [
+            [
+                'description' => 'No data available',
+                'icon' => '01d'
+            ]
+        ]
+    ];
     
     // Function to make API calls using cURL
     function makeApiCall($url) {
@@ -123,16 +165,27 @@ function getWeatherData($location, &$weather_data, &$forecast_data, &$soil_moist
         return null;
     }
 
-    // Extract district name from location
-    $district = trim(explode(',', $location)[0]);
+    // Extract district and subplace from location
+    $location_parts = array_map('trim', explode(',', $location));
+    $subplace = $location_parts[0];
+    $district = $location_parts[1] ?? '';
     
     // Get coordinates
+    $lat = null;
+    $lon = null;
+    
     if (isset($district_coordinates[$district])) {
-        // Use predefined coordinates for Wayanad and Idukki
-        $lat = $district_coordinates[$district]['lat'];
-        $lon = $district_coordinates[$district]['lon'];
+        if (!empty($subplace) && isset($district_coordinates[$district][$subplace])) {
+            // Use subplace coordinates if available
+            $lat = $district_coordinates[$district][$subplace]['lat'];
+            $lon = $district_coordinates[$district][$subplace]['lon'];
+        } else {
+            // Use district coordinates as fallback
+            $lat = $district_coordinates[$district]['lat'];
+            $lon = $district_coordinates[$district]['lon'];
+        }
     } else {
-        // Use geocoding API for other districts
+        // Use geocoding API for other locations
         $geocode_url = "http://api.openweathermap.org/geo/1.0/direct?q=" . urlencode($location) . "&limit=1&appid=" . $api_key;
         $geocode_data = makeApiCall($geocode_url);
         
@@ -147,11 +200,21 @@ function getWeatherData($location, &$weather_data, &$forecast_data, &$soil_moist
     
     // Get weather data
     $api_url = "https://api.openweathermap.org/data/2.5/weather?lat={$lat}&lon={$lon}&units=metric&appid={$api_key}";
-    $weather_data = makeApiCall($api_url);
+    $response_data = makeApiCall($api_url);
+
+    if ($response_data !== null) {
+        $weather_data = $response_data;
+    }
 
     // Get forecast data
     $forecast_url = "https://api.openweathermap.org/data/2.5/forecast?lat={$lat}&lon={$lon}&units=metric&appid={$api_key}";
-    $forecast_data = makeApiCall($forecast_url);
+    $forecast_response = makeApiCall($forecast_url);
+
+    if ($forecast_response !== null) {
+        $forecast_data = $forecast_response;
+    } else {
+        $forecast_data = ['list' => []];
+    }
 
     // Generate soil moisture and solar radiation data for Wayanad and Idukki
     if ($district === 'Wayanad' || $district === 'Idukki') {
@@ -169,59 +232,95 @@ function getWeatherData($location, &$weather_data, &$forecast_data, &$soil_moist
 function getWeatherAnalysis($weather_data, $soil_moisture) {
     $analysis = [];
     
+    // Check if weather data is valid
+    if (empty($weather_data) || !isset($weather_data['main']) || !isset($weather_data['wind'])) {
+        return [
+            'temperature' => ['status' => 'Error', 'message' => 'Weather data unavailable'],
+            'humidity' => ['status' => 'Error', 'message' => 'Weather data unavailable'],
+            'wind' => ['status' => 'Error', 'message' => 'Weather data unavailable'],
+            'pressure' => ['status' => 'Error', 'message' => 'Weather data unavailable'],
+            'soil' => ['status' => 'Error', 'message' => 'Weather data unavailable'],
+            'solar' => ['status' => 'Error', 'message' => 'Weather data unavailable']
+        ];
+    }
+    
     // Temperature analysis
-    $temp = $weather_data['main']['temp'];
-    if ($temp < 15 || $temp > 25) {
-        $analysis['temperature'] = ['status' => 'Poor', 'message' => 'Temperature out of ideal range (15°C - 25°C). Consider using shade nets or irrigation to regulate temperature.'];
+    $temp = isset($weather_data['main']['temp']) ? $weather_data['main']['temp'] : null;
+    if ($temp !== null) {
+        if ($temp < 15 || $temp > 25) {
+            $analysis['temperature'] = ['status' => 'Poor', 'message' => 'Temperature out of ideal range (15°C - 25°C). Consider using shade nets or irrigation to regulate temperature.'];
+        } else {
+            $analysis['temperature'] = ['status' => 'Good', 'message' => 'Optimal temperature for cardamom growth.'];
+        }
     } else {
-        $analysis['temperature'] = ['status' => 'Good', 'message' => 'Optimal temperature for cardamom growth.'];
+        $analysis['temperature'] = ['status' => 'Error', 'message' => 'Temperature data unavailable'];
     }
 
     // Humidity analysis
-    $humidity = $weather_data['main']['humidity'];
-    if ($humidity < 70) {
-        $analysis['humidity'] = ['status' => 'Poor', 'message' => 'Low humidity (<70%). Consider using misting or increasing irrigation frequency.'];
-    } elseif ($humidity > 90) {
-        $analysis['humidity'] = ['status' => 'Warning', 'message' => 'High humidity (>90%). Monitor for fungal diseases and ensure proper air circulation.'];
+    $humidity = isset($weather_data['main']['humidity']) ? $weather_data['main']['humidity'] : null;
+    if ($humidity !== null) {
+        if ($humidity < 70) {
+            $analysis['humidity'] = ['status' => 'Poor', 'message' => 'Low humidity (<70%). Consider using misting or increasing irrigation frequency.'];
+        } elseif ($humidity > 90) {
+            $analysis['humidity'] = ['status' => 'Warning', 'message' => 'High humidity (>90%). Monitor for fungal diseases and ensure proper air circulation.'];
+        } else {
+            $analysis['humidity'] = ['status' => 'Good', 'message' => 'Optimal humidity (70-90%) for cardamom growth.'];
+        }
     } else {
-        $analysis['humidity'] = ['status' => 'Good', 'message' => 'Optimal humidity (70-90%) for cardamom growth.'];
+        $analysis['humidity'] = ['status' => 'Error', 'message' => 'Humidity data unavailable'];
     }
 
     // Wind speed analysis
-    $wind_speed = $weather_data['wind']['speed'];
-    if ($wind_speed > 2.8) { // 10 km/h ≈ 2.8 m/s
-        $analysis['wind'] = ['status' => 'Warning', 'message' => 'High wind speeds may damage plants. Consider installing windbreaks or protective barriers.'];
+    $wind_speed = isset($weather_data['wind']['speed']) ? $weather_data['wind']['speed'] : null;
+    if ($wind_speed !== null) {
+        if ($wind_speed > 2.8) {
+            $analysis['wind'] = ['status' => 'Warning', 'message' => 'High wind speeds may damage plants. Consider installing windbreaks or protective barriers.'];
+        } else {
+            $analysis['wind'] = ['status' => 'Good', 'message' => 'Wind speed is within acceptable range for cardamom cultivation.'];
+        }
     } else {
-        $analysis['wind'] = ['status' => 'Good', 'message' => 'Wind speed is within acceptable range for cardamom cultivation.'];
+        $analysis['wind'] = ['status' => 'Error', 'message' => 'Wind data unavailable'];
     }
 
     // Pressure analysis
-    $pressure = $weather_data['main']['pressure'];
-    if ($pressure < 900) {
-        $analysis['pressure'] = ['status' => 'Warning', 'message' => 'Low pressure may indicate incoming storms. Take precautionary measures.'];
-    } elseif ($pressure > 1015) {
-        $analysis['pressure'] = ['status' => 'Warning', 'message' => 'High pressure may lead to dry conditions. Monitor irrigation needs.'];
+    $pressure = isset($weather_data['main']['pressure']) ? $weather_data['main']['pressure'] : null;
+    if ($pressure !== null) {
+        if ($pressure < 900) {
+            $analysis['pressure'] = ['status' => 'Warning', 'message' => 'Low pressure may indicate incoming storms. Take precautionary measures.'];
+        } elseif ($pressure > 1015) {
+            $analysis['pressure'] = ['status' => 'Warning', 'message' => 'High pressure may lead to dry conditions. Monitor irrigation needs.'];
+        } else {
+            $analysis['pressure'] = ['status' => 'Good', 'message' => 'Atmospheric pressure is within normal range.'];
+        }
     } else {
-        $analysis['pressure'] = ['status' => 'Good', 'message' => 'Atmospheric pressure is within normal range.'];
+        $analysis['pressure'] = ['status' => 'Error', 'message' => 'Pressure data unavailable'];
     }
 
     // Soil moisture analysis
-    if ($soil_moisture < 30) {
-        $analysis['soil'] = ['status' => 'Poor', 'message' => 'Soil too dry (<30%). Immediate irrigation needed.'];
-    } elseif ($soil_moisture > 50) {
-        $analysis['soil'] = ['status' => 'Warning', 'message' => 'Soil too wet (>50%). Reduce irrigation and ensure proper drainage.'];
+    if ($soil_moisture !== null) {
+        if ($soil_moisture < 30) {
+            $analysis['soil'] = ['status' => 'Poor', 'message' => 'Soil too dry (<30%). Immediate irrigation needed.'];
+        } elseif ($soil_moisture > 50) {
+            $analysis['soil'] = ['status' => 'Warning', 'message' => 'Soil too wet (>50%). Reduce irrigation and ensure proper drainage.'];
+        } else {
+            $analysis['soil'] = ['status' => 'Good', 'message' => 'Optimal soil moisture (30-50%) for cardamom roots.'];
+        }
     } else {
-        $analysis['soil'] = ['status' => 'Good', 'message' => 'Optimal soil moisture (30-50%) for cardamom roots.'];
+        $analysis['soil'] = ['status' => 'Error', 'message' => 'Soil moisture data unavailable'];
     }
 
-    // Solar radiation analysis (using the global variable)
+    // Solar radiation analysis
     global $solar_radiation;
-    if ($solar_radiation < 200) {
-        $analysis['solar'] = ['status' => 'Poor', 'message' => 'Insufficient light (<200 W/m²). Consider reducing shade coverage.'];
-    } elseif ($solar_radiation > 500) {
-        $analysis['solar'] = ['status' => 'Warning', 'message' => 'Excessive light (>500 W/m²). Increase shade coverage to protect plants.'];
+    if ($solar_radiation !== null) {
+        if ($solar_radiation < 200) {
+            $analysis['solar'] = ['status' => 'Poor', 'message' => 'Insufficient light (<200 W/m²). Consider reducing shade coverage.'];
+        } elseif ($solar_radiation > 500) {
+            $analysis['solar'] = ['status' => 'Warning', 'message' => 'Excessive light (>500 W/m²). Increase shade coverage to protect plants.'];
+        } else {
+            $analysis['solar'] = ['status' => 'Good', 'message' => 'Optimal light levels (200-500 W/m²) for cardamom growth.'];
+        }
     } else {
-        $analysis['solar'] = ['status' => 'Good', 'message' => 'Optimal light levels (200-500 W/m²) for cardamom growth.'];
+        $analysis['solar'] = ['status' => 'Error', 'message' => 'Solar radiation data unavailable'];
     }
 
     return $analysis;
@@ -237,10 +336,10 @@ function getCardamomGrowthIndex($weather_data, $soil_moisture) {
     
     $analysis = [];
     
-    // Weather Parameters Analysis
-    $temp = $weather_data['main']['temp'];
-    $humidity = $weather_data['main']['humidity'];
-    $wind_speed = $weather_data['wind']['speed'];
+    // Weather Parameters Analysis with null checks
+    $temp = isset($weather_data['main']['temp']) ? $weather_data['main']['temp'] : null;
+    $humidity = isset($weather_data['main']['humidity']) ? $weather_data['main']['humidity'] : null;
+    $wind_speed = isset($weather_data['wind']['speed']) ? $weather_data['wind']['speed'] : null;
     
     // Create simplified soil data array with available values
     $soil_data = [
@@ -1289,9 +1388,9 @@ function getGrowthRecommendations($analysis) {
                     </div>
                 </div>
                 
-                <!-- Replace the existing location form with this new form -->
+                <!-- Replace the existing location form with this updated form -->
                 <form method="POST" class="location-form">
-                    <select name="district" id="district" required onchange="this.form.submit()">
+                    <select name="district" id="district" required onchange="updateSubplaces(this.value)">
                         <option value="">Select District</option>
                         <?php foreach ($kerala_districts as $district => $places): ?>
                             <option value="<?php echo $district; ?>" <?php echo ($selected_district === $district) ? 'selected' : ''; ?>>
@@ -1299,6 +1398,11 @@ function getGrowthRecommendations($analysis) {
                             </option>
                         <?php endforeach; ?>
                     </select>
+                    
+                    <select name="subplace" id="subplace" style="display: none;">
+                        <option value="">Select Location</option>
+                    </select>
+                    
                     <button type="submit"><i class="fas fa-search"></i> Get Weather</button>
                 </form>
 
@@ -1659,6 +1763,29 @@ function getGrowthRecommendations($analysis) {
                 const progress = circle.querySelector('.progress');
                 progress.style.strokeDasharray = `${value}, 100`;
             });
+        });
+
+        function updateSubplaces(district) {
+            const subplaceSelect = document.getElementById('subplace');
+            const subplaces = <?php echo json_encode($kerala_districts); ?>;
+            
+            if (district === 'Idukki' || district === 'Wayanad') {
+                subplaceSelect.innerHTML = '<option value="">Select Location</option>';
+                subplaces[district].forEach(place => {
+                    subplaceSelect.innerHTML += `<option value="${place}">${place}</option>`;
+                });
+                subplaceSelect.style.display = 'block';
+            } else {
+                subplaceSelect.style.display = 'none';
+            }
+        }
+
+        // Initialize subplaces if district is already selected
+        document.addEventListener('DOMContentLoaded', function() {
+            const district = document.getElementById('district').value;
+            if (district) {
+                updateSubplaces(district);
+            }
         });
     </script>
 </body>
