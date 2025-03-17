@@ -81,6 +81,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 mysqli_stmt_bind_param($stmt, "idddds", $farmer_id, $ph_level, $nitrogen_content, $phosphorus_content, $potassium_content, $test_date);
                 
                 if (mysqli_stmt_execute($stmt)) {
+                    // Get farmer's email
+                    $email_query = "SELECT email FROM users WHERE id = ?";
+                    $email_stmt = mysqli_prepare($conn, $email_query);
+                    mysqli_stmt_bind_param($email_stmt, "i", $farmer_id);
+                    mysqli_stmt_execute($email_stmt);
+                    $email_result = mysqli_stmt_get_result($email_stmt);
+                    $farmer_data = mysqli_fetch_assoc($email_result);
+                    
+                    if ($farmer_data) {
+                        // Prepare email content
+                        $to = $farmer_data['email'];
+                        $subject = "Soil Test Results - GrowGuide";
+                        
+                        $email_body = "
+                        <html>
+                        <head>
+                            <style>
+                                body { font-family: Arial, sans-serif; }
+                                .container { padding: 20px; }
+                                .result-item { margin: 10px 0; }
+                                .button { 
+                                    background-color: #2D5A27;
+                                    color: white;
+                                    padding: 10px 20px;
+                                    text-decoration: none;
+                                    border-radius: 5px;
+                                    display: inline-block;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class='container'>
+                                <h2>New Soil Test Results</h2>
+                                <p>Dear Farmer,</p>
+                                <p>Your soil test has been completed. Here are your results:</p>
+                                
+                                <div class='result-item'>pH Level: $ph_level</div>
+                                <div class='result-item'>Nitrogen Content: $nitrogen_content%</div>
+                                <div class='result-item'>Phosphorus Content: $phosphorus_content%</div>
+                                <div class='result-item'>Potassium Content: $potassium_content%</div>
+                                
+                                <p>To view detailed recommendations and analysis, please click the button below:</p>
+                                
+                                <a href='http://yourdomain.com/soil_test.php' class='button'>View Details</a>
+                                
+                                <p>Best regards,<br>GrowGuide Team</p>
+                            </div>
+                        </body>
+                        </html>";
+                        
+                        // Email headers
+                        $headers = "MIME-Version: 1.0" . "\r\n";
+                        $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+                        $headers .= 'From: GrowGuide <noreply@growguide.com>' . "\r\n";
+                        
+                        // Send email
+                        mail($to, $subject, $email_body, $headers);
+                    }
+                    
                     $message = 'Soil test added successfully!';
                     header("Location: " . $_SERVER['PHP_SELF']);
                     exit();

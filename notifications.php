@@ -1,51 +1,29 @@
 <?php
 session_start();
 
-// Ensure user is logged in
-if (!isset($_SESSION['user_id'])) {
+// Ensure user is logged in and is an employee
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'employee') {
     header("Location: login.php");
     exit();
 }
 
-// Database connection
+// Add database connection
 $conn = mysqli_connect("localhost", "root", "", "growguide");
+
+// Check connection
 if (!$conn) {
     die("Connection failed: " . mysqli_connect_error());
 }
 
-// Get notifications for the user
-$user_id = $_SESSION['user_id'];
-$query = "SELECT n.*, 
-          CASE 
-            WHEN n.type = 'fertilizer_recommendation' THEN fr.recommendation_details
-            WHEN n.type = 'soil_test' THEN st.test_results
-   
-            ELSE NULL 
-          END as additional_details,
-          u.username as sender_name
-          FROM notifications n
-          LEFT JOIN fertilizer_recommendations fr ON n.id = fr.recommendation_id
-          LEFT JOIN soil_tests st ON n.id = st.test_id
-          
-          LEFT JOIN users u ON n.sender_id = u.id
-          WHERE n.user_id = ?
-          ORDER BY n.created_at DESC";
-
-$stmt = mysqli_prepare($conn, $query);
-if (!$stmt) {
-    die("Prepare failed: " . mysqli_error($conn));
+// Mark notification as read if ID is provided
+if (isset($_POST['mark_read']) && isset($_POST['notification_id'])) {
+    $notification_id = mysqli_real_escape_string($conn, $_POST['notification_id']);
+    mysqli_query($conn, "UPDATE notifications SET is_read = 1 WHERE id = '$notification_id'");
 }
-mysqli_stmt_bind_param($stmt, "i", $user_id);
-if (!mysqli_stmt_execute($stmt)) {
-    die("Execute failed: " . mysqli_stmt_error($stmt));
-}
-$notifications = mysqli_stmt_get_result($stmt);
 
-// Update to use is_read instead of status
-$update_query = "UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0";
-$update_stmt = mysqli_prepare($conn, $update_query);
-mysqli_stmt_bind_param($update_stmt, "i", $user_id);
-mysqli_stmt_execute($update_stmt);
+// Fetch all notifications
+$notifications_query = "SELECT * FROM notifications ORDER BY created_at DESC";
+$notifications = mysqli_query($conn, $notifications_query);
 
 mysqli_close($conn);
 ?>
@@ -62,7 +40,6 @@ mysqli_close($conn);
         .notifications-container {
             max-width: 800px;
             margin: 20px auto;
-            padding: 20px;
         }
 
         .notification-item {
@@ -71,26 +48,29 @@ mysqli_close($conn);
             padding: 15px;
             margin-bottom: 15px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s ease;
         }
 
         .notification-item:hover {
             transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
 
-        .notification-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
+        .notification-item.unread {
+            border-left: 4px solid #2B7A30;
+            background: #f8fff9;
         }
 
-        .notification-type {
-            background: #2B7A30;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.9em;
+        .notification-icon {
+            font-size: 1.5em;
+            color: #2B7A30;
+        }
+
+        .notification-content {
+            flex: 1;
         }
 
         .notification-time {
@@ -98,105 +78,67 @@ mysqli_close($conn);
             font-size: 0.9em;
         }
 
-        .notification-content {
-            margin-top: 10px;
+        .mark-read-btn {
+            background: none;
+            border: none;
+            color: #2B7A30;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
         }
 
-        .notification-actions {
-            margin-top: 15px;
-            display: flex;
-            gap: 10px;
+        .mark-read-btn:hover {
+            background: #e8f5e9;
         }
 
-        .btn-view {
-            background: #2B7A30;
-            color: white;
-            padding: 8px 15px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-size: 0.9em;
+        .no-notifications {
+            text-align: center;
+            padding: 40px;
+            color: #666;
         }
 
-        .unread {
-            border-left: 4px solid #2B7A30;
-        }
-
-        :root {
-            --primary-color: #2B7A30;
-            --primary-dark: #1a4a1d;
-            --hover-color: #3c8c40;
-            --text-light: #ffffff;
-            --sidebar-width: 250px;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            background: #f5f7fa;
-        }
-
-        /* Sidebar Styles */
+        /* Add these new sidebar styles */
         .sidebar {
-            width: var(--sidebar-width);
+            background-color: #1B4D1B;
+            width: 250px;
             height: 100vh;
             position: fixed;
             left: 0;
             top: 0;
-            background: linear-gradient(to bottom, var(--primary-color), var(--primary-dark));
-            color: var(--text-light);
-            z-index: 1000;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            padding: 20px 0;
         }
 
-        .logo-container {
-            padding: 20px;
+        .logo {
+            color: white;
+            font-size: 24px;
+            padding: 0 20px 20px;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .logo-container i {
-            font-size: 24px;
-            color: var(--text-light);
-        }
-
-        .logo-container span {
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .nav-menu {
-            margin-top: 30px;
+        .logo i {
+            color: #4CAF50;
         }
 
         .nav-item {
             display: flex;
             align-items: center;
             padding: 15px 20px;
-            color: var(--text-light);
+            color: white;
             text-decoration: none;
             transition: all 0.3s ease;
-            gap: 12px;
+            margin: 5px 0;
         }
 
-        .nav-item:hover {
-            background: var(--hover-color);
-            padding-left: 25px;
-        }
-
-        .nav-item.active {
-            background: rgba(255, 255, 255, 0.1);
-            border-left: 4px solid var(--text-light);
+        .nav-item:hover, .nav-item.active {
+            background-color: #2B7A30;
         }
 
         .nav-item i {
-            width: 20px;
-            text-align: center;
-        }
-
-        .nav-item span {
-            font-size: 16px;
+            width: 24px;
+            margin-right: 10px;
         }
 
         .logout-btn {
@@ -204,148 +146,106 @@ mysqli_close($conn);
             bottom: 20px;
             width: 100%;
             padding: 15px 20px;
-            background: rgba(220, 53, 69, 0.1);
-            color: #ff6b6b;
-            border: none;
-            cursor: pointer;
+            color: white;
+            text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 12px;
             transition: all 0.3s ease;
         }
 
         .logout-btn:hover {
-            background: #ff6b6b;
-            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
         }
 
-        /* Update main content to accommodate sidebar */
-        .notifications-container {
-            margin-left: var(--sidebar-width) !important;
-            max-width: calc(100% - var(--sidebar-width) - 40px) !important;
+        .logout-btn i {
+            width: 24px;
+            margin-right: 10px;
+        }
+
+        /* Adjust main content to accommodate sidebar */
+        .content {
+            margin-left: 250px;
             padding: 20px;
-        }
-
-        /* Remove the back to dashboard button since we have sidebar */
-        .notifications-container .btn-view[href="employe.php"] {
-            display: none;
         }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <div class="logo-container">
-            <i class="fas fa-seedling"></i>
+        <div class="logo">
+            <i class="fas fa-leaf"></i>
             <span>GrowGuide</span>
         </div>
-        
-        <nav class="nav-menu">
-            <a href="dashboard.php" class="nav-item">
-                <i class="fas fa-home"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="varieties.php" class="nav-item">
-                <i class="fas fa-seedling"></i>
-                <span>Varieties</span>
-            </a>
-            <a href="notifications.php" class="nav-item active">
-                <i class="fas fa-bell"></i>
-                <span>Notifications</span>
-            </a>
-            <a href="settings.php" class="nav-item">
-                <i class="fas fa-cog"></i>
-                <span>Settings</span>
-            </a>
-            <a href="manage_products.php" class="nav-item">
-                <i class="fas fa-shopping-basket"></i>
-                <span>Manage Products</span>
-            </a>
-            
-            <a href="logout.php" class="nav-item logout-btn">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Logout</span>
-            </a>
-        </nav>
+        <a href="employe.php" class="nav-item">
+            <i class="fas fa-home"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="varieties.php" class="nav-item">
+            <i class="fas fa-seedling"></i>
+            <span>Varieties</span>
+        </a>
+        <a href="notifications.php" class="nav-item active">
+            <i class="fas fa-bell"></i>
+            <span>Notifications</span>
+        </a>
+        <a href="settings.php" class="nav-item">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+        </a>
+        <a href="products.php" class="nav-item">
+            <i class="fas fa-box"></i>
+            <span>Manage Products</span>
+        </a>
+        <a href="logout.php" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+        </a>
     </div>
-    <div class="notifications-container">
-        <h1><i class="fas fa-bell"></i> Notifications</h1>
-        
-        <?php if (mysqli_num_rows($notifications) > 0): ?>
-            <?php while ($notification = mysqli_fetch_assoc($notifications)): ?>
-                <div class="notification-item <?php echo !$notification['is_read'] ? 'unread' : ''; ?>">
-                    <div class="notification-header">
-                        <span class="notification-type">
-                            <?php 
+
+    <div class="content">
+        <div class="notifications-container">
+            <h1><i class="fas fa-bell"></i> Notifications</h1>
+            
+            <?php if (mysqli_num_rows($notifications) > 0): ?>
+                <?php while ($notification = mysqli_fetch_assoc($notifications)): ?>
+                    <div class="notification-item <?php echo !$notification['is_read'] ? 'unread' : ''; ?>">
+                        <div class="notification-icon">
+                            <?php
                             switch($notification['type']) {
-                                case 'fertilizer_recommendation':
-                                    echo '<i class="fas fa-leaf"></i> Fertilizer Recommendation';
+                                case 'new_farmer':
+                                    echo '<i class="fas fa-user-plus"></i>';
                                     break;
                                 case 'soil_test':
-                                    echo '<i class="fas fa-vial"></i> Soil Test Results';
+                                    echo '<i class="fas fa-flask"></i>';
                                     break;
                                 case 'query':
-                                    echo '<i class="fas fa-question-circle"></i> Query Response';
+                                    echo '<i class="fas fa-question-circle"></i>';
                                     break;
-                                default:
-                                    echo '<i class="fas fa-info-circle"></i> Notification';
                             }
                             ?>
-                        </span>
-                        <span class="notification-time">
-                            <?php echo date('M d, Y H:i', strtotime($notification['created_at'])); ?>
-                        </span>
-                    </div>
-                    
-                    <div class="notification-content">
-                        <p><?php echo htmlspecialchars($notification['message']); ?></p>
-                        <?php if ($notification['additional_details']): ?>
-                            <div class="notification-preview">
-                                <p><strong>
-                                    <?php
-                                    switch($notification['type']) {
-                                        case 'fertilizer_recommendation':
-                                            echo 'Recommendation: ';
-                                            break;
-                                        case 'soil_test':
-                                            echo 'Test Results: ';
-                                            break;
-                                        case 'query':
-                                            echo 'Query Details: ';
-                                            break;
-                                    }
-                                    ?>
-                                </strong>
-                                <?php echo htmlspecialchars(substr($notification['additional_details'], 0, 150)) . '...'; ?>
-                                </p>
-                            </div>
+                        </div>
+                        <div class="notification-content">
+                            <p><?php echo htmlspecialchars($notification['message']); ?></p>
+                            <span class="notification-time">
+                                <?php echo date('F j, Y g:i a', strtotime($notification['created_at'])); ?>
+                            </span>
+                        </div>
+                        <?php if (!$notification['is_read']): ?>
+                            <form method="POST" style="display: inline;">
+                                <input type="hidden" name="notification_id" value="<?php echo $notification['id']; ?>">
+                                <button type="submit" name="mark_read" class="mark-read-btn">
+                                    <i class="fas fa-check"></i> Mark as Read
+                                </button>
+                            </form>
                         <?php endif; ?>
                     </div>
-                    
-                    <div class="notification-actions">
-                        <?php 
-                        switch($notification['type']) {
-                            case 'fertilizer_recommendation': ?>
-                                <a href="view_recommendation.php?id=<?php echo $notification['related_id']; ?>" class="btn-view">
-                                    View Full Recommendation
-                                </a>
-                                <?php break;
-                            case 'soil_test': ?>
-                                <a href="view_soil_test.php?id=<?php echo $notification['related_id']; ?>" class="btn-view">
-                                    View Soil Test Results
-                                </a>
-                                <?php break;
-                            case 'query': ?>
-                                <a href="view_query.php?id=<?php echo $notification['related_id']; ?>" class="btn-view">
-                                    View Full Query
-                                </a>
-                                <?php break;
-                        } ?>
-                    </div>
+                <?php endwhile; ?>
+            <?php else: ?>
+                <div class="no-notifications">
+                    <i class="fas fa-bell-slash fa-3x"></i>
+                    <p>No notifications to display</p>
                 </div>
-            <?php endwhile; ?>
-        <?php else: ?>
-            <p>No notifications found.</p>
-        <?php endif; ?>
+            <?php endif; ?>
+        </div>
     </div>
 </body>
 </html> 

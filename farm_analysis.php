@@ -48,14 +48,15 @@ if (!$farmerData) {
     exit();
 }
 
-// Get weather data
-$weather_api_key = "cc02c9dee7518466102e748f211bca05";
+// Update the weather data fetching section
 $weather_data = null;
-if ($farmerData['farm_location']) {
+if (isset($farmerData['farm_location']) && !empty($farmerData['farm_location'])) {
+    $weather_api_key = "cc02c9dee7518466102e748f211bca05";
     $weather_url = "https://api.openweathermap.org/data/2.5/weather?q=" . 
-        urlencode($farmerData['farm_location']) . "&units=metric&appid=" . $weather_api_key;
+        urlencode($farmerData['farm_location']) . ",IN&units=metric&appid=" . $weather_api_key;
+    
     $weather_response = @file_get_contents($weather_url);
-    if ($weather_response) {
+    if ($weather_response !== false) {
         $weather_data = json_decode($weather_response, true);
     }
 }
@@ -266,6 +267,84 @@ function analyzeConditions($weather_data, $soil_data) {
 }
 
 $analysis = analyzeConditions($weather_data, $farmerData);
+
+// Add pesticide and fertilizer recommendation function
+function getPesticideAndFertilizerRecommendations($weather_data, $soil_data) {
+    $recommendations = [];
+    
+    // Weather-based recommendations
+    if ($weather_data) {
+        $temp = $weather_data['main']['temp'] ?? null;
+        $humidity = $weather_data['main']['humidity'] ?? null;
+        $weather_condition = $weather_data['weather'][0]['main'] ?? null;
+
+        // High humidity conditions
+        if ($humidity > 80) {
+            $recommendations[] = [
+                'type' => 'pesticide',
+                'title' => 'Fungicide Application',
+                'description' => 'High humidity detected. Apply copper oxychloride (2.5g/L) or bordeaux mixture to prevent fungal diseases.',
+                'timing' => 'Apply during early morning or late evening'
+            ];
+        }
+
+        // Rainy conditions
+        if (strtolower($weather_condition) === 'rain') {
+            $recommendations[] = [
+                'type' => 'pesticide',
+                'title' => 'Root Disease Prevention',
+                'description' => 'Apply Trichoderma viride (2.5 kg/ha) mixed with organic manure to prevent root rot during wet conditions.',
+                'timing' => 'Apply after rain subsides'
+            ];
+        }
+    }
+
+    // Soil-based recommendations
+    if (isset($soil_data['avg_ph'])) {
+        $ph = $soil_data['avg_ph'];
+        if ($ph < 5.5) {
+            $recommendations[] = [
+                'type' => 'fertilizer',
+                'title' => 'pH Correction',
+                'description' => 'Apply dolomitic limestone (2-3 tons/ha) to raise soil pH.',
+                'timing' => 'Apply before planting or during land preparation'
+            ];
+        }
+    }
+
+    // NPK recommendations based on soil test
+    if (isset($soil_data['avg_nitrogen']) && $soil_data['avg_nitrogen'] < 150) {
+        $recommendations[] = [
+            'type' => 'fertilizer',
+            'title' => 'Nitrogen Supplement',
+            'description' => 'Apply neem cake (1 kg/plant) and vermicompost (2 kg/plant) to improve nitrogen content.',
+            'timing' => 'Apply during pre-monsoon period'
+        ];
+    }
+
+    if (isset($soil_data['avg_phosphorus']) && $soil_data['avg_phosphorus'] < 15) {
+        $recommendations[] = [
+            'type' => 'fertilizer',
+            'title' => 'Phosphorus Supplement',
+            'description' => 'Apply rock phosphate (100g/plant) mixed with organic manure.',
+            'timing' => 'Apply during planting or as top dressing'
+        ];
+    }
+
+    if (isset($soil_data['avg_potassium']) && $soil_data['avg_potassium'] < 120) {
+        $recommendations[] = [
+            'type' => 'fertilizer',
+            'title' => 'Potassium Supplement',
+            'description' => 'Apply wood ash (500g/plant) or potassium sulfate (100g/plant).',
+            'timing' => 'Apply during flowering stage'
+        ];
+    }
+
+    return $recommendations;
+}
+
+// Get recommendations
+$pesticide_fertilizer_recommendations = getPesticideAndFertilizerRecommendations($weather_data, $farmerData);
 ?>
 
 <!DOCTYPE html>
@@ -586,6 +665,99 @@ $analysis = analyzeConditions($weather_data, $farmerData);
             margin-right: 10px;
             color: #ffd700;
         }
+
+        .setup-notice {
+            text-align: center;
+            padding: 15px;
+            background: rgba(45, 90, 39, 0.1);
+            border-radius: 8px;
+        }
+
+        .setup-notice p {
+            margin: 0 0 10px 0;
+            color: var(--primary-dark);
+        }
+
+        .setup-link {
+            display: inline-block;
+            padding: 8px 16px;
+            background: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .setup-link:hover {
+            background: var(--primary-dark);
+            transform: translateX(5px);
+        }
+
+        /* Add to your existing styles */
+        .recommendations-section {
+            margin-top: 2rem;
+        }
+
+        .recommendations-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .recommendation-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            gap: 1rem;
+            transition: transform 0.2s ease;
+        }
+
+        .recommendation-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .recommendation-card.pesticide {
+            border-left: 4px solid #e53e3e;
+        }
+
+        .recommendation-card.fertilizer {
+            border-left: 4px solid #38a169;
+        }
+
+        .recommendation-icon {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        .recommendation-content h3 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-color);
+        }
+
+        .recommendation-content p {
+            margin: 0 0 1rem 0;
+            color: #666;
+        }
+
+        .timing {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .no-recommendations {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -621,7 +793,7 @@ $analysis = analyzeConditions($weather_data, $farmerData);
                         <i class="fas fa-flask"></i>
                         <span>Soil Test</span>
                     </a>
-                    <a href="fertilizer.php" class="nav-item">
+                    <a href="fertilizerrrr.php" class="nav-item">
                         <i class="fas fa-leaf"></i>
                         <span>Fertilizer Guide</span>
                     </a>
@@ -651,12 +823,19 @@ $analysis = analyzeConditions($weather_data, $farmerData);
             <div class="district-banner fade-in">
                 <div class="district-text">
                     <i class="fas fa-map-marker-alt"></i>
-                    Current District: <?php echo htmlspecialchars(ucfirst($farmerData['farm_location'])); ?> | 
-                    Elevation: 800-1500m | 
-                    Best Suited Crops: Cardamom, Coffee, Pepper | 
-                    Annual Rainfall: 2500-3500mm | 
-                    Temperature Range: 10-35°C | 
-                    Soil Type: Forest Loam
+                    <?php if ($farmerData['farm_location'] !== 'Location not set'): ?>
+                        Current District: <?php echo htmlspecialchars(ucfirst($farmerData['farm_location'])); ?> | 
+                        Elevation: 800-1500m | 
+                        Best Suited Crops: Cardamom, Coffee, Pepper | 
+                        Annual Rainfall: 2500-3500mm | 
+                        Temperature Range: 10-35°C | 
+                        Soil Type: Forest Loam
+                    <?php else: ?>
+                        <div class="setup-notice">
+                            <p>Welcome! Please set up your farm location to get weather updates and recommendations.</p>
+                            <a href="farmer.php" class="setup-link">Set Location <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -846,6 +1025,38 @@ $analysis = analyzeConditions($weather_data, $farmerData);
                         <li>No specific recommendations at this time. Continue maintaining current conditions.</li>
                     <?php endif; ?>
                 </ul>
+            </div>
+
+            <!-- Add Pesticide and Fertilizer Recommendations Section -->
+            <div class="recommendations-section fade-in">
+                <div class="section-title">
+                    <i class="fas fa-flask"></i>
+                    <h2>Pesticide & Fertilizer Recommendations</h2>
+                </div>
+                <div class="recommendations-container">
+                    <?php if (!empty($pesticide_fertilizer_recommendations)): ?>
+                        <?php foreach ($pesticide_fertilizer_recommendations as $rec): ?>
+                            <div class="recommendation-card <?php echo $rec['type']; ?>">
+                                <div class="recommendation-icon">
+                                    <i class="fas <?php echo $rec['type'] === 'pesticide' ? 'fa-bug-slash' : 'fa-seedling'; ?>"></i>
+                                </div>
+                                <div class="recommendation-content">
+                                    <h3><?php echo htmlspecialchars($rec['title']); ?></h3>
+                                    <p><?php echo htmlspecialchars($rec['description']); ?></p>
+                                    <div class="timing">
+                                        <i class="fas fa-clock"></i>
+                                        <span><?php echo htmlspecialchars($rec['timing']); ?></span>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="no-recommendations">
+                            <i class="fas fa-info-circle"></i>
+                            <p>No specific recommendations at this time. Continue with regular maintenance.</p>
+                        </div>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>

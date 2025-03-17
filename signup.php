@@ -126,10 +126,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         body {
             background: url('log.jpeg') no-repeat center center/cover;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 40px 0;
+            overflow-y: auto;
         }
 
         .container {
@@ -142,6 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             text-align: center;
             color: white;
             animation: slideIn 0.5s ease-in-out;
+            margin: 20px auto;
         }
 
         .container h2 {
@@ -551,7 +554,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         // Validation patterns
         const patterns = {
-            username: /^[a-zA-Z0-9_ ]{3,20}$/,
+            username: /^[a-zA-Z0-9_]{3,20}$/,
             email: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/,
             phone: /^[6-9]\d{9}$/,
             password: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/

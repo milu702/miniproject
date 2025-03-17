@@ -930,3 +930,11 @@ Stack trace:
 [17-Mar-2025 16:00:54 Europe/Berlin] Password verification failed for email: annmaria@gmail.com
 [17-Mar-2025 16:01:05 Europe/Berlin] Login attempt - Email: annmaria@gmail.com, Role: farmer
 [17-Mar-2025 16:01:06 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[17-Mar-2025 16:23:31 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[17-Mar-2025 16:23:31 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[17-Mar-2025 16:31:13 Europe/Berlin] Login attempt - Email: milujiji2027@mca.ajce.in, Role: farmer
+[17-Mar-2025 16:31:13 Europe/Berlin] Login successful - User ID: 122, Role: farmer
+[17-Mar-2025 16:57:02 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[17-Mar-2025 16:57:02 Europe/Berlin] Login successful - User ID: 66, Role: employee
+[17-Mar-2025 17:21:56 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[17-Mar-2025 17:21:56 Europe/Berlin] Login successful - User ID: 66, Role: employee
