@@ -1,6 +1,12 @@
 <?php
 session_start();
 
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
 // Ensure user is logged in and has the 'farmer' role
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'farmer') {
     header("Location: login.php");
@@ -29,7 +35,88 @@ $user_id = $_SESSION['user_id'];
 
 // First, verify the database connection
 if (!$conn) {
-    die("Database connection failed");
+    die("Database connection failed: " . mysqli_connect_error());
+}
+
+// Add debugging to see the actual SQL and session value
+$user_id = $_SESSION['user_id'] ?? 0; // Add default value
+if ($user_id === 0) {
+    die("No user ID found in session");
+}
+
+// Modify the location query with proper error handling
+$location_query = "SELECT farm_location FROM users WHERE id = ?";
+$location_stmt = mysqli_prepare($conn, $location_query);
+
+// Check if prepare was successful
+if ($location_stmt === false) {
+    die("Prepare failed: " . mysqli_error($conn) . " for query: " . $location_query);
+}
+
+// Bind parameter with error checking
+if (!mysqli_stmt_bind_param($location_stmt, "i", $user_id)) {
+    die("Binding parameters failed: " . mysqli_stmt_error($location_stmt));
+}
+
+// Execute with error checking
+if (!mysqli_stmt_execute($location_stmt)) {
+    die("Execute failed: " . mysqli_stmt_error($location_stmt));
+}
+
+$location_result = mysqli_stmt_get_result($location_stmt);
+if ($location_result === false) {
+    die("Getting result failed: " . mysqli_stmt_error($location_stmt));
+}
+
+$location_data = mysqli_fetch_assoc($location_result);
+mysqli_stmt_close($location_stmt);
+
+// First check if the notifications table exists
+$table_check = mysqli_query($conn, "SHOW TABLES LIKE 'notifications'");
+if (mysqli_num_rows($table_check) == 0) {
+    // Create the notifications table if it doesn't exist
+    $create_table = "CREATE TABLE IF NOT EXISTS notifications (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        message TEXT NOT NULL,
+        is_read TINYINT(1) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )";
+    
+    if (!mysqli_query($conn, $create_table)) {
+        die("Error creating notifications table: " . mysqli_error($conn));
+    }
+}
+
+// Simplify the notifications query and add error handling
+try {
+    // First, just get all notifications without any WHERE clause
+    $notifications_query = "SELECT * FROM notifications ORDER BY created_at DESC";
+    $notifications = mysqli_query($conn, $notifications_query);
+    
+    if ($notifications === false) {
+        throw new Exception("Error fetching notifications: " . mysqli_error($conn));
+    }
+    
+    // No need for prepare/bind_param for this simple query
+    $notifications_result = [];
+    while ($row = mysqli_fetch_assoc($notifications)) {
+        $notifications_result[] = $row;
+    }
+    
+} catch (Exception $e) {
+    // Log the error but don't stop the page from loading
+    error_log("Notifications error: " . $e->getMessage());
+    $notifications_result = []; // Empty array if there's an error
+}
+
+// Use the results in your HTML section
+if (!empty($notifications_result)) {
+    foreach ($notifications_result as $notification) {
+        // Process each notification
+        // You can access fields like $notification['message'], $notification['created_at'], etc.
+    }
+} else {
+    // Handle case when there are no notifications
 }
 
 // Check if the required tables exist
@@ -310,14 +397,20 @@ $location_stmt->bind_param("i", $_SESSION['user_id']);
 $location_stmt->execute();
 $location_result = $location_stmt->get_result()->fetch_assoc();
 
-// Add this near the top of the file after database connection
+// Get notifications - Add error handling
 $notifications_sql = "SELECT * FROM notifications 
                      WHERE user_id = ? AND is_read = 0 
                      ORDER BY created_at DESC";
 $notify_stmt = mysqli_prepare($conn, $notifications_sql);
-mysqli_stmt_bind_param($notify_stmt, "i", $_SESSION['user_id']);
-mysqli_stmt_execute($notify_stmt);
-$notifications = mysqli_stmt_get_result($notify_stmt);
+if ($notify_stmt === false) {
+    // Handle prepare error
+    error_log("Prepare failed: " . mysqli_error($conn));
+    $notifications = []; // Set empty array as fallback
+} else {
+    mysqli_stmt_bind_param($notify_stmt, "i", $_SESSION['user_id']);
+    mysqli_stmt_execute($notify_stmt);
+    $notifications = mysqli_stmt_get_result($notify_stmt);
+}
 
 // Add this near the top of the file
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_read'])) {
@@ -2565,10 +2658,26 @@ $district_places = [
                         FROM farmers 
                         WHERE user_id = ?
                     ");
-                    $stmt->bind_param("i", $_SESSION['user_id']);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-                    $preferences = $result->fetch_assoc();
+
+                    if ($stmt === false) {
+                        // Log the error and handle gracefully
+                        error_log("Error preparing statement: " . $conn->error);
+                        $preferences = null;
+                    } else {
+                        if (!$stmt->bind_param("i", $_SESSION['user_id'])) {
+                            error_log("Error binding parameters: " . $stmt->error);
+                            $preferences = null;
+                        } else {
+                            if (!$stmt->execute()) {
+                                error_log("Error executing statement: " . $stmt->error);
+                                $preferences = null;
+                            } else {
+                                $result = $stmt->get_result();
+                                $preferences = $result->fetch_assoc();
+                            }
+                        }
+                        $stmt->close();
+                    }
                     
                     if ($preferences && $preferences['notification_preferences']) {
                         $notifications = json_decode($preferences['notification_preferences'], true);

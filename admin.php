@@ -111,12 +111,13 @@ if ($farmers_result) {
     mysqli_free_result($farmers_result);
 }
 
-// Add this query near the top PHP section where other queries are
+// Modify the soil tests query to get all results with LIMIT
 $soil_tests_by_farmer = mysqli_query($conn, "
     SELECT 
         u.id as farmer_id,
         u.username as farmer_name,
         COUNT(st.test_id) as test_count,
+        MAX(st.test_date) as latest_test_date,
         AVG(st.ph_level) as avg_ph,
         AVG(st.nitrogen_content) as avg_n,
         AVG(st.phosphorus_content) as avg_p,
@@ -125,13 +126,120 @@ $soil_tests_by_farmer = mysqli_query($conn, "
     LEFT JOIN soil_tests st ON u.id = st.farmer_id
     WHERE u.role = 'farmer' AND u.status = 1
     GROUP BY u.id, u.username
-    ORDER BY test_count DESC
+    ORDER BY latest_test_date DESC
 ");
 
 // Add error handling
 if (!$soil_tests_by_farmer) {
     die("Query failed: " . mysqli_error($conn));
 }
+
+// Add these queries near the top PHP section
+// Query for soil tests by week
+$soil_tests_by_week_query = "
+    SELECT 
+        WEEK(test_date) as week_number,
+        COUNT(*) as test_count
+    FROM soil_tests
+    WHERE test_date >= DATE_SUB(NOW(), INTERVAL 8 WEEK)
+    GROUP BY WEEK(test_date)
+    ORDER BY week_number ASC";
+
+$soil_tests_by_week_result = mysqli_query($conn, $soil_tests_by_week_query);
+$weekly_tests = array_fill(0, 8, 0); // Initialize array with zeros for 8 weeks
+
+while ($row = mysqli_fetch_assoc($soil_tests_by_week_result)) {
+    $week_index = $row['week_number'] % 8; // Get relative week index
+    $weekly_tests[$week_index] = $row['test_count'];
+}
+
+// Query for new farmers by status
+$new_farmers_query = "
+    SELECT 
+        status,
+        COUNT(*) as farmer_count
+    FROM users
+    WHERE role = 'farmer'
+    AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    GROUP BY status";
+
+$new_farmers_result = mysqli_query($conn, $new_farmers_query);
+$farmer_status = [
+    'active' => 0,
+    'inactive' => 0
+];
+
+while ($row = mysqli_fetch_assoc($new_farmers_result)) {
+    $status = $row['status'] ? 'active' : 'inactive';
+    $farmer_status[$status] = $row['farmer_count'];
+}
+
+// Add this query near the top PHP section where other queries are
+$fertilizer_recommendations_query = "
+    SELECT 
+        u.username as farmer_name,
+        st.test_date,
+        st.ph_level,
+        st.nitrogen_content,
+        st.phosphorus_content,
+        st.potassium_content,
+        CASE
+            WHEN st.nitrogen_content < 0.5 THEN 'Urea (46-0-0)'
+            ELSE NULL
+        END as n_recommendation,
+        CASE
+            WHEN st.phosphorus_content < 0.05 THEN 'Single Super Phosphate'
+            ELSE NULL
+        END as p_recommendation,
+        CASE
+            WHEN st.potassium_content < 1.0 THEN 'Muriate of Potash'
+            ELSE NULL
+        END as k_recommendation
+    FROM soil_tests st
+    JOIN users u ON st.farmer_id = u.id
+    WHERE st.test_date >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    ORDER BY st.test_date DESC
+    LIMIT 10";
+
+$fertilizer_result = mysqli_query($conn, $fertilizer_recommendations_query);
+$fertilizer_data = [];
+while ($row = mysqli_fetch_assoc($fertilizer_result)) {
+    $fertilizer_data[] = $row;
+}
+
+// Add this query near the top PHP section
+$fertilizer_trends_query = "
+    SELECT 
+        DATE_FORMAT(test_date, '%Y-%m') as month,
+        AVG(nitrogen_content) as avg_nitrogen,
+        AVG(phosphorus_content) as avg_phosphorus,
+        AVG(potassium_content) as avg_potassium
+    FROM soil_tests
+    WHERE test_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+    GROUP BY DATE_FORMAT(test_date, '%Y-%m')
+    ORDER BY month ASC";
+
+$fertilizer_trends_result = mysqli_query($conn, $fertilizer_trends_query);
+$fertilizer_trends = [
+    'labels' => [],
+    'nitrogen' => [],
+    'phosphorus' => [],
+    'potassium' => []
+];
+
+while ($row = mysqli_fetch_assoc($fertilizer_trends_result)) {
+    $fertilizer_trends['labels'][] = date('M Y', strtotime($row['month']));
+    $fertilizer_trends['nitrogen'][] = round($row['avg_nitrogen'], 2);
+    $fertilizer_trends['phosphorus'][] = round($row['avg_phosphorus'], 2);
+    $fertilizer_trends['potassium'][] = round($row['avg_potassium'], 2);
+}
+
+// Add near the top with other database queries
+$pending_queries_query = "SELECT eq.*, u.username as employee_name 
+                         FROM employee_queries eq
+                         JOIN users u ON eq.employee_id = u.id
+                         ORDER BY eq.created_at DESC";
+$pending_queries = mysqli_query($conn, $pending_queries_query);
 ?>
 
 <!DOCTYPE html>
@@ -142,25 +250,45 @@ if (!$soil_tests_by_farmer) {
     <title>GrowGuide - Cardamom Plantation Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        /* Update the color scheme to green theme */
+        :root {
+            --primary-color: #1b5e20;      /* Dark green */
+            --secondary-color: #2e7d32;     /* Medium green */
+            --accent-color: #43a047;        /* Light green */
+            --background-color: #f1f8e9;    /* Very light green background */
+            --card-color: #ffffff;
+            --text-primary: #1b5e20;        /* Dark green text */
+            --text-secondary: #33691e;      /* Medium green text */
+            --success-color: #43a047;       /* Success green */
+            --shadow: 0 4px 6px rgba(46, 125, 50, 0.1);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Arial', sans-serif;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
         }
 
         body {
-            display: flex;
-            background-color: #f5f5f5;
+            background-color: var(--background-color);
+            color: var(--text-primary);
         }
 
-        /* Sidebar Styles */
+        /* Update Sidebar Styles */
         .sidebar {
             width: 280px;
             height: 100vh;
-            background-color: #2e7d32;
-            color: white;
             position: fixed;
+            left: 0;
+            top: 0;
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            box-shadow: var(--shadow);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            z-index: 1000;
             transition: all 0.3s ease;
         }
 
@@ -169,8 +297,10 @@ if (!$soil_tests_by_farmer) {
         }
 
         .logo-section {
-            padding: 25px;
-            border-bottom: 1px solid #43a047;
+            min-height: 80px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid var(--accent-color);
             display: flex;
             align-items: center;
             gap: 15px;
@@ -190,7 +320,7 @@ if (!$soil_tests_by_farmer) {
             position: absolute;
             right: -12px;
             top: 30px;
-            background: #43a047;
+            background: var(--accent-color);
             border: none;
             color: white;
             width: 24px;
@@ -203,64 +333,31 @@ if (!$soil_tests_by_farmer) {
         }
 
         .menu-section {
-            padding: 25px 0;
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 0;
+            /* Add custom scrollbar styling */
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-color) transparent;
         }
 
-        .menu-item {
-            padding: 16px 25px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            color: white;
-            border-radius: 0 25px 25px 0;
-            margin: 8px 0;
-            position: relative;
-            overflow: hidden;
+        /* Custom scrollbar for Chrome/Safari/Edge */
+        .menu-section::-webkit-scrollbar {
+            width: 6px;
         }
 
-        .menu-item:hover {
-            background-color: #43a047;
-            padding-left: 35px;
+        .menu-section::-webkit-scrollbar-track {
+            background: transparent;
         }
 
-        .menu-item.active {
-            background-color: #43a047;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-
-        .menu-item i {
-            width: 24px;
-            height: 24px;
-            font-size: 1.4rem;
-            text-align: center;
-            transition: transform 0.3s;
-        }
-
-        .menu-item:hover i {
-            transform: scale(1.2) rotate(5deg);
-        }
-
-        .menu-text {
-            font-size: 1.1rem;
-            white-space: nowrap;
-            opacity: 1;
-            transition: opacity 0.3s;
-        }
-
-        .collapsed .menu-text {
-            opacity: 0;
-            width: 0;
+        .menu-section::-webkit-scrollbar-thumb {
+            background-color: var(--accent-color);
+            border-radius: 3px;
         }
 
         .bottom-section {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            border-top: 1px solid #43a047;
             padding: 20px 0;
+            border-top: 1px solid var(--accent-color);
             background: rgba(0, 0, 0, 0.1);
         }
 
@@ -268,23 +365,16 @@ if (!$soil_tests_by_farmer) {
             margin: 5px 0;
         }
 
-        /* Main Content Styles */
+        /* Update Main Content margin */
         .main-content {
             margin-left: 280px;
-            width: calc(100% - 280px);
-            transition: all 0.3s ease;
+            padding: 20px;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
         }
 
         .main-content.expanded {
             margin-left: 80px;
-            width: calc(100% - 80px);
-        }
-
-        .welcome-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
         }
 
         .stats-grid {
@@ -292,23 +382,6 @@ if (!$soil_tests_by_farmer) {
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .stat-card h3 {
-            font-size: 1.8rem;
-            margin-bottom: 5px;
-        }
-
-        .stat-card p {
-            color: #666;
-            font-size: 0.9rem;
         }
 
         .recent-section {
@@ -324,16 +397,11 @@ if (!$soil_tests_by_farmer) {
             margin-bottom: 15px;
         }
 
-        .user-welcome {
-            font-size: 1.2rem;
-            color: #333;
-        }
-
         .icon-container {
             display: flex;
             align-items: center;
             gap: 10px;
-            color: #2e7d32;
+            color: var(--secondary-color);
         }
 
         .icon-container i {
@@ -345,21 +413,6 @@ if (!$soil_tests_by_farmer) {
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
             margin-top: 20px;
-        }
-
-        .dashboard-card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-
-        .dashboard-card h3 {
-            color: var(--primary-color);
-            margin-top: 0;
-            margin-bottom: 15px;
-            border-bottom: 2px solid var(--primary-color);
-            padding-bottom: 10px;
         }
 
         .soil-details {
@@ -421,20 +474,6 @@ if (!$soil_tests_by_farmer) {
             font-size: 0.9em;
         }
 
-        /* Add animations */
-        .fade-in {
-            animation: fadeIn 0.5s ease-in-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
-        }
-
         .farmers-list-container {
             position: fixed;
             top: 50%;
@@ -494,12 +533,12 @@ if (!$soil_tests_by_farmer) {
 
         .farmer-icon {
             font-size: 2.5rem;
-            color: #2e7d32;
+            color: var(--secondary-color);
         }
 
         .farmer-details h3 {
             margin: 0 0 10px 0;
-            color: #2e7d32;
+            color: var(--secondary-color);
         }
 
         .farmer-details p {
@@ -509,25 +548,7 @@ if (!$soil_tests_by_farmer) {
 
         .farmer-details i {
             width: 20px;
-            color: #2e7d32;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            margin-top: 10px;
-        }
-
-        .status-badge.active {
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-
-        .status-badge.inactive {
-            background: #ffebee;
-            color: #c62828;
+            color: var(--secondary-color);
         }
 
         .slide-in {
@@ -552,7 +573,7 @@ if (!$soil_tests_by_farmer) {
 
         .stat-card:hover, .dashboard-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 8px rgba(46, 125, 50, 0.2);
         }
 
         .stat-card i, .dashboard-card i {
@@ -566,13 +587,13 @@ if (!$soil_tests_by_farmer) {
             transform: translateY(-5px); /* Move icon on hover */
         }
 
-        /* Add these new button styles */
+        /* Update sidebar buttons */
         .sidebar-btn {
-            margin: 10px 20px;
+            margin: 5px 15px;
             padding: 12px 20px;
             background: rgba(255, 255, 255, 0.1);
             border: none;
-            border-radius: 25px;
+            border-radius: 10px;
             color: white;
             cursor: pointer;
             display: flex;
@@ -580,16 +601,27 @@ if (!$soil_tests_by_farmer) {
             gap: 10px;
             transition: all 0.3s;
             text-decoration: none;
+            white-space: nowrap;
         }
 
         .sidebar-btn:hover {
             background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transform: translateX(5px);
         }
 
         .sidebar-btn i {
-            font-size: 1.2rem;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .sidebar.collapsed .sidebar-btn {
+            padding: 12px;
+            margin: 5px 10px;
+            justify-content: center;
+        }
+
+        .sidebar.collapsed .menu-text {
+            display: none;
         }
 
         /* Add animations */
@@ -656,7 +688,7 @@ if (!$soil_tests_by_farmer) {
         .average-item .value {
             display: block;
             font-size: 1.2em;
-            color: #2e7d32;
+            color: var(--secondary-color);
             font-weight: bold;
         }
 
@@ -665,24 +697,554 @@ if (!$soil_tests_by_farmer) {
             text-align: right;
         }
 
-        .btn-view {
-            display: inline-block;
-            padding: 8px 15px;
-            background: #2e7d32;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background 0.3s;
-        }
-
-        .btn-view:hover {
-            background: #1b5e20;
-        }
-
         .no-results {
             text-align: center;
             padding: 20px;
             color: #666;
+        }
+
+        /* Update Link Colors */
+        a {
+            color: var(--secondary-color);
+        }
+
+        a:hover {
+            color: var(--primary-color);
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .chart-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .chart-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .chart-section h2 {
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.4rem;
+        }
+
+        .chart-section h2 i {
+            background: var(--primary-color);
+            color: white;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+        }
+
+        .chart-info {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .info-card {
+            background: var(--background-color);
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .info-card i {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        .info-card span {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        canvas {
+            margin-top: 10px;
+            width: 100% !important;
+            height: 300px !important;
+        }
+
+        .recommendation-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: var(--card-background);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .recommendation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .recommendation-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .farmer-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .farmer-header i {
+            font-size: 2rem;
+            color: var(--primary-color);
+        }
+
+        .test-date {
+            margin-left: auto;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .soil-levels {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .nutrient-levels {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .level-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .level-item .label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .level-item .value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .value.low { color: var(--danger-color); }
+        .value.high { color: var(--warning-color); }
+        .value.optimal { color: var(--success-color); }
+
+        .recommendations {
+            border-top: 1px solid var(--border-color);
+            padding-top: 1rem;
+        }
+
+        .recommendations ul {
+            list-style: none;
+            padding: 0;
+            margin: 0.5rem 0;
+        }
+
+        .recommendations li {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .recommendations .dosage {
+            margin-left: auto;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .optimal-message {
+            color: var(--success-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .no-data {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 2rem;
+        }
+
+        .hidden-recommendation {
+            display: none;
+        }
+
+        .show-more-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .show-more-recommendations-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 auto;
+            transition: background-color 0.3s ease;
+        }
+
+        .show-more-recommendations-btn:hover {
+            background: var(--secondary-color);
+        }
+
+        .show-more-recommendations-btn i {
+            transition: transform 0.3s ease;
+        }
+
+        .farmers-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .farmers-table th {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        .farmers-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .farmers-table tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .hidden-farmer-row {
+            display: none;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.9em;
+        }
+
+        .status-badge.active {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-badge.inactive {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .show-more-farmers-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 20px auto 0;
+            transition: background-color 0.3s ease;
+        }
+
+        .show-more-farmers-btn:hover {
+            background: var(--secondary-color);
+        }
+
+        .queries-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .query-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .query-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .query-card.pending {
+            border-left: 4px solid #ffc107;
+        }
+
+        .query-card.answered {
+            border-left: 4px solid #28a745;
+        }
+
+        .query-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .employee-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .employee-info i {
+            font-size: 1.5em;
+            color: var(--primary-color);
+        }
+
+        .employee-info h3 {
+            margin: 0;
+            color: var(--primary-color);
+            font-size: 1.1em;
+        }
+
+        .query-date {
+            color: #666;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .query-text {
+            color: #333;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .response-form textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            min-height: 100px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .response-form textarea:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(43, 122, 48, 0.1);
+        }
+
+        .btn-respond {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .btn-respond:hover {
+            background: var(--dark-color);
+            transform: translateY(-2px);
+        }
+
+        .query-response {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+
+        .query-response h4 {
+            color: var(--primary-color);
+            margin: 0 0 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .response-date {
+            display: block;
+            color: #666;
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+
+        .soil-tests-table {
+            display: grid;
+            gap: 20px;
+            padding: 20px 0;
+        }
+
+        .farmer-test-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .farmer-test-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .farmer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .farmer-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .farmer-name i {
+            font-size: 1.5em;
+            color: var(--primary-color);
+        }
+
+        .farmer-name h3 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+
+        .test-count {
+            background: var(--background-color);
+            color: var(--primary-color);
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+
+        .test-details {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .test-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .test-row .label {
+            min-width: 120px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .npk-values {
+            display: flex;
+            gap: 15px;
+        }
+
+        .npk-item {
+            background: var(--background-color);
+            padding: 5px 10px;
+            border-radius: 5px;
+            color: var(--primary-color);
+        }
+
+        .farmer-actions {
+            margin-top: 15px;
+            text-align: right;
+        }
+
+        .view-details-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--primary-color);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .view-details-btn:hover {
+            background: var(--secondary-color);
+        }
+
+        /* Add styles for section navigation */
+        .section-nav {
+            margin: 15px 0;
+            padding: 10px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-nav .sidebar-btn {
+            padding: 8px 15px;
+            margin: 3px 15px;
+            font-size: 0.9em;
+        }
+
+        .section-nav .sidebar-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Smooth scroll behavior */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Add padding to sections to account for fixed header */
+        [id] {
+            scroll-margin-top: 20px;
         }
     </style>
 </head>
@@ -703,6 +1265,39 @@ if (!$soil_tests_by_farmer) {
                 <i class="fas fa-th-large"></i>
                 <span class="menu-text">Dashboard</span>
             </a>
+            
+            <!-- Add section navigation links -->
+            <div class="section-nav">
+                <a href="#fertilizer-recommendations" class="sidebar-btn">
+                    <i class="fas fa-flask"></i>
+                    <span class="menu-text">Fertilizer Recommendations</span>
+                </a>
+                <a href="#recent-farmers" class="sidebar-btn">
+                    <i class="fas fa-users"></i>
+                    <span class="menu-text">Recent Farmers</span>
+                </a>
+                <a href="#soil-tests-farmer" class="sidebar-btn">
+                    <i class="fas fa-vial"></i>
+                    <span class="menu-text">Soil Tests by Farmer</span>
+                </a>
+                <a href="#soil-tests-week" class="sidebar-btn">
+                    <i class="fas fa-chart-bar"></i>
+                    <span class="menu-text">Soil Tests by Week</span>
+                </a>
+                <a href="#farmers-status" class="sidebar-btn">
+                    <i class="fas fa-chart-pie"></i>
+                    <span class="menu-text">New Farmers Status</span>
+                </a>
+                <a href="#npk-trends" class="sidebar-btn">
+                    <i class="fas fa-chart-line"></i>
+                    <span class="menu-text">NPK Trends</span>
+                </a>
+                <a href="#employee-queries" class="sidebar-btn">
+                    <i class="fas fa-question-circle"></i>
+                    <span class="menu-text">Employee Queries</span>
+                </a>
+            </div>
+
             <a href="farmers.php" class="sidebar-btn">
                 <i class="fas fa-users"></i>
                 <span class="menu-text">Farmers</span>
@@ -718,7 +1313,7 @@ if (!$soil_tests_by_farmer) {
         </div>
 
         <div class="bottom-section">
-            <a href="notifications.php" class="sidebar-btn">
+            <a href="admin_notifications.php" class="sidebar-btn">
                 <i class="fas fa-bell"></i>
                 <span class="menu-text">Notifications</span>
             </a>
@@ -795,98 +1390,308 @@ if (!$soil_tests_by_farmer) {
             </div>
         </div>
 
-       
-
-        <div class="recent-section">
+        <div id="fertilizer-recommendations" class="recent-section">
             <h2>Recent Fertilizer Recommendations</h2>
-            <p>No recent fertilizer recommendations found.</p>
-        </div>
-
-        <div class="recent-section">
-            <h2>Recent Farmers</h2>
-            <?php if (!empty($farmers_list)): ?>
-                <div class="farmers-grid">
-                    <?php foreach ($farmers_list as $index => $farmer): ?>
-                        <div class="farmer-card slide-in" style="animation-delay: <?php echo $index * 0.2; ?>s;">
-                            <h3><?php echo htmlspecialchars($farmer['username']); ?></h3>
-                            <p><?php echo htmlspecialchars($farmer['email']); ?></p>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php else: ?>
-                <p>No recent farmers found.</p>
-            <?php endif; ?>
-        </div>
-
-        <div class="dashboard-grid">
-            <?php foreach ($dashboard_data as $data): ?>
-                <div class="dashboard-card">
-                    <h3><?php echo htmlspecialchars($data['farmer_name']); ?></h3>
-                    <div class="card-content">
-                        <p>Total Soil Tests: <?php echo $data['total_soil_tests']; ?></p>
-                        <?php if ($data['latest_test_date']): ?>
-                            <p>Latest Test Date: <?php echo date('F j, Y', strtotime($data['latest_test_date'])); ?></p>
-                            <div class="soil-details">
-                                <h4>Latest Soil Test Results:</h4>
-                                <p>pH Level: <?php echo number_format($data['latest_ph'], 1); ?></p>
-                                <p>NPK Values:</p>
-                                <ul>
-                                    <li>N: <?php echo number_format($data['latest_n'], 2) . '%'; ?></li>
-                                    <li>P: <?php echo number_format($data['latest_p'], 2) . '%'; ?></li>
-                                    <li>K: <?php echo number_format($data['latest_k'], 2) . '%'; ?></li>
-                                </ul>
-                            </div>
-                        <?php else: ?>
-                            <p>No soil tests recorded yet</p>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-
-           
-        <div class="recent-section">
-            <h2><i class="fas fa-flask"></i> Soil Tests by Farmer</h2>
-            <div class="soil-tests-grid">
-                <?php if (mysqli_num_rows($soil_tests_by_farmer) > 0): ?>
-                    <?php while ($farmer_tests = mysqli_fetch_assoc($soil_tests_by_farmer)): ?>
-                        <div class="farmer-soil-tests">
+            <?php if (!empty($fertilizer_data)): ?>
+                <div class="recommendation-grid">
+                    <?php 
+                    foreach ($fertilizer_data as $index => $recommendation): 
+                        $hideClass = $index >= 3 ? 'hidden-recommendation' : '';
+                    ?>
+                        <div class="recommendation-card animated-box <?php echo $hideClass; ?>">
                             <div class="farmer-header">
-                                <h3><i class="fas fa-user-circle"></i> <?php echo htmlspecialchars($farmer_tests['farmer_name']); ?></h3>
-                                <span class="test-count"><?php echo $farmer_tests['test_count']; ?> Tests</span>
+                                <i class="fas fa-user-circle"></i>
+                                <h3><?php echo htmlspecialchars($recommendation['farmer_name']); ?></h3>
+                                <span class="test-date">
+                                    <?php echo date('M d, Y', strtotime($recommendation['test_date'])); ?>
+                                </span>
                             </div>
-                            <div class="soil-averages">
-                                <h4>Soil Test Averages</h4>
-                                <div class="averages-grid">
-                                    <div class="average-item">
-                                        <span class="label">pH Level</span>
-                                        <span class="value"><?php echo number_format($farmer_tests['avg_ph'], 2); ?></span>
+                            <div class="soil-levels">
+                                <div class="level-item">
+                                    <span class="label">pH Level</span>
+                                    <?php 
+                                    $phClass = $recommendation['ph_level'] < 5.5 ? 'low' : 
+                                             ($recommendation['ph_level'] > 6.5 ? 'high' : 'optimal');
+                                    ?>
+                                    <span class="value <?php echo $phClass; ?>">
+                                        <?php echo number_format($recommendation['ph_level'], 2); ?>
+                                    </span>
+                                </div>
+                                <div class="nutrient-levels">
+                                    <div class="level-item">
+                                        <span class="label">N</span>
+                                        <span class="value <?php echo $recommendation['nitrogen_content'] < 0.5 ? 'low' : 'optimal'; ?>">
+                                            <?php echo number_format($recommendation['nitrogen_content'], 2); ?>%
+                                        </span>
                                     </div>
-                                    <div class="average-item">
-                                        <span class="label">Nitrogen (N)</span>
-                                        <span class="value"><?php echo number_format($farmer_tests['avg_n'], 2); ?>%</span>
+                                    <div class="level-item">
+                                        <span class="label">P</span>
+                                        <span class="value <?php echo $recommendation['phosphorus_content'] < 0.05 ? 'low' : 'optimal'; ?>">
+                                            <?php echo number_format($recommendation['phosphorus_content'], 2); ?>%
+                                        </span>
                                     </div>
-                                    <div class="average-item">
-                                        <span class="label">Phosphorus (P)</span>
-                                        <span class="value"><?php echo number_format($farmer_tests['avg_p'], 2); ?>%</span>
-                                    </div>
-                                    <div class="average-item">
-                                        <span class="label">Potassium (K)</span>
-                                        <span class="value"><?php echo number_format($farmer_tests['avg_k'], 2); ?>%</span>
+                                    <div class="level-item">
+                                        <span class="label">K</span>
+                                        <span class="value <?php echo $recommendation['potassium_content'] < 1.0 ? 'low' : 'optimal'; ?>">
+                                            <?php echo number_format($recommendation['potassium_content'], 2); ?>%
+                                        </span>
                                     </div>
                                 </div>
                             </div>
-                            <div class="farmer-actions">
-                                <a href="view_farmer_tests.php?farmer_id=<?php echo $farmer_tests['farmer_id']; ?>" 
-                                   class="btn-view">View All Tests</a>
+                            <div class="recommendations">
+                                <?php if ($recommendation['n_recommendation'] || 
+                                        $recommendation['p_recommendation'] || 
+                                        $recommendation['k_recommendation']): ?>
+                                    <h4><i class="fas fa-flask"></i> Recommended Fertilizers</h4>
+                                    <ul>
+                                        <?php if ($recommendation['n_recommendation']): ?>
+                                            <li>
+                                                <i class="fas fa-check"></i>
+                                                <?php echo htmlspecialchars($recommendation['n_recommendation']); ?>
+                                                <span class="dosage">100-150 kg/ha</span>
+                                            </li>
+                                        <?php endif; ?>
+                                        <?php if ($recommendation['p_recommendation']): ?>
+                                            <li>
+                                                <i class="fas fa-check"></i>
+                                                <?php echo htmlspecialchars($recommendation['p_recommendation']); ?>
+                                                <span class="dosage">200-250 kg/ha</span>
+                                            </li>
+                                        <?php endif; ?>
+                                        <?php if ($recommendation['k_recommendation']): ?>
+                                            <li>
+                                                <i class="fas fa-check"></i>
+                                                <?php echo htmlspecialchars($recommendation['k_recommendation']); ?>
+                                                <span class="dosage">150-200 kg/ha</span>
+                                            </li>
+                                        <?php endif; ?>
+                                    </ul>
+                                <?php else: ?>
+                                    <p class="optimal-message">
+                                        <i class="fas fa-check-circle"></i>
+                                        All nutrient levels are optimal
+                                    </p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php if (count($fertilizer_data) > 3): ?>
+                    <div class="show-more-container">
+                        <button class="show-more-recommendations-btn" onclick="toggleRecommendations()">
+                            <span id="recommendations-text">Show More</span>
+                            <i class="fas fa-chevron-down" id="recommendations-icon"></i>
+                        </button>
+                    </div>
+                <?php endif; ?>
+            <?php else: ?>
+                <div class="no-data">
+                    <i class="fas fa-info-circle"></i>
+                    <p>No recent fertilizer recommendations available</p>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <div id="recent-farmers" class="recent-section">
+            <h2><i class="fas fa-users"></i> Recent Farmers</h2>
+            <?php if (!empty($farmers_list)): ?>
+                <table class="farmers-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user"></i> Username</th>
+                            <th><i class="fas fa-envelope"></i> Email</th>
+                            <th><i class="fas fa-phone"></i> Phone</th>
+                            <th><i class="fas fa-calendar-alt"></i> Joined Date</th>
+                            <th><i class="fas fa-toggle-on"></i> Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php 
+                        foreach ($farmers_list as $index => $farmer): 
+                            $rowClass = $index >= 5 ? 'hidden-farmer-row' : '';
+                        ?>
+                            <tr class="<?php echo $rowClass; ?>">
+                                <td><?php echo htmlspecialchars($farmer['username']); ?></td>
+                                <td><?php echo htmlspecialchars($farmer['email']); ?></td>
+                                <td><?php echo htmlspecialchars($farmer['phone']); ?></td>
+                                <td><?php echo date('M d, Y', strtotime($farmer['created_at'])); ?></td>
+                                <td>
+                                    <span class="status-badge <?php echo $farmer['status'] ? 'active' : 'inactive'; ?>">
+                                        <?php echo $farmer['status'] ? 'Active' : 'Inactive'; ?>
+                                    </span>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <?php if (count($farmers_list) > 5): ?>
+                    <div class="show-more-container">
+                        <button class="show-more-farmers-btn" onclick="toggleFarmerRows()">
+                            <span id="farmers-text">Show More</span>
+                            <i class="fas fa-chevron-down" id="farmers-icon"></i>
+                        </button>
+                    </div>
+                <?php endif; ?>
+            <?php else: ?>
+                <div class="no-data">
+                    <i class="fas fa-info-circle"></i>
+                    <p>No farmers found.</p>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <div id="soil-tests-farmer" class="recent-section" style="width: calc(100vw - 280px); margin-left: 0; margin-right: calc(-50vw + 50%); padding: 30px 50px;">
+            <h2><i class="fas fa-flask"></i> Soil Tests by Farmer</h2>
+            <?php if (mysqli_num_rows($soil_tests_by_farmer) > 0): ?>
+                <table class="soil-tests-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user"></i> Farmer</th>
+                            <th><i class="fas fa-vial"></i> Tests</th>
+                            <th><i class="fas fa-calendar"></i> Latest Test</th>
+                            <th><i class="fas fa-tint"></i> pH Level</th>
+                            <th><i class="fas fa-flask"></i> Nitrogen</th>
+                            <th><i class="fas fa-flask"></i> Phosphorus</th>
+                            <th><i class="fas fa-flask"></i> Potassium</th>
+                            <th><i class="fas fa-cog"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php 
+                        $count = 0;
+                        while ($farmer = mysqli_fetch_assoc($soil_tests_by_farmer)): 
+                            $hideClass = $count >= 5 ? 'hidden-soil-test' : '';
+                            $count++;
+                        ?>
+                            <tr class="<?php echo $hideClass; ?>">
+                                <td>
+                                    <div class="farmer-name">
+                                        <i class="fas fa-user-circle"></i>
+                                        <?php echo htmlspecialchars($farmer['farmer_name']); ?>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="test-badge">
+                                        <?php echo $farmer['test_count']; ?> Tests
+                                    </span>
+                                </td>
+                                <td><?php echo $farmer['latest_test_date'] ? date('M d, Y', strtotime($farmer['latest_test_date'])) : 'No tests'; ?></td>
+                                <td><?php echo number_format($farmer['avg_ph'], 2); ?></td>
+                                <td><?php echo number_format($farmer['avg_n'], 2); ?>%</td>
+                                <td><?php echo number_format($farmer['avg_p'], 2); ?>%</td>
+                                <td><?php echo number_format($farmer['avg_k'], 2); ?>%</td>
+                                <td>
+                                    <a href="view_farmer_tests.php?farmer_id=<?php echo $farmer['farmer_id']; ?>" 
+                                       class="view-details-btn">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endwhile; ?>
+                    </tbody>
+                </table>
+                <?php if ($count > 5): ?>
+                    <div class="show-more-container">
+                        <button class="show-more-soil-tests-btn" onclick="toggleSoilTests()">
+                            <span id="soil-tests-text">Show More</span>
+                            <i class="fas fa-chevron-down" id="soil-tests-icon"></i>
+                        </button>
+                    </div>
+                <?php endif; ?>
+            <?php else: ?>
+                <div class="no-results">
+                    <p><i class="fas fa-info-circle"></i> No soil tests found for any farmer.</p>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <div id="soil-tests-week" class="chart-section">
+            <h2><i class="fas fa-chart-bar"></i> Soil Tests by Week</h2>
+            <div class="chart-info">
+                <div class="info-card">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Last 8 Weeks Analysis</span>
+                </div>
+                <div class="info-card">
+                    <i class="fas fa-vial"></i>
+                    <span>Total Tests: <?php echo array_sum($weekly_tests); ?></span>
+                </div>
+            </div>
+            <canvas id="soilTestsChart"></canvas>
+        </div>
+
+        <div id="farmers-status" class="chart-section" style="width: calc(100vw - 280px); margin-left: 0; margin-right: calc(-50vw + 50%); padding: 30px 50px;">
+            <h2><i class="fas fa-chart-pie"></i> New Farmers Status</h2>
+            <div class="chart-info">
+                <div class="info-card">
+                    <i class="fas fa-user-check"></i>
+                    <span>Active: <?php echo $farmer_status['active']; ?></span>
+                </div>
+                <div class="info-card">
+                    <i class="fas fa-user-clock"></i>
+                    <span>Inactive: <?php echo $farmer_status['inactive']; ?></span>
+                </div>
+            </div>
+            <canvas id="farmersPieChart"></canvas>
+        </div>
+
+        <div id="npk-trends" class="chart-section" style="width: calc(100vw - 280px); margin-left: 0; margin-right: calc(-50vw + 50%); padding: 30px 50px;">
+            <h2><i class="fas fa-chart-line"></i> NPK Trends</h2>
+            <div class="chart-info">
+                <div class="info-card">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Last 6 Months Analysis</span>
+                </div>
+            </div>
+            <canvas id="fertilizerTrendsChart"></canvas>
+        </div>
+
+        <div id="employee-queries" class="recent-section" style="width: calc(100vw - 280px); margin-left: 0; margin-right: calc(-50vw + 50%); padding: 30px 50px;">
+            <h2><i class="fas fa-question-circle"></i> Employee Queries</h2>
+            <?php if (mysqli_num_rows($pending_queries) > 0): ?>
+                <div class="queries-grid">
+                    <?php while ($query = mysqli_fetch_assoc($pending_queries)): ?>
+                        <div class="query-card <?php echo $query['status']; ?>">
+                            <div class="query-header">
+                                <div class="employee-info">
+                                    <i class="fas fa-user-circle"></i>
+                                    <h3><?php echo htmlspecialchars($query['employee_name']); ?></h3>
+                                </div>
+                                <span class="query-date">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <?php echo date('M d, Y H:i', strtotime($query['created_at'])); ?>
+                                </span>
+                            </div>
+                            <div class="query-content">
+                                <p class="query-text"><?php echo htmlspecialchars($query['query_text']); ?></p>
+                                <?php if ($query['status'] === 'pending'): ?>
+                                    <form class="response-form" method="POST" action="admin_respond_query.php">
+                                        <input type="hidden" name="query_id" value="<?php echo $query['id']; ?>">
+                                        <textarea name="response" placeholder="Type your response..." required></textarea>
+                                        <button type="submit" class="btn-respond">
+                                            <i class="fas fa-reply"></i> Send Response
+                                        </button>
+                                    </form>
+                                <?php else: ?>
+                                    <div class="query-response">
+                                        <h4>Response:</h4>
+                                        <p><?php echo htmlspecialchars($query['response']); ?></p>
+                                        <span class="response-date">
+                                            <i class="fas fa-clock"></i>
+                                            <?php echo date('M d, Y H:i', strtotime($query['response_date'])); ?>
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     <?php endwhile; ?>
-                <?php else: ?>
-                    <div class="no-results">
-                        <p><i class="fas fa-info-circle"></i> No soil tests found for any farmer.</p>
-                    </div>
-                <?php endif; ?>
-            </div>
+                </div>
+            <?php else: ?>
+                <div class="no-data">
+                    <i class="fas fa-check-circle"></i>
+                    <p>No queries from employees</p>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -909,6 +1714,16 @@ if (!$soil_tests_by_farmer) {
             
             // Add animation for sidebar movement
             sidebar.style.transition = 'width 0.3s ease'; // Add transition effect
+            
+            // Update the section width when sidebar is toggled
+            const fullWidthSections = document.querySelectorAll('.recent-section[style*="width"], .chart-section[style*="width"]');
+            fullWidthSections.forEach(section => {
+                if (sidebar.classList.contains('collapsed')) {
+                    section.style.width = 'calc(100vw - 80px)'; // 80px is collapsed sidebar width
+                } else {
+                    section.style.width = 'calc(100vw - 280px)'; // 280px is expanded sidebar width
+                }
+            });
         }
 
         // Add a function to create a running welcome message
@@ -934,6 +1749,298 @@ if (!$soil_tests_by_farmer) {
                 farmersList.style.display = 'none';
             }
         }
+    </script>
+
+    <!-- Add Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Soil Tests Bar Chart
+        const soilTestsCtx = document.getElementById('soilTestsChart').getContext('2d');
+        new Chart(soilTestsCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7', 'Week 8'],
+                datasets: [{
+                    label: 'Number of Soil Tests',
+                    data: <?php echo json_encode(array_values($weekly_tests)); ?>,
+                    backgroundColor: 'rgba(46, 125, 50, 0.7)',
+                    borderColor: 'rgba(46, 125, 50, 1)',
+                    borderWidth: 1,
+                    borderRadius: 5,
+                    barThickness: 25
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            font: {
+                                size: 12
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(46, 125, 50, 0.9)',
+                        titleFont: {
+                            size: 14
+                        },
+                        bodyFont: {
+                            size: 13
+                        },
+                        padding: 10,
+                        cornerRadius: 5
+                    }
+                }
+            }
+        });
+
+        // Farmers Pie Chart
+        const farmersPieCtx = document.getElementById('farmersPieChart').getContext('2d');
+        new Chart(farmersPieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Active Farmers', 'Inactive Farmers'],
+                datasets: [{
+                    data: [
+                        <?php echo $farmer_status['active']; ?>,
+                        <?php echo $farmer_status['inactive']; ?>
+                    ],
+                    backgroundColor: [
+                        'rgba(67, 160, 71, 0.8)',
+                        'rgba(211, 47, 47, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(67, 160, 71, 1)',
+                        'rgba(211, 47, 47, 1)'
+                    ],
+                    borderWidth: 2,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            font: {
+                                size: 13
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        cornerRadius: 5,
+                        titleFont: {
+                            size: 14
+                        },
+                        bodyFont: {
+                            size: 13
+                        }
+                    }
+                },
+                cutout: '65%'
+            }
+        });
+
+        // Fertilizer Trends Line Chart
+        const fertilizerCtx = document.getElementById('fertilizerTrendsChart').getContext('2d');
+        new Chart(fertilizerCtx, {
+            type: 'line',
+            data: {
+                labels: <?php echo json_encode($fertilizer_trends['labels']); ?>,
+                datasets: [
+                    {
+                        label: 'Nitrogen (N)',
+                        data: <?php echo json_encode($fertilizer_trends['nitrogen']); ?>,
+                        borderColor: '#2196F3',
+                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#2196F3'
+                    },
+                    {
+                        label: 'Phosphorus (P)',
+                        data: <?php echo json_encode($fertilizer_trends['phosphorus']); ?>,
+                        borderColor: '#4CAF50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#4CAF50'
+                    },
+                    {
+                        label: 'Potassium (K)',
+                        data: <?php echo json_encode($fertilizer_trends['potassium']); ?>,
+                        borderColor: '#FFC107',
+                        backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#FFC107'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        titleColor: '#333',
+                        bodyColor: '#666',
+                        borderColor: '#ddd',
+                        borderWidth: 1,
+                        padding: 12,
+                        boxPadding: 6,
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y + '%';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 11
+                            }
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            font: {
+                                size: 11
+                            },
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+    <script>
+        function toggleFarmerRows() {
+            const hiddenRows = document.querySelectorAll('.hidden-farmer-row');
+            const showMoreText = document.getElementById('farmers-text');
+            const showMoreIcon = document.getElementById('farmers-icon');
+
+            hiddenRows.forEach(row => {
+                row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+            });
+
+            if (showMoreText.textContent === 'Show More') {
+                showMoreText.textContent = 'Show Less';
+                showMoreIcon.classList.remove('fa-chevron-down');
+                showMoreIcon.classList.add('fa-chevron-up');
+            } else {
+                showMoreText.textContent = 'Show More';
+                showMoreIcon.classList.remove('fa-chevron-up');
+                showMoreIcon.classList.add('fa-chevron-down');
+            }
+        }
+    </script>
+
+    <script>
+        function toggleRecommendations() {
+            const hiddenCards = document.querySelectorAll('.hidden-recommendation');
+            const showMoreBtn = document.querySelector('.show-more-recommendations-btn');
+            const showMoreText = document.getElementById('recommendations-text');
+            const showMoreIcon = document.getElementById('recommendations-icon');
+
+            hiddenCards.forEach(card => {
+                card.style.display = card.style.display === 'none' ? 'block' : 'none';
+            });
+
+            if (showMoreText.textContent === 'Show More') {
+                showMoreText.textContent = 'Show Less';
+                showMoreIcon.classList.remove('fa-chevron-down');
+                showMoreIcon.classList.add('fa-chevron-up');
+            } else {
+                showMoreText.textContent = 'Show More';
+                showMoreIcon.classList.remove('fa-chevron-up');
+                showMoreIcon.classList.add('fa-chevron-down');
+            }
+        }
+    </script>
+
+    <script>
+        // Add active class to section navigation links when scrolling
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = document.querySelectorAll('[id]');
+            const navLinks = document.querySelectorAll('.section-nav .sidebar-btn');
+
+            function highlightNavigation() {
+                const scrollPosition = window.scrollY;
+
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - 100;
+                    const sectionHeight = section.offsetHeight;
+                    const sectionId = section.getAttribute('id');
+
+                    if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href') === '#' + sectionId) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }
+
+            window.addEventListener('scroll', highlightNavigation);
+        });
     </script>
 </body>
 </html>

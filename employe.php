@@ -159,6 +159,39 @@ LIMIT 10";
 
 $detailed_soil_tests = mysqli_query($conn, $detailed_soil_tests_query);
 
+// Add query submission handling
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_query'])) {
+    $query_text = mysqli_real_escape_string($conn, $_POST['query_text']);
+    $employee_id = $_SESSION['user_id'];
+    
+    $insert_query = "INSERT INTO employee_queries (employee_id, query_text, status, created_at) 
+                     VALUES (?, ?, 'pending', NOW())";
+    
+    $stmt = mysqli_prepare($conn, $insert_query);
+    mysqli_stmt_bind_param($stmt, "is", $employee_id, $query_text);
+    
+    if (mysqli_stmt_execute($stmt)) {
+        $_SESSION['success_message'] = "Query submitted successfully!";
+    } else {
+        $_SESSION['error_message'] = "Error submitting query: " . mysqli_error($conn);
+    }
+    
+    mysqli_stmt_close($stmt);
+}
+
+// Fetch employee's previous queries
+$employee_id = $_SESSION['user_id'];
+$previous_queries_query = "SELECT * FROM employee_queries 
+                          WHERE employee_id = ? 
+                          ORDER BY created_at DESC 
+                          LIMIT 5";
+
+$stmt = mysqli_prepare($conn, $previous_queries_query);
+mysqli_stmt_bind_param($stmt, "i", $employee_id);
+mysqli_stmt_execute($stmt);
+$previous_queries = mysqli_stmt_get_result($stmt);
+mysqli_stmt_close($stmt);
+
 mysqli_close($conn);
 ?>
 
@@ -190,18 +223,16 @@ mysqli_close($conn);
         /* Enhanced Sidebar Styles */
         .sidebar {
             width: 250px;
-            background: linear-gradient(180deg, var(--dark-color) 0%, #1a472a 100%);
+            background: linear-gradient(180deg, #1B4D1E 0%, #2B7A30 100%);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
             padding: 20px 0;
             color: white;
-            position: fixed;
-            height: 100vh;
             transition: all 0.3s ease;
-            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
-            overflow-y: auto;
-            z-index: 1000;
         }
 
-        /* Logo Section */
         .sidebar-logo {
             display: flex;
             align-items: center;
@@ -210,21 +241,15 @@ mysqli_close($conn);
         }
 
         .sidebar-logo i {
-            font-size: 28px;
-            color: #4CAF50;
+            font-size: 24px;
             margin-right: 10px;
-            animation: rotateLogo 30s linear infinite;
         }
 
         .sidebar-logo h1 {
-            font-size: 24px;
-            background: linear-gradient(45deg, #fff, #4CAF50);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 20px;
             margin: 0;
         }
 
-        /* Navigation Links */
         .sidebar-nav {
             padding: 0 10px;
         }
@@ -235,102 +260,43 @@ mysqli_close($conn);
             padding: 12px 20px;
             color: white;
             text-decoration: none;
-            transition: all 0.5s ease;
-            border-radius: 10px;
+            transition: all 0.3s ease;
+            border-radius: 8px;
             margin-bottom: 5px;
-            position: relative;
-            overflow: hidden;
         }
 
         .sidebar-btn i {
-            margin-right: 15px;
-            font-size: 20px;
-            transition: all 0.3s ease;
-            position: relative;
-            z-index: 2;
-        }
-
-        .sidebar-btn span {
-            position: relative;
-            z-index: 2;
-        }
-
-        .sidebar-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            transition: all 0.8s ease;
-        }
-
-        .sidebar-btn:hover::before {
-            left: 100%;
+            width: 24px;
+            margin-right: 10px;
+            font-size: 18px;
         }
 
         .sidebar-btn:hover {
-            background: rgba(76, 175, 80, 0.2);
-            transform: translateX(3px);
-        }
-
-        .sidebar-btn:hover i {
-            transform: scale(1.2);
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
         }
 
         .sidebar-btn.active {
-            background: var(--primary-color);
-            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            background: rgba(255, 255, 255, 0.2);
         }
 
-        .sidebar-btn.active i {
-            color: #fff;
-        }
-
-        /* Logout Button Special Style */
         .sidebar-btn.logout {
-            margin-top: 30px;
+            margin-top: auto;
             background: rgba(220, 53, 69, 0.1);
             border: 1px solid rgba(220, 53, 69, 0.3);
         }
 
         .sidebar-btn.logout:hover {
             background: rgba(220, 53, 69, 0.2);
-            border-color: rgba(220, 53, 69, 0.5);
         }
 
-        /* Animations */
-        @keyframes rotateLogo {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        .sidebar-btn {
-            animation: fadeIn 0.5s ease forwards;
-            animation-delay: calc(var(--btn-index) * 0.1s);
-        }
-
-        /* Hover Indicator */
-        .hover-indicator {
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 4px;
-            height: 0;
-            background: #4CAF50;
-            transition: all 0.3s ease;
-            border-radius: 0 4px 4px 0;
-        }
-
-        .sidebar-btn:hover .hover-indicator {
-            height: 70%;
+        .notification-badge {
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+            margin-left: auto;
         }
 
         /* Updated Content Area */
@@ -1185,6 +1151,202 @@ mysqli_close($conn);
         .show-more-btn.active i {
             transform: rotate(180deg);
         }
+
+        .query-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .query-form-container {
+            margin: 20px 0;
+        }
+
+        .query-form {
+            max-width: 800px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            resize: vertical;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .form-group textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 10px rgba(43, 122, 48, 0.1);
+            outline: none;
+        }
+
+        .submit-query-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .submit-query-btn:hover {
+            background: var(--dark-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(43, 122, 48, 0.2);
+        }
+
+        .queries-list {
+            margin-top: 20px;
+        }
+
+        .query-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .query-content p {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+
+        .query-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .query-date, .query-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .query-status {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+
+        .query-status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .query-status.answered {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .query-response {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .query-response h4 {
+            color: var(--primary-color);
+            margin: 0 0 10px 0;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .query-response p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .no-queries {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .section-navigation {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            padding: 0 10px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .nav-link i {
+            font-size: 1em;
+        }
+
+        /* Add smooth scrolling to the page */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Add padding-top to sections to account for fixed header */
+        .section {
+            scroll-margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -1195,25 +1357,17 @@ mysqli_close($conn);
         </div>
         
         <div class="sidebar-nav">
-            <a href="employe.php" class="sidebar-btn active" style="--btn-index: 1">
-                <div class="hover-indicator"></div>
+            <a href="employe.php" class="sidebar-btn active">
                 <i class="fas fa-home"></i>
                 <span>Dashboard</span>
             </a>
-
             
-            
-            
-            <a href="varieties.php" class="sidebar-btn" style="--btn-index: 3">
-                <div class="hover-indicator"></div>
+            <a href="employe_varities.php" class="sidebar-btn">
                 <i class="fas fa-seedling"></i>
                 <span>Varieties</span>
             </a>
-           
-
             
-            <a href="notifications.php" class="sidebar-btn" style="--btn-index: 5">
-                <div class="hover-indicator"></div>
+            <a href="notifications.php" class="sidebar-btn">
                 <i class="fas fa-bell"></i>
                 <span>Notifications</span>
                 <?php if ($unread_count > 0): ?>
@@ -1221,21 +1375,17 @@ mysqli_close($conn);
                 <?php endif; ?>
             </a>
             
-            <a href="employee_settings.php"
-             class="sidebar-btn" style="--btn-index: 6">
-                <div class="hover-indicator"></div>
+            <a href="employee_settings.php" class="sidebar-btn">
                 <i class="fas fa-cog"></i>
                 <span>Settings</span>
             </a>
             
-            <a href="manage_products.php" class="sidebar-btn" style="--btn-index: 4">
-                <div class="hover-indicator"></div>
+            <a href="manage_products.php" class="sidebar-btn">
                 <i class="fas fa-shopping-basket"></i>
                 <span>Manage Products</span>
             </a>
             
-            <a href="logout.php" class="sidebar-btn logout" style="--btn-index: 7">
-                <div class="hover-indicator"></div>
+            <a href="logout.php" class="sidebar-btn logout">
                 <i class="fas fa-sign-out-alt"></i>
                 <span>Logout</span>
             </a>
@@ -1263,6 +1413,28 @@ mysqli_close($conn);
                     <i class="fas fa-calendar"></i>
                     <span><?php echo date('l, F j, Y'); ?></span>
                 </div>
+            </div>
+            <div class="section-navigation">
+                <a href="#recent-farmers" class="nav-link">
+                    <i class="fas fa-users"></i>
+                    Recent Farmers
+                </a>
+                <a href="#soil-tests" class="nav-link">
+                    <i class="fas fa-flask"></i>
+                    Soil Tests
+                </a>
+                <a href="#fertilizer-recommendations" class="nav-link">
+                    <i class="fas fa-leaf"></i>
+                    Recommendations
+                </a>
+                <a href="#soil-analysis" class="nav-link">
+                    <i class="fas fa-chart-bar"></i>
+                    Analysis
+                </a>
+                <a href="#submit-query" class="nav-link">
+                    <i class="fas fa-question-circle"></i>
+                    Submit Query
+                </a>
             </div>
         </div>
 
@@ -1304,7 +1476,7 @@ mysqli_close($conn);
             </div>
 
             <!-- Add Recent Farmers Section with detailed cards -->
-            <div class="section">
+            <div id="recent-farmers" class="section">
                 <h2><i class="fas fa-users-gear"></i> Recent Farmers</h2>
                 <div class="farmers-grid">
                     <?php if (!empty($search)): ?>
@@ -1344,7 +1516,7 @@ mysqli_close($conn);
             </div>
 
             <!-- Recent Soil Tests Section -->
-            <div class="section">
+            <div id="soil-tests" class="section">
                 <h2><i class="fas fa-flask"></i> Soil Tests by Farmer</h2>
                 <?php if (mysqli_num_rows($soil_tests_by_farmer) > 0): ?>
                     <div class="table-responsive">
@@ -1448,7 +1620,7 @@ mysqli_close($conn);
             </div>
 
             <!-- Recent Fertilizer Recommendations Section -->
-            <div class="section">
+            <div id="fertilizer-recommendations" class="section">
                 <h2>Recent Fertilizer Recommendations</h2>
                 <?php if (mysqli_num_rows($recent_recommendations) > 0): ?>
                     <div class="table-responsive">
@@ -1487,7 +1659,7 @@ mysqli_close($conn);
         </div>
 
         <!-- Add this section before the closing </div> of content -->
-        <div class="section analysis-section">
+        <div id="soil-analysis" class="section analysis-section">
             <h2><i class="fas fa-chart-bar"></i> Soil Test Analysis</h2>
             
             <div class="chart-container">
@@ -1570,6 +1742,75 @@ mysqli_close($conn);
                         <?php endwhile; ?>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- Add this before the closing </div> of content -->
+        <div id="submit-query" class="section query-section">
+            <h2><i class="fas fa-question-circle"></i> Submit Query to Admin</h2>
+            
+            <?php if (isset($_SESSION['success_message'])): ?>
+                <div class="alert alert-success">
+                    <?php 
+                        echo $_SESSION['success_message'];
+                        unset($_SESSION['success_message']);
+                    ?>
+                </div>
+            <?php endif; ?>
+            
+            <?php if (isset($_SESSION['error_message'])): ?>
+                <div class="alert alert-danger">
+                    <?php 
+                        echo $_SESSION['error_message'];
+                        unset($_SESSION['error_message']);
+                    ?>
+                </div>
+            <?php endif; ?>
+
+            <div class="query-form-container">
+                <form method="POST" action="" class="query-form">
+                    <div class="form-group">
+                        <label for="query_text">Your Query:</label>
+                        <textarea id="query_text" name="query_text" rows="4" required 
+                            placeholder="Type your query here..."></textarea>
+                    </div>
+                    <button type="submit" name="submit_query" class="submit-query-btn">
+                        <i class="fas fa-paper-plane"></i> Submit Query
+                    </button>
+                </form>
+            </div>
+
+            <div class="previous-queries">
+                <h3><i class="fas fa-history"></i> Previous Queries</h3>
+                <?php if (mysqli_num_rows($previous_queries) > 0): ?>
+                    <div class="queries-list">
+                        <?php while ($query = mysqli_fetch_assoc($previous_queries)): ?>
+                            <div class="query-card">
+                                <div class="query-content">
+                                    <p><?php echo htmlspecialchars($query['query_text']); ?></p>
+                                    <div class="query-meta">
+                                        <span class="query-date">
+                                            <i class="fas fa-calendar-alt"></i>
+                                            <?php echo date('M d, Y H:i', strtotime($query['created_at'])); ?>
+                                        </span>
+                                        <span class="query-status <?php echo $query['status']; ?>">
+                                            <i class="fas fa-circle"></i>
+                                            <?php echo ucfirst($query['status']); ?>
+                                        </span>
+                                    </div>
+                                </div>
+                                <?php if ($query['response']): ?>
+                                    <div class="query-response">
+                                        <h4><i class="fas fa-reply"></i> Admin Response:</h4>
+                                        <p><?php echo htmlspecialchars($query['response']); ?></p>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endwhile; ?>
+                    </div>
+                <?php else: ?>
+                    <p class="no-queries">No previous queries found.</p>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -1665,6 +1906,21 @@ mysqli_close($conn);
                 showMoreBtn.classList.toggle('active');
             });
         }
+
+        // Add active class to navigation links when scrolling
+        const sections = document.querySelectorAll('.section');
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        function changeLinkState() {
+            let index = sections.length;
+
+            while(--index && window.scrollY + 100 < sections[index].offsetTop) {}
+
+            navLinks.forEach((link) => link.classList.remove('active'));
+            navLinks[index].classList.add('active');
+        }
+
+        window.addEventListener('scroll', changeLinkState);
     });
     </script>
 </body>

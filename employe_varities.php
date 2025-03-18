@@ -9,89 +9,13 @@ if (!$conn) {
     die("Connection failed: " . mysqli_connect_error());
 }
 
-// Sample variety data - In production, this would come from database
-$varieties = [
-    [
-        'name' => 'Malabar Excel',
-        'scientific_name' => 'Elettaria cardamomum var. malabar',
-        'yield' => '750-900 kg/ha',
-        'maturity' => '2.5-3 years',
-        'description' => 'Known for its robust flavor and high oil content. Excellent for high-altitude cultivation.',
-        'color' => '#2E7D32'
-    ],
-    [
-        'name' => 'Mysore Green Gold',
-        'scientific_name' => 'Elettaria cardamomum var. mysore',
-        'yield' => '800-950 kg/ha',
-        'maturity' => '2-2.5 years',
-        'description' => 'Early maturing variety with distinctive aroma. Performs well in moderate climates.',
-        'color' => '#1B5E20'
-    ],
-    [
-        'name' => 'IISR Vijetha',
-        'scientific_name' => 'Elettaria cardamomum var. vijetha',
-        'yield' => '850-1000 kg/ha',
-        'maturity' => '3 years',
-        'description' => 'Disease-resistant variety with high yield potential. Suitable for organic farming.',
-        'color' => '#388E3C'
-    ],
-    [
-        'name' => 'PDP Vazhukka',
-        'scientific_name' => 'Elettaria cardamomum var. vazhukka',
-        'yield' => '700-850 kg/ha',
-        'maturity' => '2.5 years',
-        'description' => 'Traditional variety known for its adaptability to different soil conditions.',
-        'color' => '#43A047'
-    ],
-    [
-        'name' => 'Njallani Green Gold',
-        'scientific_name' => 'Elettaria cardamomum var. njallani',
-        'yield' => '900-1200 kg/ha',
-        'maturity' => '3 years',
-        'description' => 'High-yielding variety with excellent market value. Known for large capsules.',
-        'color' => '#4CAF50'
-    ],
-    [
-        'name' => 'ICRI-1',
-        'scientific_name' => 'Elettaria cardamomum var. icri',
-        'yield' => '800-900 kg/ha',
-        'maturity' => '2.5 years',
-        'description' => 'Research-developed variety with balanced oil composition.',
-        'color' => '#66BB6A'
-    ],
-    [
-        'name' => 'Avinash',
-        'scientific_name' => 'Elettaria cardamomum var. avinash',
-        'yield' => '750-850 kg/ha',
-        'maturity' => '2-2.5 years',
-        'description' => 'Quick maturing variety with good drought tolerance.',
-        'color' => '#81C784'
-    ],
-    [
-        'name' => 'PDP Highland',
-        'scientific_name' => 'Elettaria cardamomum var. highland',
-        'yield' => '850-950 kg/ha',
-        'maturity' => '3 years',
-        'description' => 'Specially developed for high-altitude regions. Strong disease resistance.',
-        'color' => '#A5D6A7'
-    ],
-    [
-        'name' => 'Mudigere-1',
-        'scientific_name' => 'Elettaria cardamomum var. mudigere',
-        'yield' => '700-800 kg/ha',
-        'maturity' => '2.5 years',
-        'description' => 'Hardy variety with good adaptation to various climatic conditions.',
-        'color' => '#C8E6C9'
-    ],
-    [
-        'name' => 'IISR Avinash',
-        'scientific_name' => 'Elettaria cardamomum var. iisr',
-        'yield' => '800-1000 kg/ha',
-        'maturity' => '3 years',
-        'description' => 'Modern hybrid with excellent disease resistance and yield potential.',
-        'color' => '#2E7D32'
-    ]
-];
+// Replace the hardcoded $varieties array with database query
+$query = "SELECT * FROM varieties ORDER BY created_at DESC";
+$result = mysqli_query($conn, $query);
+$varieties = [];
+while ($row = mysqli_fetch_assoc($result)) {
+    $varieties[] = $row;
+}
 ?>
 
 <!DOCTYPE html>
@@ -102,6 +26,72 @@ $varieties = [
     <title>GrowGuide - Cardamom Varieties</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        /* Add sidebar styles */
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background: #2E7D32;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 20px 0;
+            color: white;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-menu li {
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: white;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        .sidebar-menu a:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-menu a.active {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Update main-content to accommodate sidebar */
+        .main-content {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Remove the existing admin-dashboard-link styles as we're using sidebar now */
+        .admin-dashboard-link {
+            display: none;
+        }
+
         /* Remove sidebar styles and update main-content */
         .main-content {
             width: 100%;
@@ -351,83 +341,43 @@ $varieties = [
         .variety-card:hover .fa-seedling {
             animation: float 2s ease-in-out infinite;
         }
-        .admin-dashboard-link {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
-    color: white;
-    padding: 12px 24px;
-    border-radius: 50px;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 500;
-    box-shadow: 0 4px 15px rgba(46, 125, 50, 0.2);
-    transition: all 0.3s ease;
-    z-index: 1000;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-}
 
-.admin-dashboard-link:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(46, 125, 50, 0.3);
-    background: linear-gradient(135deg, #33873b 0%, #1e6823 100%);
-}
+        /* Add these styles in the <style> section */
+        .variety-image {
+            width: 100%;
+            height: 200px;
+            overflow: hidden;
+        }
 
-.admin-dashboard-link i {
-    font-size: 20px;
-}
+        .variety-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
 
-.admin-dashboard-link .icon-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    transition: all 0.3s ease;
-}
-
-.admin-dashboard-link:hover .icon-container {
-    transform: rotate(360deg);
-    background: rgba(255, 255, 255, 0.2);
-}
-
-.admin-dashboard-link .text {
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-@media (max-width: 768px) {
-    .admin-dashboard-link {
-        padding: 10px 16px;
-    }
-    
-    .admin-dashboard-link .text {
-        display: none;
-    }
-    
-    .admin-dashboard-link .icon-container {
-        width: 28px;
-        height: 28px;
-    }
-}
-        
-        
+        .variety-card:hover .variety-image img {
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body>
-<a href="employe.php" class="admin-dashboard-link">
-    <div class="icon-container">
-        <i class="fas fa-user-shield"></i>
+    <!-- Add Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-leaf"></i>
+            <span>GrowGuide</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="employe.php"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="#" class="active"><i class="fas fa-seedling"></i> Varieties</a></li>
+            <li><a href="#"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+            <li><a href="#"><i class="fas fa-box"></i> Manage Products</a></li>
+            <li><a href="admin.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
     </div>
-    <span class="text">EMPLOYEE DASHBOARD</span>
-</a>
-    
+
     <!-- Main Content -->
     <div class="main-content" id="main-content">
         <div class="page-header">
@@ -441,30 +391,36 @@ $varieties = [
         <div class="varieties-grid">
             <?php foreach ($varieties as $variety): ?>
                 <div class="variety-card">
-                    <div class="variety-header" style="background-color: <?php echo $variety['color']; ?>">
-                        <h2 class="variety-name"><?php echo $variety['name']; ?></h2>
-                        <p class="scientific-name"><?php echo $variety['scientific_name']; ?></p>
+                    <?php if (!empty($variety['image_path'])): ?>
+                        <div class="variety-image">
+                            <img src="<?php echo htmlspecialchars($variety['image_path']); ?>" 
+                                 alt="<?php echo htmlspecialchars($variety['variety_name']); ?>">
+                        </div>
+                    <?php endif; ?>
+                    <div class="variety-header" style="background-color: #2E7D32">
+                        <h2 class="variety-name"><?php echo htmlspecialchars($variety['variety_name']); ?></h2>
+                        <p class="scientific-name">Market Price: ₹<?php echo number_format($variety['market_price'], 2); ?>/kg</p>
                     </div>
                     <div class="variety-content">
                         <div class="variety-stats">
                             <div class="stat-item">
-                                <div class="stat-label">Yield</div>
-                                <div class="stat-value"><?php echo $variety['yield']; ?></div>
+                                <div class="stat-label">Growing Period</div>
+                                <div class="stat-value"><?php echo htmlspecialchars($variety['growing_period']); ?></div>
                             </div>
                             <div class="stat-item">
-                                <div class="stat-label">Maturity</div>
-                                <div class="stat-value"><?php echo $variety['maturity']; ?></div>
+                                <div class="stat-label">Yield Potential</div>
+                                <div class="stat-value"><?php echo htmlspecialchars($variety['yield_potential']); ?></div>
                             </div>
                         </div>
-                        <p class="variety-description"><?php echo $variety['description']; ?></p>
+                        <p class="variety-description"><?php echo htmlspecialchars($variety['description']); ?></p>
                     </div>
                     <div class="variety-footer">
                         <div class="variety-actions">
-                            <button onclick="viewDetails('<?php echo $variety['name']; ?>')">
+                            <button onclick="viewDetails('<?php echo htmlspecialchars($variety['variety_name']); ?>')">
                                 View Details
                             </button>
                         </div>
-                        <i class="fas fa-seedling" style="color: <?php echo $variety['color']; ?>"></i>
+                        <i class="fas fa-seedling" style="color: #2E7D32"></i>
                     </div>
                 </div>
             <?php endforeach; ?>

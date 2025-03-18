@@ -1,97 +1,100 @@
 <?php
 session_start();
 
-// Add database connection
-$conn = mysqli_connect("localhost", "root", "", "growguide");
+// Authentication check
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    session_unset();
+    session_destroy();
+    header("Location: login.php");
+    exit();
+}
 
-// Check connection
+// Database connection
+$conn = mysqli_connect("localhost", "root", "", "growguide");
 if (!$conn) {
     die("Connection failed: " . mysqli_connect_error());
 }
 
-// Sample variety data - In production, this would come from database
-$varieties = [
-    [
-        'name' => 'Malabar Excel',
-        'scientific_name' => 'Elettaria cardamomum var. malabar',
-        'yield' => '750-900 kg/ha',
-        'maturity' => '2.5-3 years',
-        'description' => 'Known for its robust flavor and high oil content. Excellent for high-altitude cultivation.',
-        'color' => '#2E7D32'
-    ],
-    [
-        'name' => 'Mysore Green Gold',
-        'scientific_name' => 'Elettaria cardamomum var. mysore',
-        'yield' => '800-950 kg/ha',
-        'maturity' => '2-2.5 years',
-        'description' => 'Early maturing variety with distinctive aroma. Performs well in moderate climates.',
-        'color' => '#1B5E20'
-    ],
-    [
-        'name' => 'IISR Vijetha',
-        'scientific_name' => 'Elettaria cardamomum var. vijetha',
-        'yield' => '850-1000 kg/ha',
-        'maturity' => '3 years',
-        'description' => 'Disease-resistant variety with high yield potential. Suitable for organic farming.',
-        'color' => '#388E3C'
-    ],
-    [
-        'name' => 'PDP Vazhukka',
-        'scientific_name' => 'Elettaria cardamomum var. vazhukka',
-        'yield' => '700-850 kg/ha',
-        'maturity' => '2.5 years',
-        'description' => 'Traditional variety known for its adaptability to different soil conditions.',
-        'color' => '#43A047'
-    ],
-    [
-        'name' => 'Njallani Green Gold',
-        'scientific_name' => 'Elettaria cardamomum var. njallani',
-        'yield' => '900-1200 kg/ha',
-        'maturity' => '3 years',
-        'description' => 'High-yielding variety with excellent market value. Known for large capsules.',
-        'color' => '#4CAF50'
-    ],
-    [
-        'name' => 'ICRI-1',
-        'scientific_name' => 'Elettaria cardamomum var. icri',
-        'yield' => '800-900 kg/ha',
-        'maturity' => '2.5 years',
-        'description' => 'Research-developed variety with balanced oil composition.',
-        'color' => '#66BB6A'
-    ],
-    [
-        'name' => 'Avinash',
-        'scientific_name' => 'Elettaria cardamomum var. avinash',
-        'yield' => '750-850 kg/ha',
-        'maturity' => '2-2.5 years',
-        'description' => 'Quick maturing variety with good drought tolerance.',
-        'color' => '#81C784'
-    ],
-    [
-        'name' => 'PDP Highland',
-        'scientific_name' => 'Elettaria cardamomum var. highland',
-        'yield' => '850-950 kg/ha',
-        'maturity' => '3 years',
-        'description' => 'Specially developed for high-altitude regions. Strong disease resistance.',
-        'color' => '#A5D6A7'
-    ],
-    [
-        'name' => 'Mudigere-1',
-        'scientific_name' => 'Elettaria cardamomum var. mudigere',
-        'yield' => '700-800 kg/ha',
-        'maturity' => '2.5 years',
-        'description' => 'Hardy variety with good adaptation to various climatic conditions.',
-        'color' => '#C8E6C9'
-    ],
-    [
-        'name' => 'IISR Avinash',
-        'scientific_name' => 'Elettaria cardamomum var. iisr',
-        'yield' => '800-1000 kg/ha',
-        'maturity' => '3 years',
-        'description' => 'Modern hybrid with excellent disease resistance and yield potential.',
-        'color' => '#2E7D32'
-    ]
-];
+// Add image_path column if it doesn't exist
+$alter_query = "ALTER TABLE varieties ADD COLUMN IF NOT EXISTS image_path VARCHAR(255) DEFAULT NULL";
+mysqli_query($conn, $alter_query);
+
+// Handle form submission for adding new variety
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['add_variety'])) {
+        $variety_name = mysqli_real_escape_string($conn, $_POST['variety_name']);
+        $description = mysqli_real_escape_string($conn, $_POST['description']);
+        $market_price = floatval($_POST['market_price']);
+        $growing_period = mysqli_real_escape_string($conn, $_POST['growing_period']);
+        $yield_potential = mysqli_real_escape_string($conn, $_POST['yield_potential']);
+
+        // Handle image upload
+        $image_path = '';
+        if (isset($_FILES['variety_image']) && $_FILES['variety_image']['error'] === 0) {
+            $upload_dir = 'uploads/varieties/';
+            if (!file_exists($upload_dir)) {
+                mkdir($upload_dir, 0777, true);
+            }
+            
+            $file_extension = pathinfo($_FILES['variety_image']['name'], PATHINFO_EXTENSION);
+            $file_name = uniqid() . '.' . $file_extension;
+            $target_path = $upload_dir . $file_name;
+            
+            if (move_uploaded_file($_FILES['variety_image']['tmp_name'], $target_path)) {
+                $image_path = $target_path;
+            }
+        }
+
+        $query = "INSERT INTO varieties (variety_name, description, market_price, growing_period, yield_potential, image_path, created_at) 
+                 VALUES ('$variety_name', '$description', $market_price, '$growing_period', '$yield_potential', '$image_path', NOW())";
+        
+        if (mysqli_query($conn, $query)) {
+            $_SESSION['success_message'] = "Variety added successfully!";
+        } else {
+            $_SESSION['error_message'] = "Error adding variety: " . mysqli_error($conn);
+        }
+        header("Location: varieties.php");
+        exit();
+    }
+
+    // Handle variety deletion
+    if (isset($_POST['delete_variety'])) {
+        $variety_id = intval($_POST['variety_id']);
+        $query = "DELETE FROM varieties WHERE id = $variety_id";
+        
+        if (mysqli_query($conn, $query)) {
+            $_SESSION['success_message'] = "Variety deleted successfully!";
+        } else {
+            $_SESSION['error_message'] = "Error deleting variety: " . mysqli_error($conn);
+        }
+        header("Location: varieties.php");
+        exit();
+    }
+
+    // Handle price update
+    if (isset($_POST['update_price'])) {
+        $variety_id = intval($_POST['variety_id']);
+        $new_price = floatval($_POST['new_price']);
+        
+        $query = "UPDATE varieties SET market_price = $new_price WHERE id = $variety_id";
+        
+        if (mysqli_query($conn, $query)) {
+            $_SESSION['success_message'] = "Price updated successfully!";
+        } else {
+            $_SESSION['error_message'] = "Error updating price: " . mysqli_error($conn);
+        }
+        header("Location: varieties.php");
+        exit();
+    }
+}
+
+// Fetch all varieties
+$query = "SELECT * FROM varieties ORDER BY created_at DESC";
+$result = mysqli_query($conn, $query);
+$varieties = [];
+while ($row = mysqli_fetch_assoc($result)) {
+    $varieties[] = $row;
+}
 ?>
 
 <!DOCTYPE html>
@@ -99,523 +102,518 @@ $varieties = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GrowGuide - Cardamom Varieties</title>
+    <title>Cardamom Varieties Management</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        /* Add these root variables at the start of your existing styles */
         :root {
-            --primary-color: #2E7D32;
-            --primary-dark: #1B5E20;
-            --accent-color: #81C784;
-            --text-color: #333333;
-            --sidebar-width: 250px;
+            --primary-color: #2e7d32;  /* Dark green */
+            --secondary-color: #246528; /* Slightly darker green for hover */
+            --text-primary: #333;
         }
 
-        /* Add the new sidebar styles */
+        /* Updated sidebar styles */
         .sidebar {
-            width: var(--sidebar-width);
+            width: 250px;
             height: 100vh;
+            background: var(--primary-color);
             position: fixed;
             left: 0;
             top: 0;
-            background: linear-gradient(180deg, var(--primary-color), var(--primary-dark));
-            color: white;
             padding: 20px 0;
-            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
-            z-index: 1000;
+            color: white;
         }
 
-        .sidebar-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 0 20px;
-            margin-bottom: 30px;
-        }
-
-        .sidebar-header i {
-            font-size: 24px;
-        }
-
-        .sidebar-header h2 {
+        .sidebar nav ul {
+            list-style: none;
+            padding: 0;
             margin: 0;
-            font-size: 20px;
         }
 
-        .nav-menu {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            height: calc(100% - 100px);
-        }
-
-        .nav-menu-items {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 20px;
+        .sidebar nav ul li a {
             color: white;
             text-decoration: none;
-            transition: all 0.3s ease;
-        }
-
-        .nav-item:hover {
+            padding: 15px 25px;
+            display: block;
+            transition: background-color 0.2s;
+            margin: 4px 8px;
+            border-radius: 8px;
             background: rgba(255, 255, 255, 0.1);
-            transform: translateX(5px);
         }
 
-        .nav-item.active {
+        .sidebar nav ul li a:hover,
+        .sidebar nav ul li a.active {
             background: rgba(255, 255, 255, 0.2);
-            border-right: 4px solid white;
         }
 
-        .nav-item i {
+        .sidebar nav ul li a i {
+            margin-right: 10px;
             width: 20px;
             text-align: center;
         }
 
-        /* Update main-content styles */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            padding: 30px;
-            min-height: 100vh;
-            box-sizing: border-box;
-        }
-
-        /* Update logout button styles */
-        .nav-menu-bottom .logout-btn {
-            margin: 20px;
-            background: rgba(220, 53, 69, 0.1);
-            border-radius: 8px;
-            color: #ff6b6b;
-        }
-
-        .nav-menu-bottom .logout-btn:hover {
-            background: #ff6b6b;
+        .sidebar .logo {
+            text-align: left;
+            padding: 20px 25px;
+            font-size: 1.4em;
             color: white;
+            font-weight: bold;
         }
 
-        /* Hide the admin dashboard link */
-        .admin-dashboard-link {
-            display: none;
+        .sidebar .logo img {
+            height: 24px;
+            vertical-align: middle;
+            margin-right: 10px;
         }
 
-        /* Remove sidebar styles and update main-content */
-        .main-content {
-            width: 100%;
-            min-height: 100vh;
+        /* Reuse your existing styles from admin.php */
+        /* Add these new styles */
+        .varieties-container {
             padding: 20px;
-            box-sizing: border-box;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
-        /* Move logout button to top-right */
-        .logout-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #d32f2f;
+        .add-variety-form {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .submit-btn {
+            background: var(--primary-color);
             color: white;
             border: none;
             padding: 10px 20px;
-            border-radius: 8px;
+            border-radius: 5px;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            z-index: 1000;
+            font-size: 16px;
+            transition: background-color 0.3s;
         }
 
-        .logout-btn:hover {
-            background: #b71c1c;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(211, 47, 47, 0.2);
+        .submit-btn:hover {
+            background: var(--secondary-color);
         }
 
         .varieties-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            padding: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
         }
 
         .variety-card {
             background: white;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            animation: fadeInUp 0.6s ease-out;
-            animation-fill-mode: both;
-            transform-origin: center;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
         }
 
         .variety-card:hover {
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
         .variety-header {
-            padding: 20px;
-            color: white;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .variety-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, rgba(0,0,0,0.2), transparent);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
         }
 
         .variety-name {
-            font-size: 1.5rem;
-            margin: 0;
-            position: relative;
-            z-index: 1;
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            font-weight: 600;
         }
 
-        .scientific-name {
-            font-style: italic;
+        .price-tag {
+            background: #e8f5e9;
+            color: var(--primary-color);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: 500;
+        }
+
+        .variety-details p {
+            margin: 8px 0;
+            color: #666;
+        }
+
+        .variety-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .action-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .edit-btn {
+            background: #2196F3;
+            color: white;
+        }
+
+        .delete-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        .action-btn:hover {
             opacity: 0.9;
-            margin: 5px 0;
-            position: relative;
-            z-index: 1;
         }
 
-        .variety-content {
+        .alert {
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #43a047;
+        }
+
+        .alert-error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef5350;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: relative;
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        /* Main content adjustment */
+        .main-content {
+            margin-left: 250px;
             padding: 20px;
         }
 
-        .variety-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+        /* Variety image styles */
+        .variety-image {
             margin-bottom: 15px;
-        }
-
-        .stat-item {
-            background: #f8f9fa;
-            padding: 10px;
             border-radius: 8px;
-            text-align: center;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 5px;
-        }
-
-        .stat-value {
-            font-weight: bold;
-            color: #2e7d32;
-        }
-
-        .variety-description {
-            color: #666;
-            line-height: 1.6;
-        }
-
-        .variety-footer {
-            padding: 15px 20px;
-            border-top: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .variety-actions button {
-            background: #2e7d32;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            position: relative;
             overflow: hidden;
         }
 
-        .variety-actions button:hover {
-            background: #1b5e20;
+        .variety-image img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
         }
 
-        .variety-actions button::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 150%;
-            height: 150%;
-            background: rgba(255,255,255,0.1);
-            transform: translate(-50%, -50%) rotate(45deg) scale(0);
-            transition: transform 0.6s ease;
+        /* File input styling */
+        input[type="file"] {
+            border: 1px solid #ddd;
+            padding: 8px;
+            border-radius: 5px;
+            width: 100%;
         }
 
-        .variety-actions button:hover::after {
-            transform: translate(-50%, -50%) rotate(45deg) scale(1);
+        /* Add these new icon animation styles */
+        .fas {
+            transition: transform 0.3s ease-in-out;
         }
 
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            padding: 0 20px;
+        /* Hover animations for different icon types */
+        .fa-seedling:hover {
+            transform: scale(1.2) rotate(15deg);
+            color: #4CAF50;
         }
 
-        .add-variety-btn {
-            background: #2e7d32;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: background-color 0.3s;
+        .fa-plus-circle:hover {
+            transform: scale(1.2);
+            color: #2196F3;
         }
 
-        .add-variety-btn:hover {
-            background: #1b5e20;
+        .fa-clock:hover {
+            transform: rotate(360deg);
+            color: #FF9800;
         }
 
-        /* Animation keyframes */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .fa-chart-line:hover {
+            transform: translateY(-3px);
+            color: #E91E63;
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+        .fa-info-circle:hover {
+            transform: scale(1.2);
+            color: #2196F3;
         }
 
-        /* Updated variety card animations */
-        .variety-card:nth-child(odd) {
-            animation-delay: 0.2s;
+        .fa-edit:hover {
+            transform: rotate(15deg);
         }
 
-        .variety-card:nth-child(even) {
-            animation-delay: 0.4s;
+        .fa-trash:hover {
+            transform: scale(1.1) rotate(-15deg);
         }
 
-        .variety-card:hover .fas.fa-seedling {
-            animation: pulse 1s infinite;
+        /* Sidebar icon animations */
+        .sidebar nav ul li a:hover i {
+            transform: scale(1.2);
+            transition: transform 0.3s ease;
         }
 
-        /* Enhanced variety card interactions */
-        .variety-header::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, rgba(255,255,255,0.1), transparent);
-            transform: translateX(-100%);
-            transition: transform 0.6s ease;
-        }
-
-        .variety-card:hover .variety-header::after {
-            transform: translateX(100%);
-        }
-
-        /* Add floating animation for seedling icon */
+        /* Add floating animation for variety cards */
         @keyframes float {
             0% { transform: translateY(0px); }
             50% { transform: translateY(-5px); }
             100% { transform: translateY(0px); }
         }
 
-        .variety-footer .fa-seedling {
-            transition: all 0.3s ease;
+        .variety-card {
+            animation: float 3s ease-in-out infinite;
         }
 
-        .variety-card:hover .fa-seedling {
-            animation: float 2s ease-in-out infinite;
+        .variety-card:hover {
+            animation-play-state: paused;
         }
-        .admin-dashboard-link {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
-    color: white;
-    padding: 12px 24px;
-    border-radius: 50px;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 500;
-    box-shadow: 0 4px 15px rgba(46, 125, 50, 0.2);
-    transition: all 0.3s ease;
-    z-index: 1000;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-}
 
-.admin-dashboard-link:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(46, 125, 50, 0.3);
-    background: linear-gradient(135deg, #33873b 0%, #1e6823 100%);
-}
+        /* Add pulse animation for price tag */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
 
-.admin-dashboard-link i {
-    font-size: 20px;
-}
+        .price-tag {
+            animation: pulse 2s infinite;
+        }
 
-.admin-dashboard-link .icon-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    transition: all 0.3s ease;
-}
+        .price-tag:hover {
+            animation-play-state: paused;
+        }
 
-.admin-dashboard-link:hover .icon-container {
-    transform: rotate(360deg);
-    background: rgba(255, 255, 255, 0.2);
-}
+        /* Add shine effect for submit buttons */
+        @keyframes shine {
+            0% { background-position: -100px; }
+            100% { background-position: 200px; }
+        }
 
-.admin-dashboard-link .text {
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-@media (max-width: 768px) {
-    .admin-dashboard-link {
-        padding: 10px 16px;
-    }
-    
-    .admin-dashboard-link .text {
-        display: none;
-    }
-    
-    .admin-dashboard-link .icon-container {
-        width: 28px;
-        height: 28px;
-    }
-}
-        
-        
+        .submit-btn {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            background-size: 200px 100%;
+            animation: shine 3s infinite linear;
+            background-repeat: no-repeat;
+            background-color: var(--primary-color);
+        }
     </style>
 </head>
 <body>
-    <!-- Add sidebar HTML right after body tag -->
+    <!-- Add the sidebar before main-content div -->
     <div class="sidebar">
-        <div class="sidebar-header">
-            <i class="fas fa-seedling"></i>
-            <h2>GrowGuide</h2>
+        <div class="logo">
+            <img src="assets/images/logo.png" alt="GrowGuide Logo">
         </div>
-        
-        <nav class="nav-menu">
-            <div class="nav-menu-items">
-                <a href="employe.php" class="nav-item">
-                    <i class="fas fa-home"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="varieties.php" class="nav-item active">
-                    <i class="fas fa-seedling"></i>
-                    <span>Varieties</span>
-                </a>
-                <a href="notifications.php" class="nav-item">
-                    <i class="fas fa-bell"></i>
-                    <span>Notifications</span>
-                </a>
-                <a href="settings.php" class="nav-item">
-                    <i class="fas fa-cog"></i>
-                    <span>Settings</span>
-                </a>
-                <a href="manage_products.php" class="nav-item">
-                    <i class="fas fa-shopping-basket"></i>
-                    <span>Manage Products</span>
-                </a>
-            </div>
-            <div class="nav-menu-bottom">
-                <a href="logout.php" class="nav-item logout-btn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </a>
-            </div>
+        <nav>
+            <ul>
+                <li><a href="admin.php"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="varieties.php" class="active"><i class="fas fa-seedling"></i> Varieties</a></li>
+                <li><a href="farmers.php"><i class="fas fa-users"></i> Farmers</a></li>
+                <li><a href="plantations.php"><i class="fas fa-tree"></i> Plantations</a></li>
+                <li><a href="harvests.php"><i class="fas fa-warehouse"></i> Harvests</a></li>
+                <li><a href="reports.php"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                <li><a href="settings.php"><i class="fas fa-cog"></i> Settings</a></li>
+                <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
         </nav>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content" id="main-content">
-        <div class="page-header">
-            <h1>Cardamom Varieties</h1>
-            <button class="add-variety-btn">
-                <i class="fas fa-plus"></i>
-                Add New Variety
-            </button>
-        </div>
-
-        <div class="varieties-grid">
-            <?php foreach ($varieties as $variety): ?>
-                <div class="variety-card">
-                    <div class="variety-header" style="background-color: <?php echo $variety['color']; ?>">
-                        <h2 class="variety-name"><?php echo $variety['name']; ?></h2>
-                        <p class="scientific-name"><?php echo $variety['scientific_name']; ?></p>
-                    </div>
-                    <div class="variety-content">
-                        <div class="variety-stats">
-                            <div class="stat-item">
-                                <div class="stat-label">Yield</div>
-                                <div class="stat-value"><?php echo $variety['yield']; ?></div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Maturity</div>
-                                <div class="stat-value"><?php echo $variety['maturity']; ?></div>
-                            </div>
-                        </div>
-                        <p class="variety-description"><?php echo $variety['description']; ?></p>
-                    </div>
-                    <div class="variety-footer">
-                        <div class="variety-actions">
-                            <button onclick="viewDetails('<?php echo $variety['name']; ?>')">
-                                View Details
-                            </button>
-                        </div>
-                        <i class="fas fa-seedling" style="color: <?php echo $variety['color']; ?>"></i>
-                    </div>
+    <div class="main-content">
+        <div class="varieties-container">
+            <h1><i class="fas fa-seedling"></i> Cardamom Varieties Management</h1>
+            
+            <?php if (isset($_SESSION['success_message'])): ?>
+                <div class="alert alert-success">
+                    <?php 
+                        echo $_SESSION['success_message'];
+                        unset($_SESSION['success_message']);
+                    ?>
                 </div>
-            <?php endforeach; ?>
+            <?php endif; ?>
+
+            <?php if (isset($_SESSION['error_message'])): ?>
+                <div class="alert alert-error">
+                    <?php 
+                        echo $_SESSION['error_message'];
+                        unset($_SESSION['error_message']);
+                    ?>
+                </div>
+            <?php endif; ?>
+
+            <div class="add-variety-form">
+                <h2><i class="fas fa-plus-circle"></i> Add New Variety</h2>
+                <form action="varieties.php" method="POST" enctype="multipart/form-data">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="variety_name">Variety Name</label>
+                            <input type="text" id="variety_name" name="variety_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="market_price">Market Price (per kg)</label>
+                            <input type="number" id="market_price" name="market_price" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="growing_period">Growing Period</label>
+                            <input type="text" id="growing_period" name="growing_period" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="yield_potential">Yield Potential</label>
+                            <input type="text" id="yield_potential" name="yield_potential" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="variety_image">Variety Image</label>
+                        <input type="file" id="variety_image" name="variety_image" accept="image/*">
+                    </div>
+                    <button type="submit" name="add_variety" class="submit-btn">
+                        <i class="fas fa-plus"></i> Add Variety
+                    </button>
+                </form>
+            </div>
+
+            <div class="varieties-grid">
+                <?php foreach ($varieties as $variety): ?>
+                    <div class="variety-card">
+                        <?php if (!empty($variety['image_path'])): ?>
+                            <div class="variety-image">
+                                <img src="<?php echo htmlspecialchars($variety['image_path']); ?>" alt="<?php echo htmlspecialchars($variety['variety_name']); ?>">
+                            </div>
+                        <?php endif; ?>
+                        <div class="variety-header">
+                            <span class="variety-name"><?php echo htmlspecialchars($variety['variety_name']); ?></span>
+                            <span class="price-tag">₹<?php echo number_format($variety['market_price'], 2); ?>/kg</span>
+                        </div>
+                        <div class="variety-details">
+                            <p><i class="fas fa-clock"></i> Growing Period: <?php echo htmlspecialchars($variety['growing_period']); ?></p>
+                            <p><i class="fas fa-chart-line"></i> Yield: <?php echo htmlspecialchars($variety['yield_potential']); ?></p>
+                            <p><i class="fas fa-info-circle"></i> <?php echo htmlspecialchars($variety['description']); ?></p>
+                        </div>
+                        <div class="variety-actions">
+                            <button class="action-btn edit-btn" onclick="openPriceModal(<?php echo $variety['id']; ?>, <?php echo $variety['market_price']; ?>)">
+                                <i class="fas fa-edit"></i> Update Price
+                            </button>
+                            <form action="varieties.php" method="POST" style="display: inline;">
+                                <input type="hidden" name="variety_id" value="<?php echo $variety['id']; ?>">
+                                <button type="submit" name="delete_variety" class="action-btn delete-btn" onclick="return confirm('Are you sure you want to delete this variety?')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- Price Update Modal -->
+    <div id="priceModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closePriceModal()">&times;</span>
+            <h2>Update Market Price</h2>
+            <form action="varieties.php" method="POST">
+                <input type="hidden" id="modal_variety_id" name="variety_id">
+                <div class="form-group">
+                    <label for="new_price">New Price (per kg)</label>
+                    <input type="number" id="new_price" name="new_price" step="0.01" required>
+                </div>
+                <button type="submit" name="update_price" class="submit-btn">
+                    <i class="fas fa-save"></i> Update Price
+                </button>
+            </form>
         </div>
     </div>
 
     <script>
-        function viewDetails(varietyName) {
-            // Add your detail view logic here
-            alert(`Viewing details for ${varietyName}`);
+        function openPriceModal(varietyId, currentPrice) {
+            document.getElementById('priceModal').style.display = 'block';
+            document.getElementById('modal_variety_id').value = varietyId;
+            document.getElementById('new_price').value = currentPrice;
         }
 
-        function logout() {
-            if(confirm('Are you sure you want to logout?')) {
-                window.location.href = 'admin.php';
+        function closePriceModal() {
+            document.getElementById('priceModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('priceModal')) {
+                closePriceModal();
             }
         }
     </script>
