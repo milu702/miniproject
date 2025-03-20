@@ -68,33 +68,34 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
 
         /* Logo Header */
         .sidebar-header {
-            padding: 20px;
+            padding: 25px 20px;
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 20px;
+            gap: 15px;
+            margin-bottom: 25px;
         }
 
         .sidebar-header i {
-            font-size: 24px;
+            font-size: 28px;
             color: white;
         }
 
         .sidebar-header h2 {
             color: white;
-            font-size: 20px;
+            font-size: 24px;
             margin: 0;
             font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
 
         /* Farmer Profile */
         .farmer-profile {
-            padding: 20px;
+            padding: 25px 20px;
             text-align: center;
             margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .farmer-avatar {
@@ -115,15 +116,15 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
 
         .farmer-profile h3 {
             color: white;
-            margin: 0 0 5px 0;
-            font-size: 18px;
+            margin: 0 0 8px 0;
+            font-size: 20px;
             font-weight: 500;
         }
 
         .farmer-profile p {
             color: rgba(255, 255, 255, 0.8);
             margin: 0;
-            font-size: 14px;
+            font-size: 16px;
         }
 
         .farmer-location {
@@ -143,28 +144,29 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
 
         /* Navigation Menu */
         .nav-menu {
-            padding: 0 15px;
+            padding: 0 20px;
         }
 
         .nav-item {
             display: flex;
             align-items: center;
-            padding: 12px 15px;
+            padding: 16px 20px;
             color: white;
             text-decoration: none;
             transition: all 0.3s ease;
             border-radius: 8px;
-            margin-bottom: 5px;
+            margin-bottom: 12px;
+            font-size: 16px;
         }
 
         .nav-item i {
-            width: 24px;
-            font-size: 18px;
-            margin-right: 12px;
+            width: 30px;
+            font-size: 20px;
+            margin-right: 15px;
         }
 
         .nav-item span {
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 500;
         }
 
@@ -650,6 +652,18 @@ $farmerName = isset($userData['farmer_name']) ? htmlspecialchars($userData['farm
             overflow-y: auto;
             padding: 20px;
             box-sizing: border-box;
+        }
+
+        /* Update the logout button spacing */
+        .nav-menu-bottom {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logout-btn {
+            color: #ff6b6b !important;
+            font-size: 16px;
         }
     </style>
 </head>

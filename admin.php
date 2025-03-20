@@ -1116,135 +1116,280 @@ $pending_queries = mysqli_query($conn, $pending_queries_query);
         }
 
         .soil-tests-table {
-            display: grid;
-            gap: 20px;
-            padding: 20px 0;
-        }
-
-        .farmer-test-card {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 20px;
             background: white;
             border-radius: 10px;
-            padding: 20px;
+            overflow: hidden;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
         }
 
-        .farmer-test-card:hover {
-            transform: translateY(-5px);
+        .soil-tests-table th {
+            background: var(--primary-color);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 0.95rem;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
         }
 
-        .farmer-header {
-            display: flex;
-            justify-content: space-between;
+        .soil-tests-table th i {
+            margin-right: 8px;
+        }
+
+        .soil-tests-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+
+        .soil-tests-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .soil-tests-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .nutrient-header {
+            position: relative;
+            display: inline-flex;
             align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
+            gap: 5px;
+        }
+
+        .nutrient-header .tooltip {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .nutrient-header:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .farmer-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .farmer-info i {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+        }
+
+        .test-count-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--background-color);
+            padding: 4px 10px;
+            border-radius: 15px;
+            color: var(--primary-color);
+        }
+
+        .date-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+        }
+
+        .value-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: 500;
+            min-width: 60px;
+        }
+
+        .value-badge.low {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .value-badge.high {
+            background-color: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .value-badge.optimal {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-start;
+        }
+
+        .action-buttons a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-view {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-export {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-view:hover, .btn-export:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .show-more-soil-tests-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .show-more-soil-tests-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .hidden-soil-test {
+            display: none;
+        }
+
+        .fertilizer-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .fertilizer-table th {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .fertilizer-table td {
+            padding: 12px 15px;
             border-bottom: 1px solid #eee;
         }
 
-        .farmer-name {
+        .fertilizer-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .fertilizer-table .farmer-name {
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .farmer-name i {
-            font-size: 1.5em;
+        .fertilizer-table .farmer-name i {
             color: var(--primary-color);
+            font-size: 1.2em;
         }
 
-        .farmer-name h3 {
+        .fertilizer-table .value {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .fertilizer-table .value.low {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .fertilizer-table .value.high {
+            background-color: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .fertilizer-table .value.optimal {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .recommendations-list ul {
+            list-style: none;
+            padding: 0;
             margin: 0;
-            color: var(--primary-color);
         }
 
-        .test-count {
-            background: var(--background-color);
+        .recommendations-list li {
             color: var(--primary-color);
-            padding: 5px 15px;
-            border-radius: 15px;
+            font-size: 0.9em;
+            margin-bottom: 3px;
+        }
+
+        .optimal-message {
+            color: var(--success-color);
             font-size: 0.9em;
         }
 
-        .test-details {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+        .hidden-recommendation {
+            display: none;
         }
 
-        .test-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .show-more-container {
+            text-align: center;
+            margin-top: 20px;
         }
 
-        .test-row .label {
-            min-width: 120px;
-            color: #666;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .npk-values {
-            display: flex;
-            gap: 15px;
-        }
-
-        .npk-item {
-            background: var(--background-color);
-            padding: 5px 10px;
-            border-radius: 5px;
-            color: var(--primary-color);
-        }
-
-        .farmer-actions {
-            margin-top: 15px;
-            text-align: right;
-        }
-
-        .view-details-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+        .show-more-recommendations-btn {
             background: var(--primary-color);
             color: white;
-            padding: 8px 15px;
+            border: none;
+            padding: 10px 20px;
             border-radius: 5px;
-            text-decoration: none;
-            transition: background-color 0.3s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
         }
 
-        .view-details-btn:hover {
+        .show-more-recommendations-btn:hover {
             background: var(--secondary-color);
-        }
-
-        /* Add styles for section navigation */
-        .section-nav {
-            margin: 15px 0;
-            padding: 10px 0;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .section-nav .sidebar-btn {
-            padding: 8px 15px;
-            margin: 3px 15px;
-            font-size: 0.9em;
-        }
-
-        .section-nav .sidebar-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        /* Smooth scroll behavior */
-        html {
-            scroll-behavior: smooth;
-        }
-
-        /* Add padding to sections to account for fixed header */
-        [id] {
-            scroll-margin-top: 20px;
+            transform: translateY(-2px);
         }
     </style>
 </head>
@@ -1391,92 +1536,79 @@ $pending_queries = mysqli_query($conn, $pending_queries_query);
         </div>
 
         <div id="fertilizer-recommendations" class="recent-section">
-            <h2>Recent Fertilizer Recommendations</h2>
+            <h2><i class="fas fa-flask"></i> Recent Fertilizer Recommendations</h2>
             <?php if (!empty($fertilizer_data)): ?>
-                <div class="recommendation-grid">
-                    <?php 
-                    foreach ($fertilizer_data as $index => $recommendation): 
-                        $hideClass = $index >= 3 ? 'hidden-recommendation' : '';
-                    ?>
-                        <div class="recommendation-card animated-box <?php echo $hideClass; ?>">
-                            <div class="farmer-header">
-                                <i class="fas fa-user-circle"></i>
-                                <h3><?php echo htmlspecialchars($recommendation['farmer_name']); ?></h3>
-                                <span class="test-date">
-                                    <?php echo date('M d, Y', strtotime($recommendation['test_date'])); ?>
-                                </span>
-                            </div>
-                            <div class="soil-levels">
-                                <div class="level-item">
-                                    <span class="label">pH Level</span>
-                                    <?php 
-                                    $phClass = $recommendation['ph_level'] < 5.5 ? 'low' : 
-                                             ($recommendation['ph_level'] > 6.5 ? 'high' : 'optimal');
-                                    ?>
-                                    <span class="value <?php echo $phClass; ?>">
+                <table class="fertilizer-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user"></i> Farmer</th>
+                            <th><i class="fas fa-calendar"></i> Test Date</th>
+                            <th><i class="fas fa-vial"></i> pH Level</th>
+                            <th>N (%)</th>
+                            <th>P (%)</th>
+                            <th>K (%)</th>
+                            <th><i class="fas fa-flask"></i> Recommendations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php 
+                        foreach ($fertilizer_data as $index => $recommendation): 
+                            $hideClass = $index >= 5 ? 'hidden-recommendation' : '';
+                        ?>
+                            <tr class="<?php echo $hideClass; ?>">
+                                <td>
+                                    <div class="farmer-name">
+                                        <i class="fas fa-user-circle"></i>
+                                        <?php echo htmlspecialchars($recommendation['farmer_name']); ?>
+                                    </div>
+                                </td>
+                                <td><?php echo date('M d, Y', strtotime($recommendation['test_date'])); ?></td>
+                                <td>
+                                    <span class="value <?php echo $recommendation['ph_level'] < 5.5 ? 'low' : ($recommendation['ph_level'] > 6.5 ? 'high' : 'optimal'); ?>">
                                         <?php echo number_format($recommendation['ph_level'], 2); ?>
                                     </span>
-                                </div>
-                                <div class="nutrient-levels">
-                                    <div class="level-item">
-                                        <span class="label">N</span>
-                                        <span class="value <?php echo $recommendation['nitrogen_content'] < 0.5 ? 'low' : 'optimal'; ?>">
-                                            <?php echo number_format($recommendation['nitrogen_content'], 2); ?>%
-                                        </span>
-                                    </div>
-                                    <div class="level-item">
-                                        <span class="label">P</span>
-                                        <span class="value <?php echo $recommendation['phosphorus_content'] < 0.05 ? 'low' : 'optimal'; ?>">
-                                            <?php echo number_format($recommendation['phosphorus_content'], 2); ?>%
-                                        </span>
-                                    </div>
-                                    <div class="level-item">
-                                        <span class="label">K</span>
-                                        <span class="value <?php echo $recommendation['potassium_content'] < 1.0 ? 'low' : 'optimal'; ?>">
-                                            <?php echo number_format($recommendation['potassium_content'], 2); ?>%
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="recommendations">
-                                <?php if ($recommendation['n_recommendation'] || 
-                                        $recommendation['p_recommendation'] || 
-                                        $recommendation['k_recommendation']): ?>
-                                    <h4><i class="fas fa-flask"></i> Recommended Fertilizers</h4>
-                                    <ul>
-                                        <?php if ($recommendation['n_recommendation']): ?>
-                                            <li>
-                                                <i class="fas fa-check"></i>
-                                                <?php echo htmlspecialchars($recommendation['n_recommendation']); ?>
-                                                <span class="dosage">100-150 kg/ha</span>
-                                            </li>
+                                </td>
+                                <td>
+                                    <span class="value <?php echo $recommendation['nitrogen_content'] < 0.5 ? 'low' : 'optimal'; ?>">
+                                        <?php echo number_format($recommendation['nitrogen_content'], 2); ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="value <?php echo $recommendation['phosphorus_content'] < 0.05 ? 'low' : 'optimal'; ?>">
+                                        <?php echo number_format($recommendation['phosphorus_content'], 2); ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="value <?php echo $recommendation['potassium_content'] < 1.0 ? 'low' : 'optimal'; ?>">
+                                        <?php echo number_format($recommendation['potassium_content'], 2); ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="recommendations-list">
+                                        <?php if ($recommendation['n_recommendation'] || 
+                                                $recommendation['p_recommendation'] || 
+                                                $recommendation['k_recommendation']): ?>
+                                            <ul>
+                                                <?php if ($recommendation['n_recommendation']): ?>
+                                                    <li><?php echo htmlspecialchars($recommendation['n_recommendation']); ?></li>
+                                                <?php endif; ?>
+                                                <?php if ($recommendation['p_recommendation']): ?>
+                                                    <li><?php echo htmlspecialchars($recommendation['p_recommendation']); ?></li>
+                                                <?php endif; ?>
+                                                <?php if ($recommendation['k_recommendation']): ?>
+                                                    <li><?php echo htmlspecialchars($recommendation['k_recommendation']); ?></li>
+                                                <?php endif; ?>
+                                            </ul>
+                                        <?php else: ?>
+                                            <span class="optimal-message">All levels optimal</span>
                                         <?php endif; ?>
-                                        <?php if ($recommendation['p_recommendation']): ?>
-                                            <li>
-                                                <i class="fas fa-check"></i>
-                                                <?php echo htmlspecialchars($recommendation['p_recommendation']); ?>
-                                                <span class="dosage">200-250 kg/ha</span>
-                                            </li>
-                                        <?php endif; ?>
-                                        <?php if ($recommendation['k_recommendation']): ?>
-                                            <li>
-                                                <i class="fas fa-check"></i>
-                                                <?php echo htmlspecialchars($recommendation['k_recommendation']); ?>
-                                                <span class="dosage">150-200 kg/ha</span>
-                                            </li>
-                                        <?php endif; ?>
-                                    </ul>
-                                <?php else: ?>
-                                    <p class="optimal-message">
-                                        <i class="fas fa-check-circle"></i>
-                                        All nutrient levels are optimal
-                                    </p>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-                <?php if (count($fertilizer_data) > 3): ?>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <?php if (count($fertilizer_data) > 5): ?>
                     <div class="show-more-container">
                         <button class="show-more-recommendations-btn" onclick="toggleRecommendations()">
                             <span id="recommendations-text">Show More</span>
@@ -1540,20 +1672,35 @@ $pending_queries = mysqli_query($conn, $pending_queries_query);
             <?php endif; ?>
         </div>
 
-        <div id="soil-tests-farmer" class="recent-section" style="width: calc(100vw - 280px); margin-left: 0; margin-right: calc(-50vw + 50%); padding: 30px 50px;">
+        <div id="soil-tests-farmer" class="recent-section">
             <h2><i class="fas fa-flask"></i> Soil Tests by Farmer</h2>
             <?php if (mysqli_num_rows($soil_tests_by_farmer) > 0): ?>
                 <table class="soil-tests-table">
                     <thead>
                         <tr>
                             <th><i class="fas fa-user"></i> Farmer</th>
-                            <th><i class="fas fa-vial"></i> Tests</th>
-                            <th><i class="fas fa-calendar"></i> Latest Test</th>
-                            <th><i class="fas fa-tint"></i> pH Level</th>
-                            <th><i class="fas fa-flask"></i> Nitrogen</th>
-                            <th><i class="fas fa-flask"></i> Phosphorus</th>
-                            <th><i class="fas fa-flask"></i> Potassium</th>
-                            <th><i class="fas fa-cog"></i> Actions</th>
+                            <th><i class="fas fa-vials"></i> Total Tests</th>
+                            <th><i class="fas fa-calendar-alt"></i> Latest Test</th>
+                            <th><i class="fas fa-tint"></i> Avg. pH</th>
+                            <th>
+                                <div class="nutrient-header">
+                                    <i class="fas fa-flask"></i> N
+                                    <span class="tooltip">Average Nitrogen Level</span>
+                                </div>
+                            </th>
+                            <th>
+                                <div class="nutrient-header">
+                                    <i class="fas fa-flask"></i> P
+                                    <span class="tooltip">Average Phosphorus Level</span>
+                                </div>
+                            </th>
+                            <th>
+                                <div class="nutrient-header">
+                                    <i class="fas fa-flask"></i> K
+                                    <span class="tooltip">Average Potassium Level</span>
+                                </div>
+                            </th>
+                            <th><i class="fas fa-cogs"></i> Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1565,26 +1712,61 @@ $pending_queries = mysqli_query($conn, $pending_queries_query);
                         ?>
                             <tr class="<?php echo $hideClass; ?>">
                                 <td>
-                                    <div class="farmer-name">
+                                    <div class="farmer-info">
                                         <i class="fas fa-user-circle"></i>
-                                        <?php echo htmlspecialchars($farmer['farmer_name']); ?>
+                                        <span><?php echo htmlspecialchars($farmer['farmer_name']); ?></span>
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="test-badge">
-                                        <?php echo $farmer['test_count']; ?> Tests
-                                    </span>
+                                    <div class="test-count-badge">
+                                        <i class="fas fa-vial"></i>
+                                        <span><?php echo $farmer['test_count']; ?></span>
+                                    </div>
                                 </td>
-                                <td><?php echo $farmer['latest_test_date'] ? date('M d, Y', strtotime($farmer['latest_test_date'])) : 'No tests'; ?></td>
-                                <td><?php echo number_format($farmer['avg_ph'], 2); ?></td>
-                                <td><?php echo number_format($farmer['avg_n'], 2); ?>%</td>
-                                <td><?php echo number_format($farmer['avg_p'], 2); ?>%</td>
-                                <td><?php echo number_format($farmer['avg_k'], 2); ?>%</td>
                                 <td>
-                                    <a href="view_farmer_tests.php?farmer_id=<?php echo $farmer['farmer_id']; ?>" 
-                                       class="view-details-btn">
-                                        <i class="fas fa-eye"></i> View
-                                    </a>
+                                    <div class="date-info">
+                                        <i class="fas fa-calendar-check"></i>
+                                        <span><?php echo $farmer['latest_test_date'] ? date('M d, Y', strtotime($farmer['latest_test_date'])) : 'No tests'; ?></span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <?php 
+                                    $phClass = $farmer['avg_ph'] < 5.5 ? 'low' : 
+                                             ($farmer['avg_ph'] > 6.5 ? 'high' : 'optimal');
+                                    ?>
+                                    <div class="value-badge <?php echo $phClass; ?>">
+                                        <?php echo number_format($farmer['avg_ph'], 2); ?>
+                                    </div>
+                                </td>
+                                <td>
+                                    <?php $nClass = $farmer['avg_n'] < 0.5 ? 'low' : 'optimal'; ?>
+                                    <div class="value-badge <?php echo $nClass; ?>">
+                                        <?php echo number_format($farmer['avg_n'], 2); ?>%
+                                    </div>
+                                </td>
+                                <td>
+                                    <?php $pClass = $farmer['avg_p'] < 0.05 ? 'low' : 'optimal'; ?>
+                                    <div class="value-badge <?php echo $pClass; ?>">
+                                        <?php echo number_format($farmer['avg_p'], 2); ?>%
+                                    </div>
+                                </td>
+                                <td>
+                                    <?php $kClass = $farmer['avg_k'] < 1.0 ? 'low' : 'optimal'; ?>
+                                    <div class="value-badge <?php echo $kClass; ?>">
+                                        <?php echo number_format($farmer['avg_k'], 2); ?>%
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="view_farmer_tests.php?farmer_id=<?php echo $farmer['farmer_id']; ?>" 
+                                           class="btn-view" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="export_tests.php?farmer_id=<?php echo $farmer['farmer_id']; ?>" 
+                                           class="btn-export" title="Export Data">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
@@ -1599,8 +1781,9 @@ $pending_queries = mysqli_query($conn, $pending_queries_query);
                     </div>
                 <?php endif; ?>
             <?php else: ?>
-                <div class="no-results">
-                    <p><i class="fas fa-info-circle"></i> No soil tests found for any farmer.</p>
+                <div class="no-data">
+                    <i class="fas fa-info-circle"></i>
+                    <p>No soil tests found for any farmer.</p>
                 </div>
             <?php endif; ?>
         </div>
@@ -1772,6 +1955,11 @@ $pending_queries = mysqli_query($conn, $pending_queries_query);
                 }]
             },
             options: {
+                animation: {
+                    duration: 2000,
+                    easing: 'easeInOutQuart',
+                    delay: (context) => context.dataIndex * 100
+                },
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
@@ -1779,40 +1967,41 @@ $pending_queries = mysqli_query($conn, $pending_queries_query);
                         beginAtZero: true,
                         ticks: {
                             stepSize: 1,
-                            font: {
-                                size: 12
-                            }
+                            font: { size: 12 }
                         },
                         grid: {
                             color: 'rgba(0, 0, 0, 0.05)'
                         }
                     },
                     x: {
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            font: {
-                                size: 12
-                            }
-                        }
+                        grid: { display: false },
+                        ticks: { font: { size: 12 } }
                     }
                 },
                 plugins: {
-                    legend: {
-                        display: false
-                    },
+                    legend: { display: false },
                     tooltip: {
                         backgroundColor: 'rgba(46, 125, 50, 0.9)',
-                        titleFont: {
-                            size: 14
-                        },
-                        bodyFont: {
-                            size: 13
-                        },
+                        titleFont: { size: 14 },
+                        bodyFont: { size: 13 },
                         padding: 10,
-                        cornerRadius: 5
+                        cornerRadius: 5,
+                        animation: {
+                            duration: 200
+                        }
                     }
+                },
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                    animationDuration: 400
+                },
+                onHover: (event, elements) => {
+                    const chart = event.chart;
+                    chart.data.datasets[0].backgroundColor = chart.data.datasets[0].backgroundColor.map((color, index) => 
+                        elements[0]?.index === index ? 'rgba(46, 125, 50, 0.9)' : 'rgba(46, 125, 50, 0.7)'
+                    );
+                    chart.update('none');
                 }
             }
         });
@@ -1837,10 +2026,17 @@ $pending_queries = mysqli_query($conn, $pending_queries_query);
                         'rgba(211, 47, 47, 1)'
                     ],
                     borderWidth: 2,
-                    hoverOffset: 4
+                    hoverOffset: 15,
+                    hoverBorderWidth: 3
                 }]
             },
             options: {
+                animation: {
+                    animateRotate: true,
+                    animateScale: true,
+                    duration: 2000,
+                    easing: 'easeInOutQuart'
+                },
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
@@ -1848,20 +2044,40 @@ $pending_queries = mysqli_query($conn, $pending_queries_query);
                         position: 'bottom',
                         labels: {
                             padding: 20,
-                            font: {
-                                size: 13
+                            font: { size: 13 },
+                            generateLabels: (chart) => {
+                                const datasets = chart.data.datasets;
+                                return datasets[0].data.map((value, i) => ({
+                                    text: `${chart.data.labels[i]} (${value})`,
+                                    fillStyle: datasets[0].backgroundColor[i],
+                                    strokeStyle: datasets[0].borderColor[i],
+                                    lineWidth: 2,
+                                    hidden: false,
+                                    index: i
+                                }));
                             }
+                        },
+                        onClick: (event, legendItem, legend) => {
+                            const chart = legend.chart;
+                            const index = legendItem.index;
+                            
+                            // Animate segment
+                            const dataset = chart.data.datasets[0];
+                            dataset.backgroundColor[index] = dataset.backgroundColor[index].includes('0.8') 
+                                ? dataset.backgroundColor[index].replace('0.8', '1')
+                                : dataset.backgroundColor[index].replace('1', '0.8');
+                            
+                            chart.update();
                         }
                     },
                     tooltip: {
                         backgroundColor: 'rgba(0, 0, 0, 0.8)',
                         padding: 12,
                         cornerRadius: 5,
-                        titleFont: {
-                            size: 14
-                        },
-                        bodyFont: {
-                            size: 13
+                        titleFont: { size: 14 },
+                        bodyFont: { size: 13 },
+                        animation: {
+                            duration: 200
                         }
                     }
                 },
@@ -1884,7 +2100,9 @@ $pending_queries = mysqli_query($conn, $pending_queries_query);
                         tension: 0.4,
                         fill: true,
                         pointRadius: 4,
-                        pointBackgroundColor: '#2196F3'
+                        pointBackgroundColor: '#2196F3',
+                        pointHoverRadius: 8,
+                        pointHoverBorderWidth: 3
                     },
                     {
                         label: 'Phosphorus (P)',
@@ -1894,7 +2112,9 @@ $pending_queries = mysqli_query($conn, $pending_queries_query);
                         tension: 0.4,
                         fill: true,
                         pointRadius: 4,
-                        pointBackgroundColor: '#4CAF50'
+                        pointBackgroundColor: '#4CAF50',
+                        pointHoverRadius: 8,
+                        pointHoverBorderWidth: 3
                     },
                     {
                         label: 'Potassium (K)',
@@ -1904,22 +2124,32 @@ $pending_queries = mysqli_query($conn, $pending_queries_query);
                         tension: 0.4,
                         fill: true,
                         pointRadius: 4,
-                        pointBackgroundColor: '#FFC107'
+                        pointBackgroundColor: '#FFC107',
+                        pointHoverRadius: 8,
+                        pointHoverBorderWidth: 3
                     }
                 ]
             },
             options: {
+                animation: {
+                    duration: 2000,
+                    easing: 'easeInOutQuart',
+                    delay: (context) => context.dataIndex * 100
+                },
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                },
                 plugins: {
                     legend: {
                         position: 'top',
                         labels: {
                             usePointStyle: true,
                             padding: 20,
-                            font: {
-                                size: 12
-                            }
+                            font: { size: 12 }
                         }
                     },
                     tooltip: {
@@ -1932,6 +2162,9 @@ $pending_queries = mysqli_query($conn, $pending_queries_query);
                         borderWidth: 1,
                         padding: 12,
                         boxPadding: 6,
+                        animation: {
+                            duration: 200
+                        },
                         callbacks: {
                             label: function(context) {
                                 return context.dataset.label + ': ' + context.parsed.y + '%';
@@ -1941,27 +2174,31 @@ $pending_queries = mysqli_query($conn, $pending_queries_query);
                 },
                 scales: {
                     x: {
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            font: {
-                                size: 11
-                            }
-                        }
+                        grid: { display: false },
+                        ticks: { font: { size: 11 } }
                     },
                     y: {
                         beginAtZero: true,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
-                        },
+                        grid: { color: 'rgba(0, 0, 0, 0.05)' },
                         ticks: {
-                            font: {
-                                size: 11
-                            },
+                            font: { size: 11 },
                             callback: function(value) {
                                 return value + '%';
                             }
+                        }
+                    }
+                },
+                transitions: {
+                    show: {
+                        animations: {
+                            x: { from: 0 },
+                            y: { from: 0 }
+                        }
+                    },
+                    hide: {
+                        animations: {
+                            x: { to: 0 },
+                            y: { to: 0 }
                         }
                     }
                 }
@@ -1993,13 +2230,12 @@ $pending_queries = mysqli_query($conn, $pending_queries_query);
 
     <script>
         function toggleRecommendations() {
-            const hiddenCards = document.querySelectorAll('.hidden-recommendation');
-            const showMoreBtn = document.querySelector('.show-more-recommendations-btn');
+            const hiddenRows = document.querySelectorAll('.hidden-recommendation');
             const showMoreText = document.getElementById('recommendations-text');
             const showMoreIcon = document.getElementById('recommendations-icon');
 
-            hiddenCards.forEach(card => {
-                card.style.display = card.style.display === 'none' ? 'block' : 'none';
+            hiddenRows.forEach(row => {
+                row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
             });
 
             if (showMoreText.textContent === 'Show More') {
@@ -2041,6 +2277,28 @@ $pending_queries = mysqli_query($conn, $pending_queries_query);
 
             window.addEventListener('scroll', highlightNavigation);
         });
+    </script>
+
+    <script>
+        function toggleSoilTests() {
+            const hiddenRows = document.querySelectorAll('.hidden-soil-test');
+            const showMoreText = document.getElementById('soil-tests-text');
+            const showMoreIcon = document.getElementById('soil-tests-icon');
+
+            hiddenRows.forEach(row => {
+                row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+            });
+
+            if (showMoreText.textContent === 'Show More') {
+                showMoreText.textContent = 'Show Less';
+                showMoreIcon.classList.remove('fa-chevron-down');
+                showMoreIcon.classList.add('fa-chevron-up');
+            } else {
+                showMoreText.textContent = 'Show More';
+                showMoreIcon.classList.remove('fa-chevron-up');
+                showMoreIcon.classList.add('fa-chevron-down');
+            }
+        }
     </script>
 </body>
 </html>

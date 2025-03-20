@@ -1321,6 +1321,61 @@ function getGrowthRecommendations($analysis) {
             font-size: 0.95rem;
             line-height: 1.6;
         }
+
+        .farmer-profile {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+
+        .farmer-avatar {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .farmer-avatar i {
+            font-size: 32px;
+            color: white;
+        }
+
+        .farmer-profile h3 {
+            color: white;
+            margin: 0 0 5px 0;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .farmer-profile p {
+            color: rgba(255,255,255,0.8);
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .farmer-location {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            color: rgba(255,255,255,0.7);
+            margin-top: 10px;
+            font-size: 14px;
+            background: rgba(255,255,255,0.1);
+            padding: 5px 10px;
+            border-radius: 15px;
+            width: fit-content;
+            margin: 10px auto 0;
+        }
+
+        .farmer-location i {
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -1330,6 +1385,20 @@ function getGrowthRecommendations($analysis) {
             <div class="sidebar-header">
                 <h2><i class="fas fa-seedling"></i> GrowGuide</h2>
             </div>
+            
+            <!-- Add Farmer Profile Section -->
+            <div class="farmer-profile">
+                <div class="farmer-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h3><?php echo htmlspecialchars($username); ?></h3>
+                <p>Cardamom Farmer</p>
+                <div class="farmer-location">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>Kerala</span>
+                </div>
+            </div>
+
             <nav class="nav-menu">
                 <div class="nav-menu-items">
                     <a href="farmer.php" class="nav-item">
@@ -1380,13 +1449,7 @@ function getGrowthRecommendations($analysis) {
                         </div>
                     <?php endif; ?>
                     
-                    <div class="welcome-message">
-                        <p style="font-size: 1.5rem; font-weight: bold; color: #2c5282;">
-                            Welcome back, 
-                            <span style="color: #4299e1;"><?php echo $username; ?></span>! 🌱
-                        </p>
-                    </div>
-                </div>
+                   
                 
                 <!-- Replace the existing location form with this updated form -->
                 <form method="POST" class="location-form">

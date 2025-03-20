@@ -21,6 +21,19 @@ ob_clean();
 // Set JSON header
 header('Content-Type: application/json');
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require 'PHPMailer-master/src/Exception.php';
+require 'PHPMailer-master/src/PHPMailer.php';
+require 'PHPMailer-master/src/SMTP.php';
+
+// Get current user data
+$stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$userData = $stmt->get_result()->fetch_assoc();
+
 try {
     // Start transaction
     $conn->begin_transaction();
@@ -72,15 +85,6 @@ try {
             throw new Exception("Current password is incorrect.");
         }
 
-        // Validate new password
-        if (strlen($_POST['new_password']) < 8) {
-            throw new Exception("New password must be at least 8 characters long.");
-        }
-
-        if (!preg_match("/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/", $_POST['new_password'])) {
-            throw new Exception("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
-        }
-
         // Update password
         $new_password_hash = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
         $stmt = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
@@ -96,9 +100,92 @@ try {
 
     // Update session variables
     $_SESSION['username'] = $name;
-    $_SESSION['farmer_name'] = $name;
 
-    // Return success response with updated data
+    // Track changes for email notification
+    $changes = [];
+    if ($name !== $userData['username']) {
+        $changes['name'] = $name;
+    }
+    if ($email !== $userData['email']) {
+        $changes['email'] = $email;
+    }
+    if (isset($phone) && $phone !== $userData['phone']) {
+        $changes['phone'] = $phone;
+    }
+    if (!empty($_POST['new_password'])) {
+        $changes['password'] = 'updated';
+    }
+
+    // Send email notification if there are changes
+    if (!empty($changes)) {
+        $mail = new PHPMailer(true);
+
+        try {
+            // Server settings
+            $mail->isSMTP();
+            $mail->Host = 'smtp.gmail.com';
+            $mail->SMTPAuth = true;
+            $mail->Username = 'milujiji702@gmail.com';
+            $mail->Password = 'dglt rbly eujw zstx';
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port = 587;
+
+            // Recipients
+            $mail->setFrom('milujiji702@gmail.com', 'GrowGuide');
+            $mail->addAddress($email, $name);
+
+            // Content
+            $mail->isHTML(true);
+            $mail->Subject = 'Your GrowGuide Account Settings Have Been Updated';
+
+            // Email body
+            $emailBody = "
+            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
+                <div style='background: #2D5A27; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;'>
+                    <h1>🌱 GrowGuide Account Update</h1>
+                </div>
+                
+                <div style='background: #f9f9f9; padding: 20px; border-radius: 0 0 10px 10px;'>
+                    <h2>Hello {$name},</h2>
+                    <p>Your GrowGuide account settings have been successfully updated.</p>
+                    
+                    <div style='background: white; padding: 15px; border-radius: 8px; margin: 15px 0;'>
+                        <h3>Changes Made:</h3>";
+
+            foreach ($changes as $field => $value) {
+                $field = ucfirst(str_replace('_', ' ', $field));
+                $emailBody .= "<p>✅ <strong>{$field}</strong> has been updated</p>";
+            }
+
+            $emailBody .= "
+                    </div>
+                    
+                    <div style='background: #FFF3CD; border: 1px solid #FFE69C; color: #856404; padding: 10px; border-radius: 5px; margin: 15px 0;'>
+                        <p>🔔 If you didn't make these changes, please contact us immediately.</p>
+                    </div>
+
+                    <p style='text-align: center;'>
+                        <a href='http://localhost/mini/login.php' 
+                           style='display: inline-block; padding: 10px 20px; background: #2D5A27; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0;'>
+                            Login to Your Account
+                        </a>
+                    </p>
+                </div>
+                
+                <div style='text-align: center; margin-top: 20px; color: #666; font-size: 12px;'>
+                    <p>This is an automated message from GrowGuide. Please do not reply.</p>
+                    <p>© " . date('Y') . " GrowGuide. All rights reserved.</p>
+                </div>
+            </div>";
+
+            $mail->Body = $emailBody;
+            $mail->send();
+        } catch (Exception $e) {
+            error_log("Failed to send settings update email: " . $mail->ErrorInfo);
+        }
+    }
+
+    // Return success response
     echo json_encode([
         'success' => true,
         'message' => 'Settings updated successfully',
@@ -113,10 +200,6 @@ try {
     // Rollback transaction on error
     $conn->rollback();
     
-    // Set error message
-    $_SESSION['error'] = $e->getMessage();
-    $response['message'] = $e->getMessage();
-
     // Return error response
     echo json_encode([
         'success' => false,
@@ -124,5 +207,4 @@ try {
     ]);
 }
 
-// Ensure no additional output
 exit; 

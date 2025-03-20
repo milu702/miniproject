@@ -1,5 +1,16 @@
 <?php
 session_start();
+
+// Add these PHPMailer requirements at the top
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\SMTP;
+
+// Add these requires before your config.php
+require 'PHPMailer-master/src/Exception.php';
+require 'PHPMailer-master/src/PHPMailer.php';
+require 'PHPMailer-master/src/SMTP.php';
+
 require_once 'config.php';
 
 // Initialize database connection
@@ -27,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_employee'])) {
         $username = mysqli_real_escape_string($conn, $_POST['username']);
         $email = mysqli_real_escape_string($conn, $_POST['email']);
-        $password = $_POST['password']; // Store original password for email
+        $password = $_POST['password'];
         $hashed_password = password_hash($_POST['password'], PASSWORD_DEFAULT);
         
         // Check if username or email already exists
@@ -57,8 +68,115 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         mysqli_stmt_bind_param($insert_stmt, "sss", $username, $email, $hashed_password);
                         
                         if (mysqli_stmt_execute($insert_stmt)) {
-                            $message = 'Employee added successfully!';
-                            // Clear any POST data to prevent duplicate submissions
+                            // Send welcome email to new employee
+                            try {
+                                $mail = new PHPMailer(true);
+                                
+                                // Server settings
+                                $mail->isSMTP();
+                                $mail->Host       = 'smtp.gmail.com';
+                                $mail->SMTPAuth   = true;
+                                $mail->Username   = 'milujiji702@gmail.com';
+                                $mail->Password   = 'dglt rbly eujw zstx';
+                                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                                $mail->Port       = 587;
+
+                                // Recipients
+                                $mail->setFrom('milujiji702@gmail.com', 'GrowGuide Admin');
+                                $mail->addAddress($email, $username);
+                                
+                                // Generate password reset token
+                                $reset_token = bin2hex(random_bytes(32));
+                                $token_expiry = date('Y-m-d H:i:s', strtotime('+24 hours'));
+                                
+                                // Store reset token in database
+                                $token_query = "UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE email = ?";
+                                $token_stmt = mysqli_prepare($conn, $token_query);
+                                mysqli_stmt_bind_param($token_stmt, "sss", $reset_token, $token_expiry, $email);
+                                mysqli_stmt_execute($token_stmt);
+
+                                // Content
+                                $mail->isHTML(true);
+                                $mail->Subject = 'Welcome to GrowGuide - Your Account Details';
+                                
+                                $reset_link = "http://yourdomain.com/reset-password.php?token=" . $reset_token;
+                                
+                                $mail->Body = "
+                                <html>
+                                <head>
+                                    <style>
+                                        body { font-family: Arial, sans-serif; line-height: 1.6; }
+                                        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                                        .header { background: #2D5A27; color: white; padding: 20px; text-align: center; }
+                                        .content { padding: 20px; background: #f9f9f9; }
+                                        .button { 
+                                            display: inline-block;
+                                            padding: 10px 20px;
+                                            background: #2D5A27;
+                                            color: white;
+                                            text-decoration: none;
+                                            border-radius: 5px;
+                                            margin: 20px 0;
+                                        }
+                                        .footer { text-align: center; margin-top: 20px; color: #666; }
+                                        .credentials { 
+                                            background: #f0f0f0; 
+                                            padding: 15px; 
+                                            border-radius: 5px; 
+                                            margin: 15px 0;
+                                        }
+                                    </style>
+                                </head>
+                                <body>
+                                    <div class='container'>
+                                        <div class='header'>
+                                            <h1>Welcome to GrowGuide!</h1>
+                                        </div>
+                                        
+                                        <div class='content'>
+                                            <h2>Hello $username,</h2>
+                                            
+                                            <p>Welcome to the GrowGuide team! Your employee account has been created successfully.</p>
+                                            
+                                            <div class='credentials'>
+                                                <p><strong>Your login credentials:</strong></p>
+                                                <ul>
+                                                    <li>Username: $username</li>
+                                                    <li>Email: $email</li>
+                                                    <li>Temporary Password: $password</li>
+                                                </ul>
+                                            </div>
+                                            
+                                            <p><strong>Important Security Notice:</strong></p>
+                                            <ul>
+                                                <li>Please login using this link: <a href='http://localhost/mini/login.php'>GrowGuide Login</a></li>
+                                                <li>For security reasons, please change your password after your first login</li>
+                                                <li>Keep your credentials confidential</li>
+                                                <li>Never share your password with anyone</li>
+                                            </ul>
+                                            
+                                            <p>If you have any questions or need assistance, please don't hesitate to contact the admin team.</p>
+                                        </div>
+                                        
+                                        <div class='footer'>
+                                            <p>This is an automated message, please do not reply.</p>
+                                            <p>© " . date('Y') . " GrowGuide. All rights reserved.</p>
+                                        </div>
+                                    </div>
+                                </body>
+                                </html>";
+
+                                if($mail->send()) {
+                                    $message = 'Employee added successfully and welcome email sent!';
+                                } else {
+                                    $message = 'Employee added but failed to send welcome email.';
+                                }
+                                
+                            } catch (Exception $e) {
+                                $message = "Employee added but email could not be sent. Error: {$mail->ErrorInfo}";
+                                error_log("Email sending failed: " . $mail->ErrorInfo);
+                            }
+                            
                             header("Location: " . $_SERVER['PHP_SELF']);
                             exit();
                         } else {

@@ -1000,3 +1000,37 @@ Stack trace:
 [18-Mar-2025 07:43:57 Europe/Berlin] Password verification failed for email: milujiji800@gmail.com
 [18-Mar-2025 07:44:08 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
 [18-Mar-2025 07:44:08 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[18-Mar-2025 08:51:43 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[18-Mar-2025 08:51:43 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[18-Mar-2025 12:04:47 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[18-Mar-2025 12:04:47 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[18-Mar-2025 16:18:55 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[18-Mar-2025 16:18:55 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[18-Mar-2025 16:27:16 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[18-Mar-2025 16:27:16 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[19-Mar-2025 08:45:31 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[19-Mar-2025 08:45:31 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[19-Mar-2025 09:06:03 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[19-Mar-2025 09:06:03 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[19-Mar-2025 09:14:38 Europe/Berlin] Login attempt - Email: milujiji702@gmail.com, Role: admin
+[19-Mar-2025 09:14:38 Europe/Berlin] Login successful - User ID: 36, Role: admin
+[19-Mar-2025 09:14:38 Europe/Berlin] Redirecting admin to admin.php
+[19-Mar-2025 09:18:21 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[19-Mar-2025 09:18:21 Europe/Berlin] Login successful - User ID: 66, Role: employee
+[19-Mar-2025 09:46:51 Europe/Berlin] Login attempt - Email: milujiji702@gmail.com, Role: admin
+[19-Mar-2025 09:46:51 Europe/Berlin] Password verification failed for email: milujiji702@gmail.com
+[19-Mar-2025 09:47:06 Europe/Berlin] Login attempt - Email: milujiji702@gmail.com, Role: admin
+[19-Mar-2025 09:47:06 Europe/Berlin] Login successful - User ID: 36, Role: admin
+[19-Mar-2025 09:47:06 Europe/Berlin] Redirecting admin to admin.php
+[19-Mar-2025 10:05:44 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[19-Mar-2025 10:05:44 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[19-Mar-2025 10:12:25 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[19-Mar-2025 10:12:26 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[19-Mar-2025 17:13:12 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[19-Mar-2025 17:13:12 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[19-Mar-2025 17:23:35 Europe/Berlin] Login attempt - Email: milujiji702@gmail.com, Role: admin
+[19-Mar-2025 17:23:35 Europe/Berlin] Login successful - User ID: 36, Role: admin
+[19-Mar-2025 17:23:35 Europe/Berlin] Redirecting admin to admin.php
+[19-Mar-2025 17:38:51 Europe/Berlin] Login attempt - Email: milujiji702@gmail.com, Role: admin
+[19-Mar-2025 17:38:51 Europe/Berlin] Login successful - User ID: 36, Role: admin
+[19-Mar-2025 17:38:51 Europe/Berlin] Redirecting admin to admin.php

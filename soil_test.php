@@ -2,6 +2,17 @@
 session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+
+// Add these PHPMailer requirements
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\SMTP;
+
+// Remove the composer autoload and use direct file requires
+require 'PHPMailer-master/src/Exception.php';
+require 'PHPMailer-master/src/PHPMailer.php';
+require 'PHPMailer-master/src/SMTP.php';
+
 require_once 'config.php';
 
 // Initialize database connection
@@ -81,8 +92,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 mysqli_stmt_bind_param($stmt, "idddds", $farmer_id, $ph_level, $nitrogen_content, $phosphorus_content, $potassium_content, $test_date);
                 
                 if (mysqli_stmt_execute($stmt)) {
-                    // Get farmer's email
-                    $email_query = "SELECT email FROM users WHERE id = ?";
+                    // Get farmer's email and name
+                    $email_query = "SELECT email, username FROM users WHERE id = ?";
                     $email_stmt = mysqli_prepare($conn, $email_query);
                     mysqli_stmt_bind_param($email_stmt, "i", $farmer_id);
                     mysqli_stmt_execute($email_stmt);
@@ -90,54 +101,172 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $farmer_data = mysqli_fetch_assoc($email_result);
                     
                     if ($farmer_data) {
-                        // Prepare email content
-                        $to = $farmer_data['email'];
-                        $subject = "Soil Test Results - GrowGuide";
-                        
+                        try {
+                            $mail = new PHPMailer(true);
+                            
+                            // Server settings
+                            $mail->isSMTP();
+                            $mail->Host       = 'smtp.gmail.com';
+                            $mail->SMTPAuth   = true;
+                            $mail->Username   = 'milujiji702@gmail.com';
+                            $mail->Password   = 'dglt rbly eujw zstx';
+                            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                            $mail->Port       = 587;
+
+                            // Recipients
+                            $mail->setFrom('milujiji702@gmail.com', 'GrowGuide');
+                            $mail->addAddress($farmer_data['email'], $farmer_data['username']);
+                            
+                            // Generate certificate number
+                            $certificate_number = 'ST-' . date('Ymd') . '-' . sprintf('%04d', $_SESSION['user_id']);
+                            
+                            // Content
+                            $mail->isHTML(true);
+                            $mail->Subject = 'Soil Test Certificate - GrowGuide';
+                            
+                            // Email body HTML
                         $email_body = "
                         <html>
                         <head>
                             <style>
-                                body { font-family: Arial, sans-serif; }
-                                .container { padding: 20px; }
-                                .result-item { margin: 10px 0; }
-                                .button { 
-                                    background-color: #2D5A27;
-                                    color: white;
-                                    padding: 10px 20px;
-                                    text-decoration: none;
+                                    body { font-family: Arial, sans-serif; line-height: 1.6; }
+                                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                                    .header { text-align: center; padding: 20px; background: #2D5A27; color: white; }
+                                    .certificate { 
+                                        border: 2px solid #2D5A27; 
+            padding: 20px;
+                                        margin: 20px 0; 
+                                        background: #f9f9f9;
+                                        position: relative;
+                                    }
+                                    .result-item { 
+                                        margin: 10px 0;
+            padding: 10px;
+            background: white;
                                     border-radius: 5px;
+                                    }
+                                    .status {
                                     display: inline-block;
+                                        padding: 3px 8px;
+                                        border-radius: 3px;
+            color: white;
+            font-size: 0.9em;
                                 }
                             </style>
                         </head>
                         <body>
                             <div class='container'>
-                                <h2>New Soil Test Results</h2>
-                                <p>Dear Farmer,</p>
-                                <p>Your soil test has been completed. Here are your results:</p>
-                                
-                                <div class='result-item'>pH Level: $ph_level</div>
-                                <div class='result-item'>Nitrogen Content: $nitrogen_content%</div>
-                                <div class='result-item'>Phosphorus Content: $phosphorus_content%</div>
-                                <div class='result-item'>Potassium Content: $potassium_content%</div>
-                                
-                                <p>To view detailed recommendations and analysis, please click the button below:</p>
-                                
-                                <a href='http://yourdomain.com/soil_test.php' class='button'>View Details</a>
-                                
-                                <p>Best regards,<br>GrowGuide Team</p>
+                                    <div class='header'>
+                                        <h1>Soil Test Certificate</h1>
+        </div>
+
+                                    <p>Dear " . htmlspecialchars($farmer_data['username']) . ",</p>
+                                    
+                                    <p>Your soil test results are ready. Here is your official soil test certificate:</p>
+                                    
+                                    <div class='certificate'>
+                                        <h2 style='text-align: center;'>SOIL TEST CERTIFICATE</h2>
+                                        <p style='text-align: center;'>Certificate Number: $certificate_number</p>
+                                        <p style='text-align: center;'>Date: " . date('d-m-Y') . "</p>
+                                        
+                                        <h3>Test Results:</h3>
+                                        
+                                        <div class='result-item'>
+                                            <strong>pH Level:</strong> $ph_level 
+                                            <span class='status' style='background-color: " . getPHColor($ph_level) . ";'>" 
+                                                . getPHStatus($ph_level) . "</span>
+                                                    </div>
+
+                                        <div class='result-item'>
+                                            <strong>Nitrogen Content:</strong> $nitrogen_content% ";
+                                            $n_status = getNitrogenStatus($nitrogen_content);
+                                            $email_body .= "<span class='status' style='background-color: {$n_status[1]};'>{$n_status[0]}</span>
+                </div>
+
+                                        <div class='result-item'>
+                                            <strong>Phosphorus Content:</strong> $phosphorus_content% ";
+                                            $p_status = getPhosphorusStatus($phosphorus_content);
+                                            $email_body .= "<span class='status' style='background-color: {$p_status[1]};'>{$p_status[0]}</span>
+                                        </div>
+
+                                        <div class='result-item'>
+                                            <strong>Potassium Content:</strong> $potassium_content% ";
+                                            $k_status = getPotassiumStatus($potassium_content);
+                                            $email_body .= "<span class='status' style='background-color: {$k_status[1]};'>{$k_status[0]}</span>
+                                        </div>
+                                        
+                                        <h3>Recommendations:</h3>
+                                        <ul>
+                                            " . generateRecommendations($ph_level, $nitrogen_content, $phosphorus_content, $potassium_content) . "
+                                        </ul>
+                                        
+                                        <p style='text-align: center; margin-top: 30px;'>
+                                            <img src='https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=" . urlencode("https://yourdomain.com/verify-certificate.php?cert=" . $certificate_number) . "' alt='Certificate QR Code'>
+                                        </p>
+                                        
+                                        <p style='text-align: center; font-style: italic; margin-top: 20px;'>
+                                            This is an official soil test certificate from GrowGuide
+                                        </p>
+                </div>
+
+                                    <p><strong>Next Steps:</strong></p>
+                                    <ul>
+                                        <li>Review the detailed recommendations provided above</li>
+                                        <li>Log in to your GrowGuide dashboard for more detailed analysis</li>
+                                        <li>Schedule a follow-up consultation if needed</li>
+                                    </ul>
+                                    
+                                    <p style='text-align: center; color: #666; font-size: 0.9em; margin-top: 30px;'>
+                                        For any questions or support, please contact our team.<br>
+                                        Email: support@growguide.com | Phone: +1234567890
+                                    </p>
                             </div>
                         </body>
                         </html>";
                         
-                        // Email headers
-                        $headers = "MIME-Version: 1.0" . "\r\n";
-                        $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-                        $headers .= 'From: GrowGuide <noreply@growguide.com>' . "\r\n";
+                            $mail->Body = $email_body;
                         
                         // Send email
-                        mail($to, $subject, $email_body, $headers);
+                            if($mail->send()) {
+                                // Get the last inserted soil test ID
+                                $soil_test_id = mysqli_insert_id($conn);
+                                
+                                // Store certificate in database
+                                $cert_query = "INSERT INTO soil_test_certificates (certificate_number, farmer_id, test_date, soil_test_id) 
+                                               VALUES (?, ?, NOW(), ?)";
+                                $cert_stmt = mysqli_prepare($conn, $cert_query);
+                                
+                                if ($cert_stmt) {
+                                    mysqli_stmt_bind_param($cert_stmt, "sii", $certificate_number, $farmer_id, $soil_test_id);
+                                    
+                                    if (mysqli_stmt_execute($cert_stmt)) {
+                                        $message = 'Soil test added successfully! Certificate has been sent to your email.';
+                                        $_SESSION['success'] = true;
+                                    } else {
+                                        $message = 'Soil test added but certificate storage failed: ' . mysqli_stmt_error($cert_stmt);
+                                        error_log("Certificate storage failed: " . mysqli_stmt_error($cert_stmt));
+                                        $_SESSION['success'] = false;
+                                    }
+                                    mysqli_stmt_close($cert_stmt);
+                                } else {
+                                    $message = 'Soil test added but certificate preparation failed: ' . mysqli_error($conn);
+                                    error_log("Certificate preparation failed: " . mysqli_error($conn));
+                                    $_SESSION['success'] = false;
+                                }
+                            } else {
+                                $message = "Soil test added but email could not be sent. Error: {$mail->ErrorInfo}";
+                                error_log("Email sending failed: " . $mail->ErrorInfo);
+                                $_SESSION['success'] = false;
+                            }
+                            
+                        } catch (Exception $e) {
+                            $message = "Soil test added but email could not be sent. Error: {$mail->ErrorInfo}";
+                            error_log("Email sending failed: " . $mail->ErrorInfo);
+                            $_SESSION['success'] = false;
+                        }
+                        
+                        header("Location: " . $_SERVER['PHP_SELF']);
+                        exit();
                     }
                     
                     $message = 'Soil test added successfully!';
@@ -183,6 +312,57 @@ function getPotassiumStatus($value) {
     if ($value < 1.0) return ['Low', '#ff6b6b'];
     if ($value > 2.0) return ['High', '#4d96ff'];
     return ['Optimal', '#69db7c'];
+}
+
+// Helper function to generate recommendations
+function generateRecommendations($ph, $n, $p, $k) {
+    $recommendations = [];
+    
+    // pH recommendations
+    if ($ph < 5.5) {
+        $recommendations[] = "Apply agricultural lime (2-3 tons/ha) to increase soil pH";
+        $recommendations[] = "Mix lime thoroughly with soil before planting";
+        $recommendations[] = "Consider split applications for better results";
+    } elseif ($ph > 6.5) {
+        $recommendations[] = "Add organic matter to help lower soil pH";
+        $recommendations[] = "Use sulfur-based amendments";
+        $recommendations[] = "Choose acid-loving plants for better yields";
+    }
+    
+    // Nitrogen recommendations
+    if ($n < 0.5) {
+        $recommendations[] = "Apply nitrogen-rich fertilizer (NPK ratio 6:6:20)";
+        $recommendations[] = "Add composted manure to improve soil fertility";
+        $recommendations[] = "Consider planting nitrogen-fixing cover crops";
+    } elseif ($n > 1.0) {
+        $recommendations[] = "Reduce nitrogen application for next season";
+        $recommendations[] = "Plant nitrogen-consuming crops";
+        $recommendations[] = "Monitor plant growth for excess nitrogen symptoms";
+    }
+    
+    // Phosphorus recommendations
+    if ($p < 0.05) {
+        $recommendations[] = "Apply phosphate fertilizers or bone meal";
+        $recommendations[] = "Incorporate organic phosphorus sources";
+        $recommendations[] = "Maintain soil pH between 6.0-7.0 for better phosphorus availability";
+    } elseif ($p > 0.2) {
+        $recommendations[] = "Avoid phosphorus fertilizers for the next growing season";
+        $recommendations[] = "Use cover crops to prevent phosphorus runoff";
+        $recommendations[] = "Monitor water quality in nearby water bodies";
+    }
+    
+    // Potassium recommendations
+    if ($k < 1.0) {
+        $recommendations[] = "Apply potassium-rich fertilizers";
+        $recommendations[] = "Add wood ash to increase potassium levels";
+        $recommendations[] = "Consider foliar application of potassium";
+    } elseif ($k > 2.0) {
+        $recommendations[] = "Reduce potassium fertilizer application";
+        $recommendations[] = "Improve soil drainage";
+        $recommendations[] = "Monitor for nutrient imbalances";
+    }
+    
+    return "<li>" . implode("</li><li>", $recommendations) . "</li>";
 }
 ?>
 

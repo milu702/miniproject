@@ -2199,6 +2199,61 @@ $district_places = [
         .dashboard-link {
             display: none !important;
         }
+
+        .quick-nav {
+            display: flex;
+            gap: 20px;
+            margin: 30px 0;
+            padding: 0 10px;
+        }
+
+        .quick-nav-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background: white;
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quick-nav-btn:hover {
+            transform: translateY(-5px);
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .quick-nav-btn i {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .quick-nav-btn:hover i {
+            color: white;
+        }
+
+        .quick-nav-btn span {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .quick-nav-btn small {
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .quick-nav {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -2897,3 +2952,20 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <?php endif; ?>
+
+<!-- Add this JavaScript if you haven't already -->
+<script>
+function scrollToSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (section) {
+        const offset = 80; // Adjust this value as needed
+        const sectionPosition = section.getBoundingClientRect().top;
+        const offsetPosition = sectionPosition + window.pageYOffset - offset;
+
+        window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+        });
+    }
+}
+</script>
