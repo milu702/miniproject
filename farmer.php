@@ -79,7 +79,10 @@ if (mysqli_num_rows($table_check) == 0) {
         id INT PRIMARY KEY AUTO_INCREMENT,
         message TEXT NOT NULL,
         is_read TINYINT(1) DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        type VARCHAR(50) NOT NULL,
+        user_id INT,
+        FOREIGN KEY (user_id) REFERENCES users(id)
     )";
     
     if (!mysqli_query($conn, $create_table)) {
@@ -337,6 +340,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_query'])) {
         
         if ($query_stmt->execute()) {
             $_SESSION['success'] = "Your query has been submitted successfully!";
+            
+            // Get farmer name
+            $farmer_name = getFarmerName($conn, $_SESSION['user_id']);
+            
+            // Create notification message
+            $notification_message = "<div class='notification-content'>
+                <strong>New Farmer Query</strong><br>
+                Farmer: {$farmer_name}<br>
+                Type: {$query_type}<br>
+                Query: {$query_text}<br>
+                Date: " . date('Y-m-d H:i:s') . "
+            </div>";
+            
+            // Insert notification directly into the database
+            $notify_stmt = $conn->prepare("
+                INSERT INTO notifications (type, message, user_id, created_at, is_read) 
+                VALUES ('query', ?, ?, NOW(), 0)
+            ");
+            
+            if ($notify_stmt) {
+                $notify_stmt->bind_param("si", $notification_message, $user_id);
+                if (!$notify_stmt->execute()) {
+                    error_log("Failed to create notification: " . $notify_stmt->error);
+                }
+                $notify_stmt->close();
+            } else {
+                error_log("Failed to prepare notification statement: " . $conn->error);
+            }
+            
         } else {
             $_SESSION['error'] = "Error submitting query: " . $query_stmt->error;
         }
@@ -464,6 +496,21 @@ $district_places = [
         'Meppadi'
     ]
 ];
+
+// Add this function near the top of the file, after the database connection code
+function getFarmerName($conn, $user_id) {
+    $query = "SELECT username FROM users WHERE id = ?";
+    $stmt = mysqli_prepare($conn, $query);
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, "i", $user_id);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $row = mysqli_fetch_assoc($result);
+        mysqli_stmt_close($stmt);
+        return $row['username'] ?? 'Unknown Farmer';
+    }
+    return 'Unknown Farmer';
+}
 
 ?>
 

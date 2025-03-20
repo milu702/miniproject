@@ -260,8 +260,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root {
-            --primary-color: #2e7d32;
-            --primary-dark: #1b5e20;
+            --primary-color: #2D5A27;
+            --primary-dark: #1B4D1B;
+            --accent-color: #8B9D83;
+            --text-color: #333333;
+            --bg-color: #f5f5f5;
+            --sidebar-width: 250px;
             --error-color: #dc3545;
             --success-color: #28a745;
             --transition-speed: 0.3s;
@@ -277,82 +281,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .sidebar {
-            width: 250px;
-            background: var(--primary-color);
-            color: white;
+            background-color: #1B4D1B;
+            width: var(--sidebar-width);
             height: 100vh;
-            padding: 10px;
             position: fixed;
-            transition: all var(--transition-speed);
+            left: 0;
+            top: 0;
+            padding: 20px 0;
         }
 
-        .sidebar-header {
-            font-size: 20px;
-            font-weight: bold;
+        .logo {
+            padding: 0 20px;
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 15px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            margin-bottom: 20px;
         }
 
-        .sidebar-header i {
-            font-size: 22px;
+        .logo i {
+            font-size: 24px;
+        }
+
+        .logo span {
+            font-size: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .menu {
             list-style: none;
             padding: 0;
-            margin: 10px 0;
+            margin: 0;
         }
 
-        .menu li {
-            padding: 12px 20px;
+        .nav-item {
             display: flex;
             align-items: center;
-            gap: 15px;
-            cursor: pointer;
-            transition: all var(--transition-speed);
-            margin: 5px 0;
-            position: relative;
+            padding: 15px 20px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            margin: 2px 0;
         }
 
-        .menu li::before {
-            content: '';
+        .nav-item:hover, .nav-item.active {
+            background-color: #2B7A30;
+        }
+
+        .nav-item i {
+            width: 24px;
+            margin-right: 10px;
+        }
+
+        .nav-item span {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .logout-btn {
             position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 3px;
-            background: white;
-            transform: scaleY(0);
-            transition: transform var(--transition-speed);
-        }
-
-        .menu li:hover::before,
-        .menu li.active::before {
-            transform: scaleY(1);
-        }
-
-        .menu li a {
+            bottom: 20px;
+            width: 100%;
+            padding: 15px 20px;
             color: white;
             text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 15px;
-            width: 100%;
+            transition: all 0.3s ease;
         }
 
-        .collapsed {
-            width: 70px;
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
         }
 
-        .collapsed .menu li {
-            justify-content: center;
-        }
-
-        .collapsed .menu li span {
-            display: none;
+        .logout-btn i {
+            width: 24px;
+            margin-right: 10px;
         }
 
         .content {
@@ -785,34 +791,42 @@ tr:hover {
     </div>
     <span class="text">Admin Dashboard</span>
 </a>
-<div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <i class="fas fa-seedling"></i>
-        <span>GrowGuide</span>
+<div class="sidebar">
+    <div class="logo">
+        <i class="fas fa-leaf"></i>
+        <span>GROWGUIDE</span>
     </div>
-    <ul class="menu">
-        <li>
-            <a href="admin.php">
-                <i class="fas fa-th-large"></i>
-                <span>Dashboard</span>
-            </a>
-        </li>
-        <li>
-            <a href="farmers.php">
-                <i class="fas fa-users"></i>
-                <span>Farmers</span>
-            </a>
-        </li>
-        <li class="active">
-            <a href="ad_employees.php">
-                <i class="fas fa-user-tie"></i>
-                <span>Employees</span>
-            </a>
-        </li>
-    </ul>
-    <button class="toggle-btn" onclick="toggleSidebar()">
-        <i class="fas fa-bars"></i>
-    </button>
+    
+    <div class="menu">
+        <a href="admin.php" class="nav-item">
+            <i class="fas fa-th-large"></i>
+            <span>DASHBOARD</span>
+        </a>
+        <a href="farmers.php" class="nav-item">
+            <i class="fas fa-users"></i>
+            <span>FARMERS</span>
+        </a>
+        <a href="ad_employee.php" class="nav-item">
+            <i class="fas fa-user"></i>
+            <span>EMPLOYEES</span>
+        </a>
+        <a href="varieties.php" class="nav-item">
+            <i class="fas fa-seedling"></i>
+            <span>VARIETIES</span>
+        </a>
+        <a href="admin_notifications.php" class="nav-item">
+            <i class="fas fa-bell"></i>
+            <span>NOTIFICATIONS</span>
+        </a>
+        <a href="admin_setting.php" class="nav-item">
+            <i class="fas fa-cog"></i>
+            <span>SETTINGS</span>
+        </a>
+        <a href="logout.php" class="nav-item">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>LOGOUT</span>
+        </a>
+    </div>
 </div>
 
 <div class="content">

@@ -167,6 +167,42 @@ mysqli_close($conn);
             margin-left: 250px;
             padding: 20px;
         }
+
+        .notification-meta {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .respond-btn {
+            background: var(--primary-color);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .respond-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .notification-content strong {
+            color: var(--primary-color);
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .unread {
+            border-left: 4px solid var(--primary-color);
+            background: #f0f7f0;
+        }
     </style>
 </head>
 <body>
@@ -179,7 +215,7 @@ mysqli_close($conn);
             <i class="fas fa-home"></i>
             <span>Dashboard</span>
         </a>
-        <a href="varieties.php" class="nav-item">
+        <a href="employe_varities.php" class="nav-item">
             <i class="fas fa-seedling"></i>
             <span>Varieties</span>
         </a>
@@ -187,13 +223,11 @@ mysqli_close($conn);
             <i class="fas fa-bell"></i>
             <span>Notifications</span>
         </a>
-        <a href="settings.php" class="nav-item">
+        <a href="employee_settings.php" class="nav-item">
             <i class="fas fa-cog"></i>
             <span>Settings</span>
         </a>
-        <a href="products.php" class="nav-item">
-            <i class="fas fa-box"></i>
-            <span>Manage Products</span>
+       
         </a>
         <a href="logout.php" class="logout-btn">
             <i class="fas fa-sign-out-alt"></i>
@@ -211,23 +245,31 @@ mysqli_close($conn);
                         <div class="notification-icon">
                             <?php
                             switch($notification['type']) {
-                                case 'new_farmer':
-                                    echo '<i class="fas fa-user-plus"></i>';
-                                    break;
                                 case 'soil_test':
                                     echo '<i class="fas fa-flask"></i>';
                                     break;
                                 case 'query':
                                     echo '<i class="fas fa-question-circle"></i>';
                                     break;
+                                default:
+                                    echo '<i class="fas fa-bell"></i>';
                             }
                             ?>
                         </div>
                         <div class="notification-content">
-                            <p><?php echo htmlspecialchars($notification['message']); ?></p>
-                            <span class="notification-time">
-                                <?php echo date('F j, Y g:i a', strtotime($notification['created_at'])); ?>
-                            </span>
+                            <?php echo $notification['message']; ?>
+                            <div class="notification-meta">
+                                <span class="notification-time">
+                                    <i class="fas fa-clock"></i>
+                                    <?php echo date('F j, Y g:i a', strtotime($notification['created_at'])); ?>
+                                </span>
+                                <?php if ($notification['type'] == 'query'): ?>
+                                    <a href="respond_query.php?id=<?php echo $notification['user_id']; ?>" 
+                                       class="respond-btn">
+                                        <i class="fas fa-reply"></i> Respond
+                                    </a>
+                                <?php endif; ?>
+                            </div>
                         </div>
                         <?php if (!$notification['is_read']): ?>
                             <form method="POST" style="display: inline;">

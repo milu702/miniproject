@@ -223,11 +223,7 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
                 </a>
-                <a href="manage_products.php" class="nav-item">
-                    <i class="fas fa-shopping-basket"></i>
-                    <span>Manage Products</span>
-                </a>
-                
+               
                 <a href="logout.php" class="nav-item logout-btn">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>

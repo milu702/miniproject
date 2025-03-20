@@ -92,6 +92,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 mysqli_stmt_bind_param($stmt, "idddds", $farmer_id, $ph_level, $nitrogen_content, $phosphorus_content, $potassium_content, $test_date);
                 
                 if (mysqli_stmt_execute($stmt)) {
+                    // Get farmer's name
+                    $farmer_name = getFarmerName($conn, $farmer_id);
+                    
+                    // Create notification message
+                    $notification_message = "<div class='notification-content'>
+                        <strong>New Soil Test Submitted</strong><br>
+                        Farmer: {$farmer_name}<br>
+                        pH Level: {$ph_level}<br>
+                        N-P-K: {$nitrogen_content}% - {$phosphorus_content}% - {$potassium_content}%<br>
+                        Date: " . date('Y-m-d H:i:s') . "
+                    </div>";
+                    
+                    // Send notification
+                    require_once 'send_notification.php';
+                    sendNotification($conn, 'soil_test', $notification_message, $farmer_id);
+                    
                     // Get farmer's email and name
                     $email_query = "SELECT email, username FROM users WHERE id = ?";
                     $email_stmt = mysqli_prepare($conn, $email_query);

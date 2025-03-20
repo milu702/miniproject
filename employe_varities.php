@@ -370,12 +370,11 @@ while ($row = mysqli_fetch_assoc($result)) {
         </div>
         <ul class="sidebar-menu">
             <li><a href="employe.php"><i class="fas fa-home"></i> Dashboard</a></li>
-            <li><a href="#" class="active"><i class="fas fa-seedling"></i> Varieties</a></li>
-            <li><a href="#"><i class="fas fa-bell"></i> Notifications</a></li>
-            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
-            <li><a href="#"><i class="fas fa-box"></i> Manage Products</a></li>
-            <li><a href="admin.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-        </ul>
+            <li><a href="employe_varities.php" class="active"><i class="fas fa-seedling"></i> Varieties</a></li>
+            <li><a href="notifications.php"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="employee_settings.php"><i class="fas fa-cog"></i> Settings</a></li>
+            
+    </ul>
     </div>
 
     <!-- Main Content -->

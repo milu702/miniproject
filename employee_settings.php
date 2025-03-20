@@ -42,98 +42,76 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary-dark: #1a4a1d;
-            --primary-color: #2B7A30;
-            --hover-color: #3c8c40;
-            --text-light: #ffffff;
+            --primary-color: #2D5A27;
+            --primary-dark: #1B4D1B;
+            --accent-color: #8B9D83;
+            --text-color: #333333;
+            --bg-color: #f5f5f5;
             --sidebar-width: 250px;
-            --primary-color: #2d6a4f;  /* Dark green */
-            --secondary-color: #40916c; /* Medium green */
-            --accent-color: #95d5b2;   /* Light green */
-            --light-color: #ecf0f1;
-            --dark-color: #1B4D1E;     /* Very dark green */
         }
 
         /* Updated Sidebar Styles */
         .sidebar {
+            background-color: #1B4D1B;
             width: var(--sidebar-width);
             height: 100vh;
             position: fixed;
             left: 0;
             top: 0;
-            background: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-            color: var(--text-light);
-            z-index: 1000;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px 0;
         }
 
-        .sidebar-header {
-            padding: 20px;
+        .logo {
+            color: white;
+            font-size: 24px;
+            padding: 0 20px 20px;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .sidebar-header i {
-            font-size: 24px;
-        }
-
-        .sidebar-header h2 {
-            margin: 0;
-            font-size: 20px;
-            font-weight: 500;
-        }
-
-        .nav-menu {
-            display: flex;
-            flex-direction: column;
-            padding: 20px 0;
+        .logo i {
+            color: #4CAF50;
         }
 
         .nav-item {
             display: flex;
             align-items: center;
-            padding: 10px 24px;
-            color: var(--text-light);
+            padding: 15px 20px;
+            color: white;
             text-decoration: none;
             transition: all 0.3s ease;
-            gap: 12px;
-            font-size: 0.95rem;
+            margin: 5px 0;
         }
 
-        .nav-item.active {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .nav-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            padding-left: 28px;
+        .nav-item:hover, .nav-item.active {
+            background-color: #2B7A30;
         }
 
         .nav-item i {
-            width: 20px;
-            text-align: center;
-            font-size: 16px;
+            width: 24px;
+            margin-right: 10px;
         }
 
-        .nav-item span {
-            font-size: 16px;
-        }
-
-        /* Logout button specific styles */
         .logout-btn {
-            margin-top: auto;
-            background: rgba(220, 53, 69, 0.1);
-            color: #ff6b6b;
-            border: none;
-            cursor: pointer;
-            margin: 20px;
-            border-radius: 8px;
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            padding: 15px 20px;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
         }
 
         .logout-btn:hover {
-            background: #ff6b6b;
-            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .logout-btn i {
+            width: 24px;
+            margin-right: 10px;
         }
 
         /* Update main content to accommodate sidebar */
@@ -355,40 +333,33 @@ $employeeName = isset($userData['employee_name']) ? htmlspecialchars($userData['
     </style>
 </head>
 <body>
-    <!-- Replace the existing sidebar HTML with this (right after <body> tag) -->
+    <!-- Replace the existing sidebar HTML with this -->
     <div class="sidebar">
-        <div class="sidebar-header">
-            <i class="fas fa-seedling"></i>
-            <h2>GrowGuide</h2>
+        <div class="logo">
+            <i class="fas fa-leaf"></i>
+            <span>GrowGuide</span>
         </div>
+        <a href="employe.php" class="nav-item">
+            <i class="fas fa-home"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="employe_varities.php" class="nav-item">
+            <i class="fas fa-seedling"></i>
+            <span>Varieties</span>
+        </a>
+        <a href="notifications.php" class="nav-item">
+            <i class="fas fa-bell"></i>
+            <span>Notifications</span>
+        </a>
+        <a href="settings.php" class="nav-item active">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+        </a>
         
-        <nav class="nav-menu">
-            <a href="employe.php" class="nav-item">
-                <i class="fas fa-home"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="farmers_list.php" class="nav-item">
-                <i class="fas fa-users"></i>
-                <span>Farmers</span>
-            </a>
-            <a href="soil_tests.php" class="nav-item">
-                <i class="fas fa-flask"></i>
-                <span>Soil Tests</span>
-            </a>
-            <a href="recommendations.php" class="nav-item">
-                <i class="fas fa-clipboard-list"></i>
-                <span>Recommendations</span>
-            </a>
-            <a href="employee_settings.php" class="nav-item active">
-                <i class="fas fa-cog"></i>
-                <span>Settings</span>
-            </a>
-            
-            <a href="logout.php" class="nav-item logout-btn">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Logout</span>
-            </a>
-        </nav>
+        <a href="logout.php" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+        </a>
     </div>
 
     <div class="content">
