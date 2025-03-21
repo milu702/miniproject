@@ -2108,9 +2108,9 @@ function getFarmerName($conn, $user_id) {
         /* Add these styles in the <style> section */
         .running-message {
             position: fixed;
-            bottom: 20px;
+            bottom: 80px; /* Increased to make room for soil test message */
             right: -300px;
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            background: linear-gradient(135deg, #2980b9, #3498db);
             color: white;
             padding: 15px 25px;
             border-radius: 30px;
@@ -2118,7 +2118,7 @@ function getFarmerName($conn, $user_id) {
             display: flex;
             align-items: center;
             gap: 12px;
-            z-index: 1000;
+            z-index: 999;
             animation: slideInOut 15s linear infinite;
             cursor: pointer;
         }
@@ -2299,6 +2299,169 @@ function getFarmerName($conn, $user_id) {
             .quick-nav {
                 flex-direction: column;
                 gap: 15px;
+            }
+        }
+
+        .chat-widget {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;  /* Changed from right: 20px to left: 20px */
+            width: 350px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+            z-index: 1000;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .chat-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .chat-header i {
+            font-size: 1.2em;
+        }
+
+        .chat-minimize {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 5px;
+            transition: transform 0.3s ease;
+        }
+
+        .chat-minimize:hover {
+            transform: scale(1.1);
+        }
+
+        .chat-body {
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            transition: height 0.3s ease;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 80%;
+            animation: messageSlide 0.3s ease;
+        }
+
+        .bot-message {
+            background: #f0f2f5;
+            margin-right: auto;
+            margin-left: 0;
+            border-bottom-left-radius: 5px;
+        }
+
+        .user-message {
+            background: var(--primary-color);
+            color: white;
+            margin-left: auto;
+            margin-right: 0;
+            border-bottom-right-radius: 5px;
+        }
+
+        .chat-input {
+            padding: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .chat-input input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .chat-input button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .chat-input button:hover {
+            transform: scale(1.05);
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-widget.minimized .chat-body {
+            height: 0;
+            overflow: hidden;
+        }
+
+        /* Add soil test message styles */
+        .soil-test-message {
+            position: fixed;
+            bottom: 20px; /* Position below weather message */
+            right: -300px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            padding: 15px 25px;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 999;
+            animation: slideInOut 15s linear infinite 1s; /* 1s delay from weather message */
+            cursor: pointer;
+        }
+
+        /* Update animation for both messages */
+        @keyframes slideInOut {
+            0% {
+                right: -300px;
+            }
+            10% {
+                right: 20px;
+            }
+            90% {
+                right: 20px;
+            }
+            100% {
+                right: -300px;
             }
         }
     </style>
@@ -2957,6 +3120,126 @@ function getFarmerName($conn, $user_id) {
             });
     }
     </script>
+
+    <!-- Add this right before the closing </body> tag -->
+    <div class="chat-widget" id="chatWidget">
+        <div class="chat-header" onclick="toggleChat()">
+            <i class="fas fa-robot"></i>
+            <span>Farming Assistant</span>
+            <button class="chat-minimize" id="chatMinimize">
+                <i class="fas fa-minus"></i>
+            </button>
+        </div>
+        <div class="chat-body" id="chatBody">
+            <div class="chat-messages" id="chatMessages">
+                <div class="message bot-message">
+                    Hello! I'm your farming assistant. How can I help you today?
+                </div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="userInput" placeholder="Type your question..." onkeypress="handleKeyPress(event)">
+                <button onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add this JavaScript before the closing </body> tag -->
+    <script>
+        let isMinimized = false;
+
+        function toggleChat() {
+            const chatWidget = document.getElementById('chatWidget');
+            const minimizeIcon = document.querySelector('#chatMinimize i');
+            
+            isMinimized = !isMinimized;
+            chatWidget.classList.toggle('minimized');
+            minimizeIcon.className = isMinimized ? 'fas fa-plus' : 'fas fa-minus';
+        }
+
+        function sendMessage() {
+            const userInput = document.getElementById('userInput');
+            const message = userInput.value.trim();
+            
+            if (message) {
+                addMessage(message, 'user');
+                userInput.value = '';
+                
+                // Process the message and get bot response
+                processUserMessage(message);
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function addMessage(text, sender) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function processUserMessage(message) {
+            // Get farmer's name from PHP session
+            const farmerName = '<?php echo $username; ?>';
+            
+            // Get current hour for time-based greeting
+            const hour = new Date().getHours();
+            let timeGreeting = '';
+            
+            if (hour >= 5 && hour < 12) {
+                timeGreeting = 'Good morning';
+            } else if (hour >= 12 && hour < 17) {
+                timeGreeting = 'Good afternoon';
+            } else if (hour >= 17 && hour < 22) {
+                timeGreeting = 'Good evening';
+            } else {
+                timeGreeting = 'Hello';
+            }
+
+            // Simple keyword-based responses
+            const responses = {
+                'hi': `${timeGreeting}, ${farmerName}! 😊 I'm here to help you with your farming queries. How may I assist you today?`,
+                'hello': `${timeGreeting}, ${farmerName}! 😊 I'm here to help you with your farming queries. How may I assist you today?`,
+                'hey': `${timeGreeting}, ${farmerName}! 😊 I'm here to help you with your farming queries. How may I assist you today?`,
+                'weather': 'You can check detailed weather information in the Weather section of the dashboard.',
+                'soil': 'Regular soil testing is important for optimal cardamom growth. Visit the Soil Test section for more details.',
+                'fertilizer': 'For fertilizer recommendations, please check the Fertilizer Guide section.',
+                'disease': 'If you notice any diseases in your crops, please provide specific symptoms for better assistance.',
+                'harvest': 'The best time for harvesting cardamom is when the capsules are fully developed but still green.',
+                'price': 'You can check current market prices in the Market Information section.',
+                'help': `Of course, ${farmerName}! I can help you with information about weather, soil testing, fertilizers, diseases, harvesting, and market prices. What would you like to know?`
+            };
+
+            // Simulate typing delay
+            setTimeout(() => {
+                let response = `I apologize, ${farmerName}, but I need more specific information to help you better. Try asking about weather, soil, fertilizers, diseases, harvesting, or market prices.`;
+                
+                // Check for keywords in the message
+                for (const [keyword, reply] of Object.entries(responses)) {
+                    if (message.toLowerCase().includes(keyword)) {
+                        response = reply;
+                        break;
+                    }
+                }
+                
+                addMessage(response, 'bot');
+            }, 1000);
+        }
+
+        // Event listener for minimizing chat
+        document.getElementById('chatMinimize').addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleChat();
+        });
+    </script>
 </body>
 </html>
 
@@ -2969,7 +3252,17 @@ $soil_test_needed = $days_since_last_test > 90; // If more than 90 days since la
 
 if ($soil_test_needed):
 ?>
-<div class="running-message" onclick="window.location.href='soil_test.php'">
+<div class="running-message" onclick="window.location.href='weather.php'">
+    <i class="fas fa-cloud-sun"></i>
+    <div class="running-message-content">
+        <span class="running-message-text">Check Today's Weather Forecast!</span>
+        <a href="weather.php" class="running-message-link">
+            View Details <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+</div>
+
+<div class="soil-test-message" onclick="window.location.href='soil_test.php'">
     <i class="fas fa-flask"></i>
     <div class="running-message-content">
         <span class="running-message-text">Soil Test Required!</span>
@@ -2981,19 +3274,23 @@ if ($soil_test_needed):
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const runningMessage = document.querySelector('.running-message');
-    if (runningMessage) {
-        // Restart animation when it ends
-        runningMessage.addEventListener('animationend', function() {
+    // Handle weather message animation
+    const weatherMessage = document.querySelector('.running-message');
+    if (weatherMessage) {
+        weatherMessage.addEventListener('animationend', function() {
             this.style.animation = 'none';
             this.offsetHeight; // Trigger reflow
             this.style.animation = 'slideInOut 15s linear infinite';
         });
+    }
 
-        // Make entire message clickable
-        runningMessage.style.cursor = 'pointer';
-        runningMessage.addEventListener('click', function() {
-            window.location.href = 'soil_test.php';
+    // Handle soil test message animation
+    const soilTestMessage = document.querySelector('.soil-test-message');
+    if (soilTestMessage) {
+        soilTestMessage.addEventListener('animationend', function() {
+            this.style.animation = 'none';
+            this.offsetHeight; // Trigger reflow
+            this.style.animation = 'slideInOut 15s linear infinite 1s';
         });
     }
 });
