@@ -63,6 +63,20 @@ if ($result) {
     mysqli_free_result($result);
 }
 
+// Add this function before the form processing section
+function getFarmerName($conn, $farmer_id) {
+    $query = "SELECT username FROM users WHERE id = ?";
+    $stmt = mysqli_prepare($conn, $query);
+    mysqli_stmt_bind_param($stmt, "i", $farmer_id);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    
+    if ($row = mysqli_fetch_assoc($result)) {
+        return htmlspecialchars($row['username']);
+    }
+    return 'Unknown Farmer';
+}
+
 // Form processing
 $message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

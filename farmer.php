@@ -512,6 +512,46 @@ function getFarmerName($conn, $user_id) {
     return 'Unknown Farmer';
 }
 
+// Add this function to parse and format the cardamom price data
+function getLatestCardamomPrices() {
+    $small_cardamom_price = "2,963.00"; // From the latest data
+    $large_cardamom_price = "1,800.00"; // Highest price from Siliguri market
+    
+    return [
+        'small' => $small_cardamom_price,
+        'large' => $large_cardamom_price,
+        'date' => '22-Mar-2025' // Latest date from the data
+    ];
+}
+
+// In the notifications section, replace the standalone case with a proper switch statement
+if ($notifications && mysqli_num_rows($notifications) > 0) {
+    while ($notification = mysqli_fetch_assoc($notifications)) {
+        switch ($notification['type']) {
+            case 'market_updates':
+                $prices = getLatestCardamomPrices();
+                echo '<div class="notification-item market">
+                        <i class="fas fa-chart-line"></i>
+                        <div class="notification-content">
+                            <h4>Cardamom Market Update</h4>
+                            <p>Latest Prices (as of ' . $prices['date'] . '):<br>
+                               Small Cardamom: ₹' . $prices['small'] . '/kg<br>
+                               Large Cardamom: ₹' . $prices['large'] . '/kg
+                            </p>
+                            <small>Source: Spices Board India</small>
+                        </div>
+                      </div>';
+                break;
+            // Add other notification types here if needed
+            default:
+                // Handle other notification types
+                break;
+        }
+    }
+} else {
+    echo '<div class="no-notifications">No new notifications</div>';
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -2105,6 +2145,18 @@ function getFarmerName($conn, $user_id) {
             opacity: 0.5;
         }
 
+        .notification-item.market p {
+            line-height: 1.4;
+            margin: 5px 0;
+        }
+
+        .notification-item.market small {
+            color: #666;
+            font-size: 0.8em;
+            display: block;
+            margin-top: 5px;
+        }
+
         /* Add these styles in the <style> section */
         .running-message {
             position: fixed;
@@ -2463,6 +2515,19 @@ function getFarmerName($conn, $user_id) {
             100% {
                 right: -300px;
             }
+        }
+
+        /* Add to your existing CSS */
+        .notification-item.market p {
+            line-height: 1.4;
+            margin: 5px 0;
+        }
+
+        .notification-item.market small {
+            color: #666;
+            font-size: 0.8em;
+            display: block;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -2969,13 +3034,18 @@ function getFarmerName($conn, $user_id) {
                                         </div>';
                                     break;
                                 case 'market_updates':
+                                    $prices = getLatestCardamomPrices();
                                     echo '<div class="notification-item market">
                                             <i class="fas fa-chart-line"></i>
                                             <div class="notification-content">
-                                                <h4>Market Update</h4>
-                                                <p>Current market price for cardamom: ₹850/kg</p>
+                                                <h4>Cardamom Market Update</h4>
+                                                <p>Latest Prices (as of ' . $prices['date'] . '):<br>
+                                                   Small Cardamom: ₹' . $prices['small'] . '/kg<br>
+                                                   Large Cardamom: ₹' . $prices['large'] . '/kg
+                                                </p>
+                                                <small>Source: Spices Board India</small>
                                             </div>
-                                        </div>';
+                                          </div>';
                                     break;
                             }
                         }

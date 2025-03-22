@@ -1073,3 +1073,7 @@ Stack trace:
 [20-Mar-2025 18:00:41 Europe/Berlin] Redirecting admin to admin.php
 [21-Mar-2025 10:35:05 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
 [21-Mar-2025 10:35:05 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[22-Mar-2025 16:32:06 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[22-Mar-2025 16:32:06 Europe/Berlin] Password verification failed for email: milujiji800@gmail.com
+[22-Mar-2025 16:32:15 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[22-Mar-2025 16:32:15 Europe/Berlin] Login successful - User ID: 67, Role: farmer
