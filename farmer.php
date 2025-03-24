@@ -90,6 +90,64 @@ if (mysqli_num_rows($table_check) == 0) {
     }
 }
 
+// Check if the farmers table exists first
+$farmers_table_check = mysqli_query($conn, "SHOW TABLES LIKE 'farmers'");
+if (mysqli_num_rows($farmers_table_check) == 0) {
+    // Create the farmers table if it doesn't exist
+    $create_farmers_table = "CREATE TABLE IF NOT EXISTS farmers (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        user_id INT NOT NULL,
+        farmer_id INT,
+        farm_size DECIMAL(10,2),
+        farm_location VARCHAR(255),
+        notification_preferences JSON,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )";
+    
+    if (!mysqli_query($conn, $create_farmers_table)) {
+        die("Error creating farmers table: " . mysqli_error($conn));
+    }
+}
+
+// Now check if the farmer_profiles table exists
+$table_check = mysqli_query($conn, "SHOW TABLES LIKE 'farmer_profiles'");
+if (mysqli_num_rows($table_check) == 0) {
+    // Create the farmer_profiles table if it doesn't exist - with proper foreign key
+    $create_table = "CREATE TABLE IF NOT EXISTS farmer_profiles (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        farmer_id INT NOT NULL,
+        experience_years INT,
+        farm_type VARCHAR(100),
+        specialization VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (farmer_id) REFERENCES farmers(id)
+    )";
+    
+    // Try to create with foreign key
+    if (!mysqli_query($conn, $create_table)) {
+        // If the foreign key fails, try creating without it for now
+        $create_table_without_fk = "CREATE TABLE IF NOT EXISTS farmer_profiles (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            farmer_id INT NOT NULL,
+            experience_years INT,
+            farm_type VARCHAR(100),
+            specialization VARCHAR(100),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )";
+        
+        if (!mysqli_query($conn, $create_table_without_fk)) {
+            die("Error creating farmer_profiles table: " . mysqli_error($conn));
+        }
+        
+        // Log that we created without foreign key
+        error_log("Created farmer_profiles table without foreign key constraint");
+    }
+}
+
 // Simplify the notifications query and add error handling
 try {
     // First, just get all notifications without any WHERE clause
@@ -548,9 +606,9 @@ if ($notifications && mysqli_num_rows($notifications) > 0) {
                 break;
         }
     }
-} else {
-    echo '<div class="no-notifications">No new notifications</div>';
 }
+
+?>
 
 ?>
 
@@ -2357,15 +2415,282 @@ if ($notifications && mysqli_num_rows($notifications) > 0) {
         .chat-widget {
             position: fixed;
             bottom: 20px;
-            left: 20px;  /* Changed from right: 20px to left: 20px */
+            left: 20px;
+            width: 350px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .chat-header i {
+            font-size: 1.5em;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px;
+            border-radius: 50%;
+        }
+
+        .chat-header span {
+            flex: 1;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .chat-minimize {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+
+        .chat-minimize:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .chat-body {
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            transition: height 0.3s ease;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            max-width: 85%;
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 15px;
+            font-size: 0.95em;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        .bot-message {
+            background: #f0f4f9;
+            color: #2c3e50;
+            border-bottom-left-radius: 5px;
+            margin-right: auto;
+            /* Add styling for markdown-like formatting */
+            font-family: 'SF Mono', 'Consolas', monospace;
+        }
+
+        .bot-message strong,
+        .bot-message b {
+            color: var(--primary-color);
+        }
+
+        .bot-message ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+
+        .bot-message li {
+            margin: 3px 0;
+        }
+
+        .user-message {
+            background: var(--primary-color);
+            color: white;
+            border-bottom-right-radius: 5px;
+            margin-left: auto;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-input {
+            padding: 15px;
+            border-top: 1px solid #eef2f5;
+            display: flex;
+            gap: 10px;
+            background: white;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #eef2f5;
+            border-radius: 25px;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .chat-input input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(45, 90, 39, 0.1);
+        }
+
+        .chat-input button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .chat-input button:hover {
+            background: var(--primary-dark);
+            transform: scale(1.05);
+        }
+
+        .chat-widget.minimized .chat-body {
+            height: 0;
+        }
+
+        /* Add styles for markdown-like formatting in bot messages */
+        .bot-message h1,
+        .bot-message h2,
+        .bot-message h3 {
+            margin: 10px 0;
+            color: var(--primary-dark);
+        }
+
+        .bot-message code {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: 'SF Mono', 'Consolas', monospace;
+            font-size: 0.9em;
+        }
+
+        .bot-message pre {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 10px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        /* Add custom scrollbar for chat messages */
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* Add loading animation for bot responses */
+        .bot-message.loading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            animation: typing 1s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .assistant-tips {
+            text-align: left;
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .assistant-tips li {
+            margin: 5px 0;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9em;
+        }
+
+        .sample-questions {
+            text-align: left;
+            padding-left: 15px;
+            margin-top: 10px;
+        }
+
+        .sample-questions li {
+            font-size: 0.85em;
+            color: #666;
+            margin: 5px 0;
+            font-style: italic;
+        }
+
+        .guide-item ul {
+            list-style-type: none;
+        }
+
+        .guide-item ul li::before {
+            content: "•";
+            color: var(--primary-color);
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+
+        /* Update chat widget styles */
+        .chat-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
             width: 350px;
             background: white;
             border-radius: 15px;
             box-shadow: 0 5px 25px rgba(0,0,0,0.2);
             z-index: 1000;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
             transition: all 0.3s ease;
         }
 
@@ -2383,175 +2708,236 @@ if ($notifications && mysqli_num_rows($notifications) > 0) {
             font-size: 1.2em;
         }
 
-        .chat-minimize {
-            margin-left: auto;
-            background: none;
-            border: none;
+        /* Add a first-time user tooltip */
+        .chat-widget::before {
+            content: "👋 Click here to get farming assistance!";
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: #333;
             color: white;
-            cursor: pointer;
-            padding: 5px;
-            transition: transform 0.3s ease;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            animation: bounce 2s infinite;
+            display: none;
         }
 
-        .chat-minimize:hover {
-            transform: scale(1.1);
+        .chat-widget.first-time::before {
+            display: block;
         }
 
-        .chat-body {
-            height: 400px;
-            display: flex;
-            flex-direction: column;
-            transition: height 0.3s ease;
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
         }
 
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-        }
-
-        .message {
-            margin-bottom: 15px;
-            padding: 10px 15px;
-            border-radius: 15px;
-            max-width: 80%;
-            animation: messageSlide 0.3s ease;
-        }
-
-        .bot-message {
-            background: #f0f2f5;
-            margin-right: auto;
-            margin-left: 0;
-            border-bottom-left-radius: 5px;
-        }
-
-        .user-message {
-            background: var(--primary-color);
-            color: white;
-            margin-left: auto;
-            margin-right: 0;
-            border-bottom-right-radius: 5px;
-        }
-
-        .chat-input {
-            padding: 15px;
-            border-top: 1px solid #eee;
-            display: flex;
-            gap: 10px;
-        }
-
-        .chat-input input {
-            flex: 1;
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-            outline: none;
-            transition: border-color 0.3s ease;
-        }
-
-        .chat-input input:focus {
-            border-color: var(--primary-color);
-        }
-
-        .chat-input button {
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: transform 0.3s ease;
-        }
-
-        .chat-input button:hover {
-            transform: scale(1.05);
-        }
-
-        @keyframes messageSlide {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .chat-widget.minimized .chat-body {
-            height: 0;
-            overflow: hidden;
-        }
-
-        /* Add soil test message styles */
-        .soil-test-message {
+        /* Running Message Styles */
+        .soil-test-running-message {
             position: fixed;
-            bottom: 20px; /* Position below weather message */
-            right: -300px;
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            bottom: 20px;
+            right: -400px; /* Start off-screen */
+            background: linear-gradient(135deg, #2D5A27, #1A3A19);
             color: white;
-            padding: 15px 25px;
-            border-radius: 30px;
+            padding: 15px 20px;
+            border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             display: flex;
             align-items: center;
-            gap: 12px;
-            z-index: 999;
-            animation: slideInOut 15s linear infinite 1s; /* 1s delay from weather message */
+            gap: 15px;
             cursor: pointer;
+            z-index: 999;
+            animation: slideInOutSoil 15s linear infinite;
+            animation-delay: 1s; /* Delay after weather message */
+            transition: transform 0.3s ease;
+            width: auto;
+            min-width: 300px;
         }
 
-        /* Update animation for both messages */
-        @keyframes slideInOut {
+        .soil-test-running-message:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .message-icon {
+            background: rgba(255, 255, 255, 0.2);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .message-icon i {
+            font-size: 20px;
+            color: white;
+            animation: pulseIcon 2s infinite;
+        }
+
+        .message-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .message-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .primary-text {
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .sub-text {
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        .message-action {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .message-action:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateX(5px);
+        }
+
+        @keyframes slideInOutSoil {
             0% {
-                right: -300px;
+                right: -400px;
+                opacity: 0;
             }
-            10% {
+            5% {
                 right: 20px;
+                opacity: 1;
             }
             90% {
                 right: 20px;
+                opacity: 1;
             }
             100% {
-                right: -300px;
+                right: -400px;
+                opacity: 0;
             }
         }
 
-        /* Add to your existing CSS */
-        .notification-item.market p {
-            line-height: 1.4;
-            margin: 5px 0;
+        @keyframes pulseIcon {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+            }
         }
 
-        .notification-item.market small {
-            color: #666;
-            font-size: 0.8em;
-            display: block;
-            margin-top: 5px;
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .soil-test-running-message {
+                bottom: 80px; /* Position above weather message */
+                min-width: 250px;
+            }
+
+            .message-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .message-action {
+                font-size: 0.8em;
+                padding: 6px 12px;
+            }
         }
 
-        .message {
-            white-space: pre-wrap;
-            font-family: monospace;
+        /* Add urgency indicators */
+        .soil-test-running-message.urgent {
+            background: linear-gradient(135deg, #d32f2f, #b71c1c);
+            animation: slideInOutSoil 12s linear infinite, urgentPulse 2s infinite;
         }
 
-        .bot-message {
-            background: #f0f2f5;
-            padding: 15px;
-            border-radius: 15px;
-            margin-bottom: 10px;
-            max-width: 80%;
-            line-height: 1.4;
+        @keyframes urgentPulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.02);
+            }
         }
 
-        .user-message {
-            background: var(--primary-color);
+        /* Scroll button styles */
+        .scroll-btn {
+            position: fixed;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background-color: var(--primary-color);
             color: white;
-            padding: 10px 15px;
-            border-radius: 15px;
-            margin-bottom: 10px;
-            max-width: 80%;
-            margin-left: auto;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            opacity: 0.7;
+        }
+
+        .scroll-btn:hover {
+            opacity: 1;
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .scroll-to-top {
+            bottom: 80px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .scroll-to-top.visible {
+            opacity: 0.7;
+            visibility: visible;
+        }
+
+        .scroll-to-bottom {
+            bottom: 30px;
+        }
+
+        /* Add responsive styles for mobile */
+        @media (max-width: 768px) {
+            .scroll-btn {
+                width: 35px;
+                height: 35px;
+                right: 15px;
+            }
+            
+            .scroll-to-top {
+                bottom: 70px;
+            }
+            
+            .scroll-to-bottom {
+                bottom: 25px;
+            }
         }
     </style>
 </head>
@@ -2796,32 +3182,50 @@ if ($notifications && mysqli_num_rows($notifications) > 0) {
                         <h3>Track Progress</h3>
                         <p>Monitor your farm's performance, soil conditions, and weather data. Set tasks and get timely reminders for important activities.</p>
                     </div>
+                    
+                    <!-- Add new card for AI Assistant instructions -->
+                    <div class="welcome-card">
+                        <i class="fas fa-robot"></i>
+                        <h3>AI Farming Assistant</h3>
+                        <p>Get instant help with our AI chat assistant. Click the chat icon in the bottom-right corner to:</p>
+                        <ul class="assistant-tips">
+                            <li>Ask about cardamom cultivation</li>
+                            <li>Get disease management advice</li>
+                            <li>Learn about irrigation & fertilizers</li>
+                            <li>Check harvesting guidelines</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 
-            <!-- Add Quick Guide Section -->
+            <!-- Add AI Assistant Guide section -->
             <div class="quick-guide">
-                <h2><i class="fas fa-book-reader"></i> Quick Guide</h2>
+                <h2><i class="fas fa-robot"></i> How to Use the AI Assistant</h2>
                 <div class="guide-grid">
                     <div class="guide-item">
-                        <i class="fas fa-tachometer-alt"></i>
-                        <h4>Dashboard</h4>
-                        <p>Overview of your farm metrics and current status</p>
+                        <i class="fas fa-comments"></i>
+                        <h4>Ask Questions</h4>
+                        <p>Type your farming-related questions in simple, clear language. For example: "How do I plant cardamom?" or "What are signs of pest infestation?"</p>
                     </div>
                     <div class="guide-item">
-                        <i class="fas fa-flask"></i>
-                        <h4>Soil Analysis</h4>
-                        <p>Track and update soil conditions</p>
+                        <i class="fas fa-list-ul"></i>
+                        <h4>Key Topics</h4>
+                        <p>Get information about: planting, irrigation, fertilizers, pests, diseases, harvesting, and market prices.</p>
                     </div>
                     <div class="guide-item">
-                        <i class="fas fa-calendar-check"></i>
-                        <h4>Schedule</h4>
-                        <p>Plan and manage farming activities</p>
+                        <i class="fas fa-lightbulb"></i>
+                        <h4>Sample Questions</h4>
+                        <ul class="sample-questions">
+                            <li>"When is the best time to plant cardamom?"</li>
+                            <li>"How often should I water my plants?"</li>
+                            <li>"What fertilizers should I use?"</li>
+                            <li>"How do I identify plant diseases?"</li>
+                        </ul>
                     </div>
                     <div class="guide-item">
-                        <i class="fas fa-cloud-sun"></i>
-                        <h4>Weather</h4>
-                        <p>Real-time weather updates and forecasts</p>
+                        <i class="fas fa-info-circle"></i>
+                        <h4>Tips</h4>
+                        <p>Be specific in your questions. The more detailed your query, the more accurate the response will be.</p>
                     </div>
                 </div>
             </div>
@@ -3285,165 +3689,39 @@ if ($notifications && mysqli_num_rows($notifications) > 0) {
             const hour = new Date().getHours();
             let timeGreeting = getTimeGreeting(hour);
 
-            // Comprehensive disease information object
-            const cardamomDiseases = {
-                'capsule rot': {
-                    name: 'Capsule Rot (Azhukal Disease)',
-                    symptoms: [
-                        'Water-soaked lesions on capsules',
-                        'Dark brown to black discoloration',
-                        'Rotting of capsules',
-                        'Premature splitting'
-                    ],
-                    management: [
-                        'Improve drainage in plantation',
-                        'Remove infected plant parts',
-                        'Apply Bordeaux mixture (1%)',
-                        'Use fungicides like copper oxychloride'
-                    ],
-                    conditions: 'Common during monsoon season with high humidity'
-                },
-                'katte': {
-                    name: 'Katte Disease (Mosaic Disease)',
-                    symptoms: [
-                        'Mosaic pattern on leaves',
-                        'Chlorotic streaks',
-                        'Stunted growth',
-                        'Reduced yield'
-                    ],
-                    management: [
-                        'Remove infected plants',
-                        'Use disease-free planting material',
-                        'Control aphid vectors',
-                        'Maintain field sanitation'
-                    ],
-                    conditions: 'Viral disease spread by aphids'
-                },
-                'rhizome rot': {
-                    name: 'Rhizome Rot',
-                    symptoms: [
-                        'Yellowing of leaves',
-                        'Wilting of plants',
-                        'Rotting of rhizomes',
-                        'Death of entire clump'
-                    ],
-                    management: [
-                        'Improve soil drainage',
-                        'Remove and destroy affected plants',
-                        'Apply Trichoderma viride',
-                        'Use disease-free rhizomes for planting'
-                    ],
-                    conditions: 'Common in poorly drained soils'
-                },
-                'leaf blight': {
-                    name: 'Leaf Blight',
-                    symptoms: [
-                        'Brown spots on leaves',
-                        'Leaf margins turn brown',
-                        'Drying of leaves',
-                        'Reduced photosynthesis'
-                    ],
-                    management: [
-                        'Remove infected leaves',
-                        'Maintain proper spacing',
-                        'Apply copper-based fungicides',
-                        'Ensure good air circulation'
-                    ],
-                    conditions: 'Favored by high humidity and poor air circulation'
-                },
-                'clump rot': {
-                    name: 'Clump Rot',
-                    symptoms: [
-                        'Yellowing of outer leaves',
-                        'Progressive wilting',
-                        'Rotting of pseudostems',
-                        'Collapse of entire clump'
-                    ],
-                    management: [
-                        'Avoid waterlogging',
-                        'Remove affected clumps',
-                        'Apply biocontrol agents',
-                        'Maintain proper pH (6.0-6.5)'
-                    ],
-                    conditions: 'Common in waterlogged conditions'
-                }
-            };
-
-            // Disease prevention tips
-            const preventionTips = {
-                'cultural': [
-                    'Maintain proper spacing between plants',
-                    'Ensure good drainage',
-                    'Regular weeding and field sanitation',
-                    'Balanced fertilization'
-                ],
-                'monitoring': [
-                    'Regular field inspection',
-                    'Early detection of symptoms',
-                    'Weather monitoring',
-                    'Soil health assessment'
-                ],
-                'chemical': [
-                    'Use recommended fungicides',
-                    'Proper timing of application',
-                    'Follow safety measures',
-                    'Maintain spray schedule'
-                ]
-            };
-
-            // Function to format disease information
-            function formatDiseaseInfo(disease) {
-                return `
-🔍 *${disease.name}*
-
-📋 *Symptoms:*
-${disease.symptoms.map(s => `• ${s}`).join('\n')}
-
-⚕️ *Management:*
-${disease.management.map(m => `• ${m}`).join('\n')}
-
-🌧️ *Conditions:*
-${disease.conditions}
-`;
-            }
-
             // Process the message and generate response
             setTimeout(() => {
                 let response = '';
                 const lowerMessage = message.toLowerCase();
 
-                // Check for disease-related queries
-                if (lowerMessage.includes('disease')) {
-                    if (lowerMessage.includes('list') || lowerMessage.includes('all')) {
-                        response = `Here are the common cardamom diseases:\n\n${Object.values(cardamomDiseases).map(d => `• ${d.name}`).join('\n')}\n\nAsk me about any specific disease for more details!`;
-                    } else if (lowerMessage.includes('prevent')) {
-                        response = `
-🛡️ *General Disease Prevention Tips:*
+                // Check if it's the initial welcome message
+                if (document.getElementById('chatMessages').children.length === 1) {
+                    response = `${timeGreeting}, ${farmerName}! 👋
 
-🌱 *Cultural Practices:*
-${preventionTips.cultural.map(t => `• ${t}`).join('\n')}
+I'm your AI Farming Assistant, here to help with cardamom cultivation. 
 
-👁️ *Monitoring:*
-${preventionTips.monitoring.map(t => `• ${t}`).join('\n')}
+🌟 How to Ask Questions:
+• Be specific (e.g., "How do I plant cardamom?" rather than "Help with planting")
+• One topic at a time for better answers
+• Mention the growth stage if relevant
 
-🧪 *Chemical Control:*
-${preventionTips.chemical.map(t => `• ${t}`).join('\n')}
-`;
-                    } else {
-                        // Check for specific diseases
-                        for (const [key, disease] of Object.entries(cardamomDiseases)) {
-                            if (lowerMessage.includes(key)) {
-                                response = formatDiseaseInfo(disease);
-                                break;
-                            }
-                        }
-                        if (!response) {
-                            response = `Which cardamom disease would you like to know about? You can ask about:\n\n${Object.values(cardamomDiseases).map(d => `• ${d.name}`).join('\n')}`;
-                        }
-                    }
+💡 You can ask about:
+• Planting & Cultivation
+• Irrigation & Water Management
+• Fertilizers & Nutrients
+• Pest & Disease Control
+• Harvesting Tips
+• Market Information
+
+📝 Example Questions:
+"When is the best time to plant cardamom?"
+"How often should I water during summer?"
+"What are the signs of pest infestation?"
+"How do I know when to harvest?"
+
+What would you like to know about?`;
                 } else {
-                    // Handle other queries (existing responses)
-                    response = getGeneralResponse(lowerMessage, farmerName, timeGreeting);
+                    // ... rest of your existing response logic ...
                 }
 
                 addMessage(response, 'bot');
@@ -3486,6 +3764,58 @@ ${preventionTips.chemical.map(t => `• ${t}`).join('\n')}
             toggleChat();
         });
     </script>
+
+    <!-- Add this JavaScript to show the tooltip for first-time users -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if it's the user's first time
+        if (!localStorage.getItem('chatWidgetSeen')) {
+            document.querySelector('.chat-widget').classList.add('first-time');
+            
+            // Remove the first-time class after the user clicks
+            document.querySelector('.chat-widget').addEventListener('click', function() {
+                this.classList.remove('first-time');
+                localStorage.setItem('chatWidgetSeen', 'true');
+            });
+        }
+    });
+    </script>
+
+    <!-- Add scroll-to buttons -->
+    <div class="scroll-btn scroll-to-top" onclick="scrollToTop()" title="Scroll to Top">
+        <i class="fas fa-arrow-up"></i>
+    </div>
+    
+    <div class="scroll-btn scroll-to-bottom" onclick="scrollToBottom()" title="Scroll to Bottom">
+        <i class="fas fa-arrow-down"></i>
+    </div>
+
+    <!-- Add this JavaScript for scroll buttons -->
+    <script>
+    // Show/hide scroll-to-top button based on scroll position
+    window.onscroll = function() {
+        const scrollTopBtn = document.querySelector('.scroll-to-top');
+        if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+            scrollTopBtn.classList.add('visible');
+        } else {
+            scrollTopBtn.classList.remove('visible');
+        }
+    };
+
+    function scrollToTop() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    }
+
+    function scrollToBottom() {
+        window.scrollTo({
+            top: document.body.scrollHeight,
+            behavior: 'smooth'
+        });
+    }
+    </script>
 </body>
 </html>
 
@@ -3508,11 +3838,15 @@ if ($soil_test_needed):
     </div>
 </div>
 
-<div class="soil-test-message" onclick="window.location.href='soil_test.php'">
-    <i class="fas fa-flask"></i>
-    <div class="running-message-content">
-        <span class="running-message-text">Soil Test Required!</span>
-        <a href="soil_test.php" class="running-message-link">
+<div class="soil-test-running-message" onclick="window.location.href='soil_test.php'">
+    <div class="message-icon">
+        <i class="fas fa-flask"></i>
+    </div>
+    <div class="message-content">
+        <div class="message-text">
+            <span class="primary-text">Soil Test Due!</span>
+        </div>
+        <a href="soil_test.php" class="message-action">
             Test Now <i class="fas fa-arrow-right"></i>
         </a>
     </div>
@@ -3531,7 +3865,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Handle soil test message animation
-    const soilTestMessage = document.querySelector('.soil-test-message');
+    const soilTestMessage = document.querySelector('.soil-test-running-message');
     if (soilTestMessage) {
         soilTestMessage.addEventListener('animationend', function() {
             this.style.animation = 'none';

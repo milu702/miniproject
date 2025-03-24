@@ -14,8 +14,6 @@ $user_id = $_SESSION['user_id'];
 $stmt = $conn->prepare("
     SELECT 
         f.farmer_id,
-        COALESCE(p.soil_type, '') as soil_type,
-        COALESCE(p.soil_moisture, 0) as soil_moisture,
         COALESCE(st.ph_level, 0) as avg_ph,
         COALESCE(st.nitrogen_content, 0) as avg_nitrogen,
         COALESCE(st.phosphorus_content, 0) as avg_phosphorus,

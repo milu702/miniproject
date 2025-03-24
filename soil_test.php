@@ -3,6 +3,13 @@ session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Initialize message variable at the top of the file, after session_start()
+$message = '';
+if (isset($_SESSION['message'])) {
+    $message = $_SESSION['message'];
+    unset($_SESSION['message']); // Clear the message after displaying
+}
+
 // Add these PHPMailer requirements
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -14,6 +21,61 @@ require 'PHPMailer-master/src/PHPMailer.php';
 require 'PHPMailer-master/src/SMTP.php';
 
 require_once 'config.php';
+
+// Define all helper functions first
+function extractSoilTestData($file) {
+    $file_extension = strtolower(pathinfo($file["name"], PATHINFO_EXTENSION));
+    
+    try {
+        if ($file_extension == "pdf") {
+            $content = strip_tags(file_get_contents($file["tmp_name"]));
+            return extractValuesFromText($content);
+        } 
+        else if (in_array($file_extension, ["jpg", "jpeg", "png"])) {
+            return false;
+        }
+    } catch (Exception $e) {
+        error_log("Error extracting soil test data: " . $e->getMessage());
+        return false;
+    }
+    
+    return false;
+}
+
+function extractValuesFromText($text) {
+    $patterns = [
+        'ph' => '/pH\s*(?:level)?[:=\s]*(\d+\.?\d*)/i',
+        'nitrogen' => '/nitrogen\s*(?:content)?[:=\s]*(\d+\.?\d*)/i',
+        'phosphorus' => '/phosphorus\s*(?:content)?[:=\s]*(\d+\.?\d*)/i',
+        'potassium' => '/potassium\s*(?:content)?[:=\s]*(\d+\.?\d*)/i'
+    ];
+    
+    $results = [];
+    foreach ($patterns as $key => $pattern) {
+        if (preg_match($pattern, $text, $matches)) {
+            $results[$key] = floatval($matches[1]);
+        }
+    }
+    
+    if (count($results) === 4) {
+        return $results;
+    }
+    
+    return false;
+}
+
+// Keep this single declaration of validateSoilTestValues() near the top with other helper functions
+function validateSoilTestValues($values) {
+    if (!is_array($values)) return false;
+    
+    $valid = true;
+    $valid &= isset($values['ph']) && $values['ph'] >= 0 && $values['ph'] <= 14;
+    $valid &= isset($values['nitrogen']) && $values['nitrogen'] >= 0 && $values['nitrogen'] <= 5;
+    $valid &= isset($values['phosphorus']) && $values['phosphorus'] >= 0 && $values['phosphorus'] <= 1;
+    $valid &= isset($values['potassium']) && $values['potassium'] >= 0 && $values['potassium'] <= 5;
+    
+    return $valid;
+}
 
 // Initialize database connection
 $dbConfig = new DatabaseConfig();
@@ -77,7 +139,7 @@ function getFarmerName($conn, $farmer_id) {
     return 'Unknown Farmer';
 }
 
-// Add this new function to handle file uploads
+// Add this function to handle file uploads
 function handleFileUpload($file) {
     $target_dir = "uploads/soil_tests/";
     if (!file_exists($target_dir)) {
@@ -105,36 +167,51 @@ function handleFileUpload($file) {
     }
 }
 
-// Form processing
-$message = '';
+// Add this function to handle both manual entry and file upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_soil_test'])) {
         $document_path = null;
+        $soil_data = null;
         
-        // Handle file upload if present
+        // Check if file is uploaded
         if (isset($_FILES["soil_test_document"]) && $_FILES["soil_test_document"]["error"] == 0) {
             $upload_result = handleFileUpload($_FILES["soil_test_document"]);
             if ($upload_result["success"]) {
                 $document_path = $upload_result["filename"];
+                // Try to extract data from file
+                $soil_data = extractSoilTestData($_FILES["soil_test_document"]);
+                if ($soil_data) {
+                    // Use extracted values
+                    $ph_level = $soil_data['ph'];
+                    $nitrogen_content = $soil_data['nitrogen'];
+                    $phosphorus_content = $soil_data['phosphorus'];
+                    $potassium_content = $soil_data['potassium'];
+                }
             } else {
                 $message = $upload_result["message"];
                 error_log("File upload failed: " . $upload_result["message"]);
             }
         }
+        
+        // If no file data, use manual input
+        if (!$soil_data) {
+            if (empty($_POST['ph_level']) || 
+                empty($_POST['nitrogen_content']) || 
+                empty($_POST['phosphorus_content']) || 
+                empty($_POST['potassium_content'])) {
+                $message = 'Please either upload a soil test document or fill in all the fields manually';
+                error_log("Validation failed: Missing required fields");
+            } else {
+                $ph_level = floatval($_POST['ph_level']);
+                $nitrogen_content = floatval($_POST['nitrogen_content']);
+                $phosphorus_content = floatval($_POST['phosphorus_content']);
+                $potassium_content = floatval($_POST['potassium_content']);
+            }
+        }
 
-        // Continue with existing validation and processing
-        if (empty($_POST['ph_level']) || 
-            empty($_POST['nitrogen_content']) || 
-            empty($_POST['phosphorus_content']) || 
-            empty($_POST['potassium_content'])) {
-            $message = 'All fields are required';
-            error_log("Validation failed: Missing required fields");
-        } else {
+        // Continue with database insertion if we have valid data
+        if (isset($ph_level)) {
             $farmer_id = $_SESSION['user_id'];
-            $ph_level = floatval($_POST['ph_level']);
-            $nitrogen_content = floatval($_POST['nitrogen_content']);
-            $phosphorus_content = floatval($_POST['phosphorus_content']);
-            $potassium_content = floatval($_POST['potassium_content']);
             $test_date = date('Y-m-d');
             
             // Modify the insert query to include document_path
@@ -336,16 +413,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $_SESSION['success'] = false;
                         }
                         
+                        $_SESSION['message'] = 'Soil test added successfully!';
                         header("Location: " . $_SERVER['PHP_SELF']);
                         exit();
                     }
                     
                     $message = 'Soil test added successfully!';
+                    $_SESSION['message'] = 'Soil test added successfully!';
                     header("Location: " . $_SERVER['PHP_SELF']);
                     exit();
                 } else {
                     $message = 'Error adding soil test: ' . mysqli_stmt_error($stmt);
                     error_log("Insert failed: " . mysqli_stmt_error($stmt));
+                    $_SESSION['message'] = 'Error adding soil test: ' . mysqli_stmt_error($stmt);
+                    header("Location: " . $_SERVER['PHP_SELF']);
+                    exit();
                 }
                 mysqli_stmt_close($stmt);
             }
@@ -1220,6 +1302,36 @@ function generateRecommendations($ph, $n, $p, $k) {
             align-items: center;
             gap: 10px;
         }
+
+        .input-method-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--primary-color);
+            background: white;
+            color: var(--primary-color);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .toggle-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .toggle-btn:hover {
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
@@ -1383,7 +1495,7 @@ function generateRecommendations($ph, $n, $p, $k) {
                                                             <p><i class="fas fa-arrow-up"></i> Increase pH by:</p>
                                                             <ul>
                                                                 <li>Apply agricultural lime (2-3 tons/ha)</li>
-                                                                <li>Mix with soil thoroughly</li>
+                                                                <li>Mix lime thoroughly with soil before planting</li>
                                                                 <li>Allow 2-3 weeks before planting</li>
                                                             </ul>
                                         <?php elseif ($test['ph_level'] > 6.5): ?>
@@ -1488,11 +1600,20 @@ function generateRecommendations($ph, $n, $p, $k) {
                         <div class="alert <?php echo strpos($message, 'success') !== false ? 'alert-success' : 'alert-error'; ?>">
                             <i class="fas <?php echo strpos($message, 'success') !== false ? 'fa-check-circle' : 'fa-exclamation-circle'; ?>"></i>
                             <?php echo $message; ?>
-                                        </div>
+                        </div>
                     <?php endif; ?>
                     
-                    <form method="POST" id="soilTestForm" onsubmit="return validateSoilTestForm()">
-                        <div class="form-grid">
+                    <form method="POST" id="soilTestForm" enctype="multipart/form-data" onsubmit="return validateForm()">
+                        <div class="input-method-toggle">
+                            <button type="button" class="toggle-btn active" onclick="toggleInputMethod('manual')">
+                                <i class="fas fa-keyboard"></i> Manual Entry
+                            </button>
+                            <button type="button" class="toggle-btn" onclick="toggleInputMethod('file')">
+                                <i class="fas fa-file-upload"></i> Upload Test Report
+                            </button>
+                        </div>
+
+                        <div class="form-grid" id="manualEntry">
                             <div class="input-group">
                                 <label for="ph_level">
                                     <i class="fas fa-vial"></i> pH Level
@@ -1508,11 +1629,11 @@ function generateRecommendations($ph, $n, $p, $k) {
                                     <div class="input-icon">
                                         <i class="fas fa-check-circle success-icon"></i>
                                         <i class="fas fa-exclamation-circle error-icon"></i>
-                                        </div>
                                     </div>
+                                </div>
                                 <small class="input-info">Optimal range: 5.5 - 6.5</small>
                                 <div class="error-message"></div>
-                                </div>
+                            </div>
 
                             <div class="input-group">
                                 <label for="nitrogen_content">
@@ -1529,11 +1650,11 @@ function generateRecommendations($ph, $n, $p, $k) {
                                     <div class="input-icon">
                                         <i class="fas fa-check-circle success-icon"></i>
                                         <i class="fas fa-exclamation-circle error-icon"></i>
-                        </div>
-                        </div>
+                                    </div>
+                                </div>
                                 <small class="input-info">Optimal range: 0.5% - 1.0%</small>
                                 <div class="error-message"></div>
-                        </div>
+                            </div>
 
                             <div class="input-group">
                                 <label for="phosphorus_content">
@@ -1550,11 +1671,11 @@ function generateRecommendations($ph, $n, $p, $k) {
                                     <div class="input-icon">
                                         <i class="fas fa-check-circle success-icon"></i>
                                         <i class="fas fa-exclamation-circle error-icon"></i>
-                                        </div>
                                     </div>
+                                </div>
                                 <small class="input-info">Optimal range: 0.05% - 0.2%</small>
                                 <div class="error-message"></div>
-                </div>
+                            </div>
 
                             <div class="input-group">
                                 <label for="potassium_content">
@@ -1571,12 +1692,14 @@ function generateRecommendations($ph, $n, $p, $k) {
                                     <div class="input-icon">
                                         <i class="fas fa-check-circle success-icon"></i>
                                         <i class="fas fa-exclamation-circle error-icon"></i>
-                            </div>
-                        </div>
+                                    </div>
+                                </div>
                                 <small class="input-info">Optimal range: 1.0% - 2.0%</small>
                                 <div class="error-message"></div>
                             </div>
+                        </div>
 
+                        <div class="form-grid" id="fileUpload" style="display: none;">
                             <div class="input-group document-upload">
                                 <label for="soil_test_document">
                                     <i class="fas fa-file-upload"></i> Upload Soil Test Document
@@ -1589,14 +1712,15 @@ function generateRecommendations($ph, $n, $p, $k) {
                                            onchange="previewFile(this)">
                                     <div class="file-preview" id="filePreview"></div>
                                 </div>
-                                <small class="input-info">Upload PDF or image of soil test report (Max 5MB)</small>
+                                <small class="input-info">Upload your soil test report (PDF or image, Max 5MB)</small>
                                 <div class="error-message"></div>
                             </div>
                         </div>
+
                         <button type="submit" name="add_soil_test" class="submit-btn">
                             <i class="fas fa-save"></i> Submit Soil Test
                         </button>
-                </form>
+                    </form>
                 </div>
             </div>
         </div>
@@ -1853,6 +1977,53 @@ function generateRecommendations($ph, $n, $p, $k) {
                 }
             } else {
                 preview.innerHTML = '';
+            }
+        }
+
+        function toggleInputMethod(method) {
+            const manualEntry = document.getElementById('manualEntry');
+            const fileUpload = document.getElementById('fileUpload');
+            const toggleBtns = document.querySelectorAll('.toggle-btn');
+            
+            if (method === 'manual') {
+                manualEntry.style.display = 'grid';
+                fileUpload.style.display = 'none';
+                toggleBtns[0].classList.add('active');
+                toggleBtns[1].classList.remove('active');
+                resetFileUpload();
+            } else {
+                manualEntry.style.display = 'none';
+                fileUpload.style.display = 'grid';
+                toggleBtns[0].classList.remove('active');
+                toggleBtns[1].classList.add('active');
+                resetManualInputs();
+            }
+        }
+
+        function resetFileUpload() {
+            const fileInput = document.getElementById('soil_test_document');
+            const filePreview = document.getElementById('filePreview');
+            fileInput.value = '';
+            filePreview.innerHTML = '';
+        }
+
+        function resetManualInputs() {
+            const inputs = document.querySelectorAll('#manualEntry input');
+            inputs.forEach(input => {
+                input.value = '';
+                const inputGroup = input.closest('.input-group');
+                inputGroup.classList.remove('success', 'error');
+            });
+        }
+
+        function validateForm() {
+            const manualEntry = document.getElementById('manualEntry');
+            const fileUpload = document.getElementById('fileUpload');
+            
+            if (manualEntry.style.display !== 'none') {
+                return validateSoilTestForm();
+            } else {
+                return validateFileUpload();
             }
         }
     </script>
