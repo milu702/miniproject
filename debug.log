@@ -1085,3 +1085,7 @@ Stack trace:
 [24-Mar-2025 06:55:42 Europe/Berlin] Login successful - User ID: 67, Role: farmer
 [24-Mar-2025 17:30:48 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
 [24-Mar-2025 17:30:48 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[24-Mar-2025 18:19:26 Europe/Berlin] Login attempt - Email: amalajiji702@gmail.com, Role: employee
+[24-Mar-2025 18:19:26 Europe/Berlin] Login successful - User ID: 66, Role: employee
+[24-Mar-2025 18:29:06 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[24-Mar-2025 18:29:06 Europe/Berlin] Login successful - User ID: 67, Role: farmer

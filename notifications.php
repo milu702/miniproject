@@ -269,6 +269,12 @@ mysqli_close($conn);
                                         <i class="fas fa-reply"></i> Respond
                                     </a>
                                 <?php endif; ?>
+                                <?php if ($notification['type'] == 'soil_test'): ?>
+                                    <a href="respond_soil_test.php?id=<?php echo $notification['user_id']; ?>&test_id=<?php echo $notification['reference_id']; ?>" 
+                                       class="respond-btn">
+                                        <i class="fas fa-flask"></i> View Soil Test
+                                    </a>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <?php if (!$notification['is_read']): ?>
