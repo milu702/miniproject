@@ -77,11 +77,52 @@ function getFarmerName($conn, $farmer_id) {
     return 'Unknown Farmer';
 }
 
+// Add this new function to handle file uploads
+function handleFileUpload($file) {
+    $target_dir = "uploads/soil_tests/";
+    if (!file_exists($target_dir)) {
+        mkdir($target_dir, 0777, true);
+    }
+    
+    $file_extension = strtolower(pathinfo($file["name"], PATHINFO_EXTENSION));
+    $new_filename = uniqid() . '.' . $file_extension;
+    $target_file = $target_dir . $new_filename;
+    
+    // Check file type
+    if ($file_extension != "pdf" && $file_extension != "jpg" && $file_extension != "jpeg" && $file_extension != "png") {
+        return ["success" => false, "message" => "Only PDF, JPG, JPEG & PNG files are allowed."];
+    }
+    
+    // Check file size (5MB max)
+    if ($file["size"] > 5000000) {
+        return ["success" => false, "message" => "File is too large. Maximum size is 5MB."];
+    }
+    
+    if (move_uploaded_file($file["tmp_name"], $target_file)) {
+        return ["success" => true, "filename" => $new_filename];
+    } else {
+        return ["success" => false, "message" => "Error uploading file."];
+    }
+}
+
 // Form processing
 $message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_soil_test'])) {
-        // Validate input data
+        $document_path = null;
+        
+        // Handle file upload if present
+        if (isset($_FILES["soil_test_document"]) && $_FILES["soil_test_document"]["error"] == 0) {
+            $upload_result = handleFileUpload($_FILES["soil_test_document"]);
+            if ($upload_result["success"]) {
+                $document_path = $upload_result["filename"];
+            } else {
+                $message = $upload_result["message"];
+                error_log("File upload failed: " . $upload_result["message"]);
+            }
+        }
+
+        // Continue with existing validation and processing
         if (empty($_POST['ph_level']) || 
             empty($_POST['nitrogen_content']) || 
             empty($_POST['phosphorus_content']) || 
@@ -96,14 +137,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $potassium_content = floatval($_POST['potassium_content']);
             $test_date = date('Y-m-d');
             
-            // Modified insert query to explicitly list columns
-            $insert_query = "INSERT INTO soil_tests (farmer_id, ph_level, nitrogen_content, phosphorus_content, potassium_content, test_date) 
-                            VALUES (?, ?, ?, ?, ?, ?)";
+            // Modify the insert query to include document_path
+            $insert_query = "INSERT INTO soil_tests (farmer_id, ph_level, nitrogen_content, phosphorus_content, potassium_content, test_date, document_path) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?)";
             
             $stmt = mysqli_prepare($conn, $insert_query);
             
             if ($stmt) {
-                mysqli_stmt_bind_param($stmt, "idddds", $farmer_id, $ph_level, $nitrogen_content, $phosphorus_content, $potassium_content, $test_date);
+                mysqli_stmt_bind_param($stmt, "iddddss", $farmer_id, $ph_level, $nitrogen_content, $phosphorus_content, $potassium_content, $test_date, $document_path);
                 
                 if (mysqli_stmt_execute($stmt)) {
                     // Get farmer's name
@@ -1143,6 +1184,42 @@ function generateRecommendations($ph, $n, $p, $k) {
         .show-more-btn.active i {
             transform: rotate(180deg);
         }
+
+        .document-upload {
+            grid-column: 1 / -1;
+        }
+        
+        .document-upload input[type="file"] {
+            padding: 10px;
+            border: 2px dashed #ddd;
+            border-radius: 4px;
+            width: 100%;
+            cursor: pointer;
+        }
+        
+        .document-upload input[type="file"]:hover {
+            border-color: var(--primary-color);
+        }
+        
+        .file-preview {
+            margin-top: 10px;
+            max-width: 200px;
+        }
+        
+        .file-preview img {
+            max-width: 100%;
+            border-radius: 4px;
+        }
+        
+        .file-preview .pdf-preview {
+            padding: 10px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
@@ -1499,6 +1576,22 @@ function generateRecommendations($ph, $n, $p, $k) {
                                 <small class="input-info">Optimal range: 1.0% - 2.0%</small>
                                 <div class="error-message"></div>
                             </div>
+
+                            <div class="input-group document-upload">
+                                <label for="soil_test_document">
+                                    <i class="fas fa-file-upload"></i> Upload Soil Test Document
+                                </label>
+                                <div class="input-wrapper">
+                                    <input type="file" 
+                                           id="soil_test_document" 
+                                           name="soil_test_document" 
+                                           accept=".pdf,.jpg,.jpeg,.png"
+                                           onchange="previewFile(this)">
+                                    <div class="file-preview" id="filePreview"></div>
+                                </div>
+                                <small class="input-info">Upload PDF or image of soil test report (Max 5MB)</small>
+                                <div class="error-message"></div>
+                            </div>
                         </div>
                         <button type="submit" name="add_soil_test" class="submit-btn">
                             <i class="fas fa-save"></i> Submit Soil Test
@@ -1573,6 +1666,20 @@ function generateRecommendations($ph, $n, $p, $k) {
                 }
             });
 
+            // Validate file size
+            const fileInput = document.getElementById('soil_test_document');
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                if (file.size > 5000000) {
+                    const inputGroup = fileInput.closest('.input-group');
+                    const errorDiv = inputGroup.querySelector('.error-message');
+                    inputGroup.classList.add('error');
+                    errorDiv.textContent = 'File size must be less than 5MB';
+                    shakeElement(inputGroup);
+                    return false;
+                }
+            }
+            
             return isValid;
         };
 
@@ -1724,6 +1831,30 @@ function generateRecommendations($ph, $n, $p, $k) {
                 showMoreBtn.addEventListener('click', toggleShowMore);
             }
         });
+
+        function previewFile(input) {
+            const preview = document.getElementById('filePreview');
+            const file = input.files[0];
+            
+            if (file) {
+                if (file.type === 'application/pdf') {
+                    preview.innerHTML = `
+                        <div class="pdf-preview">
+                            <i class="fas fa-file-pdf" style="color: #dc3545;"></i>
+                            <span>${file.name}</span>
+                        </div>
+                    `;
+                } else if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                    }
+                    reader.readAsDataURL(file);
+                }
+            } else {
+                preview.innerHTML = '';
+            }
+        }
     </script>
 </body>
 </html>

@@ -2037,7 +2037,7 @@ if ($notifications && mysqli_num_rows($notifications) > 0) {
         .logout-btn {
             color: #ff6b6b !important;
             transition: all 0.3s ease;
-        }
+        }A
 
         .logout-btn:hover {
             background-color: #ff6b6b !important;
@@ -2528,6 +2528,30 @@ if ($notifications && mysqli_num_rows($notifications) > 0) {
             font-size: 0.8em;
             display: block;
             margin-top: 5px;
+        }
+
+        .message {
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+
+        .bot-message {
+            background: #f0f2f5;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            max-width: 80%;
+            line-height: 1.4;
+        }
+
+        .user-message {
+            background: var(--primary-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            max-width: 80%;
+            margin-left: auto;
         }
     </style>
 </head>
@@ -3257,51 +3281,203 @@ if ($notifications && mysqli_num_rows($notifications) > 0) {
         }
 
         function processUserMessage(message) {
-            // Get farmer's name from PHP session
             const farmerName = '<?php echo $username; ?>';
-            
-            // Get current hour for time-based greeting
             const hour = new Date().getHours();
-            let timeGreeting = '';
-            
-            if (hour >= 5 && hour < 12) {
-                timeGreeting = 'Good morning';
-            } else if (hour >= 12 && hour < 17) {
-                timeGreeting = 'Good afternoon';
-            } else if (hour >= 17 && hour < 22) {
-                timeGreeting = 'Good evening';
-            } else {
-                timeGreeting = 'Hello';
+            let timeGreeting = getTimeGreeting(hour);
+
+            // Comprehensive disease information object
+            const cardamomDiseases = {
+                'capsule rot': {
+                    name: 'Capsule Rot (Azhukal Disease)',
+                    symptoms: [
+                        'Water-soaked lesions on capsules',
+                        'Dark brown to black discoloration',
+                        'Rotting of capsules',
+                        'Premature splitting'
+                    ],
+                    management: [
+                        'Improve drainage in plantation',
+                        'Remove infected plant parts',
+                        'Apply Bordeaux mixture (1%)',
+                        'Use fungicides like copper oxychloride'
+                    ],
+                    conditions: 'Common during monsoon season with high humidity'
+                },
+                'katte': {
+                    name: 'Katte Disease (Mosaic Disease)',
+                    symptoms: [
+                        'Mosaic pattern on leaves',
+                        'Chlorotic streaks',
+                        'Stunted growth',
+                        'Reduced yield'
+                    ],
+                    management: [
+                        'Remove infected plants',
+                        'Use disease-free planting material',
+                        'Control aphid vectors',
+                        'Maintain field sanitation'
+                    ],
+                    conditions: 'Viral disease spread by aphids'
+                },
+                'rhizome rot': {
+                    name: 'Rhizome Rot',
+                    symptoms: [
+                        'Yellowing of leaves',
+                        'Wilting of plants',
+                        'Rotting of rhizomes',
+                        'Death of entire clump'
+                    ],
+                    management: [
+                        'Improve soil drainage',
+                        'Remove and destroy affected plants',
+                        'Apply Trichoderma viride',
+                        'Use disease-free rhizomes for planting'
+                    ],
+                    conditions: 'Common in poorly drained soils'
+                },
+                'leaf blight': {
+                    name: 'Leaf Blight',
+                    symptoms: [
+                        'Brown spots on leaves',
+                        'Leaf margins turn brown',
+                        'Drying of leaves',
+                        'Reduced photosynthesis'
+                    ],
+                    management: [
+                        'Remove infected leaves',
+                        'Maintain proper spacing',
+                        'Apply copper-based fungicides',
+                        'Ensure good air circulation'
+                    ],
+                    conditions: 'Favored by high humidity and poor air circulation'
+                },
+                'clump rot': {
+                    name: 'Clump Rot',
+                    symptoms: [
+                        'Yellowing of outer leaves',
+                        'Progressive wilting',
+                        'Rotting of pseudostems',
+                        'Collapse of entire clump'
+                    ],
+                    management: [
+                        'Avoid waterlogging',
+                        'Remove affected clumps',
+                        'Apply biocontrol agents',
+                        'Maintain proper pH (6.0-6.5)'
+                    ],
+                    conditions: 'Common in waterlogged conditions'
+                }
+            };
+
+            // Disease prevention tips
+            const preventionTips = {
+                'cultural': [
+                    'Maintain proper spacing between plants',
+                    'Ensure good drainage',
+                    'Regular weeding and field sanitation',
+                    'Balanced fertilization'
+                ],
+                'monitoring': [
+                    'Regular field inspection',
+                    'Early detection of symptoms',
+                    'Weather monitoring',
+                    'Soil health assessment'
+                ],
+                'chemical': [
+                    'Use recommended fungicides',
+                    'Proper timing of application',
+                    'Follow safety measures',
+                    'Maintain spray schedule'
+                ]
+            };
+
+            // Function to format disease information
+            function formatDiseaseInfo(disease) {
+                return `
+🔍 *${disease.name}*
+
+📋 *Symptoms:*
+${disease.symptoms.map(s => `• ${s}`).join('\n')}
+
+⚕️ *Management:*
+${disease.management.map(m => `• ${m}`).join('\n')}
+
+🌧️ *Conditions:*
+${disease.conditions}
+`;
             }
 
-            // Simple keyword-based responses
+            // Process the message and generate response
+            setTimeout(() => {
+                let response = '';
+                const lowerMessage = message.toLowerCase();
+
+                // Check for disease-related queries
+                if (lowerMessage.includes('disease')) {
+                    if (lowerMessage.includes('list') || lowerMessage.includes('all')) {
+                        response = `Here are the common cardamom diseases:\n\n${Object.values(cardamomDiseases).map(d => `• ${d.name}`).join('\n')}\n\nAsk me about any specific disease for more details!`;
+                    } else if (lowerMessage.includes('prevent')) {
+                        response = `
+🛡️ *General Disease Prevention Tips:*
+
+🌱 *Cultural Practices:*
+${preventionTips.cultural.map(t => `• ${t}`).join('\n')}
+
+👁️ *Monitoring:*
+${preventionTips.monitoring.map(t => `• ${t}`).join('\n')}
+
+🧪 *Chemical Control:*
+${preventionTips.chemical.map(t => `• ${t}`).join('\n')}
+`;
+                    } else {
+                        // Check for specific diseases
+                        for (const [key, disease] of Object.entries(cardamomDiseases)) {
+                            if (lowerMessage.includes(key)) {
+                                response = formatDiseaseInfo(disease);
+                                break;
+                            }
+                        }
+                        if (!response) {
+                            response = `Which cardamom disease would you like to know about? You can ask about:\n\n${Object.values(cardamomDiseases).map(d => `• ${d.name}`).join('\n')}`;
+                        }
+                    }
+                } else {
+                    // Handle other queries (existing responses)
+                    response = getGeneralResponse(lowerMessage, farmerName, timeGreeting);
+                }
+
+                addMessage(response, 'bot');
+            }, 1000);
+        }
+
+        // Helper function for time-based greeting
+        function getTimeGreeting(hour) {
+            if (hour >= 5 && hour < 12) return 'Good morning';
+            if (hour >= 12 && hour < 17) return 'Good afternoon';
+            if (hour >= 17 && hour < 22) return 'Good evening';
+            return 'Hello';
+        }
+
+        // Helper function for general responses
+        function getGeneralResponse(message, farmerName, timeGreeting) {
             const responses = {
-                'hi': `${timeGreeting}, ${farmerName}! 😊 I'm here to help you with your farming queries. How may I assist you today?`,
-                'hello': `${timeGreeting}, ${farmerName}! 😊 I'm here to help you with your farming queries. How may I assist you today?`,
-                'hey': `${timeGreeting}, ${farmerName}! 😊 I'm here to help you with your farming queries. How may I assist you today?`,
+                'hi': `${timeGreeting}, ${farmerName}! 😊 I can help you with information about cardamom diseases, cultivation, weather, and more. What would you like to know?`,
+                'hello': `${timeGreeting}, ${farmerName}! 😊 I can help you with information about cardamom diseases, cultivation, weather, and more. What would you like to know?`,
+                'help': `I can help you with:\n\n• Cardamom diseases and prevention\n• Weather information\n• Soil testing\n• Fertilizer recommendations\n• Harvesting tips\n• Market prices\n\nWhat would you like to know about?`,
                 'weather': 'You can check detailed weather information in the Weather section of the dashboard.',
                 'soil': 'Regular soil testing is important for optimal cardamom growth. Visit the Soil Test section for more details.',
                 'fertilizer': 'For fertilizer recommendations, please check the Fertilizer Guide section.',
-                'disease': 'If you notice any diseases in your crops, please provide specific symptoms for better assistance.',
                 'harvest': 'The best time for harvesting cardamom is when the capsules are fully developed but still green.',
-                'price': 'You can check current market prices in the Market Information section.',
-                'help': `Of course, ${farmerName}! I can help you with information about weather, soil testing, fertilizers, diseases, harvesting, and market prices. What would you like to know?`
+                'price': 'You can check current market prices in the Market Information section.'
             };
 
-            // Simulate typing delay
-            setTimeout(() => {
-                let response = `I apologize, ${farmerName}, but I need more specific information to help you better. Try asking about weather, soil, fertilizers, diseases, harvesting, or market prices.`;
-                
-                // Check for keywords in the message
-                for (const [keyword, reply] of Object.entries(responses)) {
-                    if (message.toLowerCase().includes(keyword)) {
-                        response = reply;
-                        break;
-                    }
+            for (const [keyword, reply] of Object.entries(responses)) {
+                if (message.includes(keyword)) {
+                    return reply;
                 }
-                
-                addMessage(response, 'bot');
-            }, 1000);
+            }
+
+            return `I apologize, ${farmerName}, but I need more specific information to help you better. You can ask me about diseases, weather, soil, fertilizers, harvesting, or market prices.`;
         }
 
         // Event listener for minimizing chat
