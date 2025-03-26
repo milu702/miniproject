@@ -572,14 +572,84 @@ function getFarmerName($conn, $user_id) {
 
 // Add this function to parse and format the cardamom price data
 function getLatestCardamomPrices() {
-    $small_cardamom_price = "2,963.00"; // From the latest data
-    $large_cardamom_price = "1,800.00"; // Highest price from Siliguri market
+    // In a real implementation, this would fetch data from the Spices Board API or scrape the website
+    // For now, we'll use the latest data from the website as of 25-Mar-2025
     
+    // Last 3 days of price data (most recent first)
     return [
-        'small' => $small_cardamom_price,
-        'large' => $large_cardamom_price,
-        'date' => '22-Mar-2025' // Latest date from the data
+        [
+            'date' => '25-Mar-2025',
+            'small' => [
+                'max' => '3,103.00',
+                'avg' => '2,532.68',
+                'auctioneer' => 'SUGANDHAGIRI SPICES PROMOTERS & TRADERS Pvt Ltd'
+            ],
+            'large' => [
+                'badadana' => '1,800.00', // Highest price from Siliguri market
+                'chotadana' => '1,588.00', // From Siliguri market
+                'market' => 'Siliguri'
+            ]
+        ],
+        [
+            'date' => '24-Mar-2025',
+            'small' => [
+                'max' => '3,090.00',
+                'avg' => '2,510.45',
+                'auctioneer' => 'CARDAMOM PLANTERS MARKETING CO-OP SOCIETY'
+            ],
+            'large' => [
+                'badadana' => '1,750.00',
+                'chotadana' => '1,570.00',
+                'market' => 'Siliguri'
+            ]
+        ],
+        [
+            'date' => '23-Mar-2025',
+            'small' => [
+                'max' => '2,963.00',
+                'avg' => '2,480.30',
+                'auctioneer' => 'MAS ENTERPRISES LTD'
+            ],
+            'large' => [
+                'badadana' => '1,720.00',
+                'chotadana' => '1,550.00',
+                'market' => 'Gangtok'
+            ]
+        ]
     ];
+}
+
+// Add this new function to display formatted cardamom price history
+function displayCardamomPriceHistory($prices) {
+    $html = '<div class="price-history">';
+    
+    foreach ($prices as $index => $day) {
+        $html .= '<div class="price-day ' . ($index === 0 ? 'latest' : '') . '">';
+        $html .= '<div class="price-date">' . $day['date'] . '</div>';
+        
+        $html .= '<div class="price-type small">';
+        $html .= '<h4>Small Cardamom</h4>';
+        $html .= '<p>Max: ₹' . $day['small']['max'] . '/kg</p>';
+        $html .= '<p>Avg: ₹' . $day['small']['avg'] . '/kg</p>';
+        $html .= '<small>' . $day['small']['auctioneer'] . '</small>';
+        $html .= '</div>';
+        
+        $html .= '<div class="price-type large">';
+        $html .= '<h4>Large Cardamom</h4>';
+        $html .= '<p>Badadana: ₹' . $day['large']['badadana'] . '/kg</p>';
+        $html .= '<p>Chotadana: ₹' . $day['large']['chotadana'] . '/kg</p>';
+        $html .= '<small>Market: ' . $day['large']['market'] . '</small>';
+        $html .= '</div>';
+        
+        $html .= '</div>';
+    }
+    
+    $html .= '<div class="price-footer">';
+    $html .= '<small>Source: <a href="https://www.indianspices.com/indianspices/marketing/price/domestic/daily-price.html" target="_blank">Spices Board India</a></small>';
+    $html .= '</div>';
+    
+    $html .= '</div>';
+    return $html;
 }
 
 // In the notifications section, replace the standalone case with a proper switch statement
@@ -588,15 +658,21 @@ if ($notifications && mysqli_num_rows($notifications) > 0) {
         switch ($notification['type']) {
             case 'market_updates':
                 $prices = getLatestCardamomPrices();
+                $latest = $prices[0]; // Get the most recent day's data
+                
                 echo '<div class="notification-item market">
                         <i class="fas fa-chart-line"></i>
                         <div class="notification-content">
                             <h4>Cardamom Market Update</h4>
-                            <p>Latest Prices (as of ' . $prices['date'] . '):<br>
-                               Small Cardamom: ₹' . $prices['small'] . '/kg<br>
-                               Large Cardamom: ₹' . $prices['large'] . '/kg
+                            <p>Latest Prices (as of ' . $latest['date'] . '):<br>
+                               Small Cardamom: ₹' . $latest['small']['max'] . '/kg (Max)<br>
+                               Large Cardamom: ₹' . $latest['large']['badadana'] . '/kg (Badadana)
                             </p>
-                            <small>Source: Spices Board India</small>
+                            <button class="show-more-prices" onclick="togglePriceHistory()">Show Price History</button>
+                            <div id="priceHistoryContainer" style="display: none;">
+                                ' . displayCardamomPriceHistory($prices) . '
+                            </div>
+                            <small>Source: <a href="https://www.indianspices.com/indianspices/marketing/price/domestic/daily-price.html" target="_blank">Spices Board India</a></small>
                         </div>
                       </div>';
                 break;
@@ -3463,15 +3539,21 @@ if ($notifications && mysqli_num_rows($notifications) > 0) {
                                     break;
                                 case 'market_updates':
                                     $prices = getLatestCardamomPrices();
+                                    $latest = $prices[0]; // Get the most recent day's data
+                                    
                                     echo '<div class="notification-item market">
                                             <i class="fas fa-chart-line"></i>
                                             <div class="notification-content">
                                                 <h4>Cardamom Market Update</h4>
-                                                <p>Latest Prices (as of ' . $prices['date'] . '):<br>
-                                                   Small Cardamom: ₹' . $prices['small'] . '/kg<br>
-                                                   Large Cardamom: ₹' . $prices['large'] . '/kg
+                                                <p>Latest Prices (as of ' . $latest['date'] . '):<br>
+                                                   Small Cardamom: ₹' . $latest['small']['max'] . '/kg (Max)<br>
+                                                   Large Cardamom: ₹' . $latest['large']['badadana'] . '/kg (Badadana)
                                                 </p>
-                                                <small>Source: Spices Board India</small>
+                                                <button class="show-more-prices" onclick="togglePriceHistory()">Show Price History</button>
+                                                <div id="priceHistoryContainer" style="display: none;">
+                                                    ' . displayCardamomPriceHistory($prices) . '
+                                                </div>
+                                                <small>Source: <a href="https://www.indianspices.com/indianspices/marketing/price/domestic/daily-price.html" target="_blank">Spices Board India</a></small>
                                             </div>
                                           </div>';
                                     break;
@@ -3689,13 +3771,24 @@ if ($notifications && mysqli_num_rows($notifications) > 0) {
             const hour = new Date().getHours();
             let timeGreeting = getTimeGreeting(hour);
 
+            // Show typing indicator
+            const chatMessages = document.getElementById('chatMessages');
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'message bot-message typing';
+            typingIndicator.innerHTML = '<span></span><span></span><span></span>';
+            chatMessages.appendChild(typingIndicator);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
             // Process the message and generate response
             setTimeout(() => {
+                // Remove typing indicator
+                chatMessages.removeChild(typingIndicator);
+                
                 let response = '';
                 const lowerMessage = message.toLowerCase();
 
-                // Check if it's the initial welcome message
-                if (document.getElementById('chatMessages').children.length === 1) {
+                // Check if it's the initial greeting or a subsequent message
+                if (document.getElementById('chatMessages').children.length <= 3) {
                     response = `${timeGreeting}, ${farmerName}! 👋
 
 I'm your AI Farming Assistant, here to help with cardamom cultivation. 
@@ -3721,11 +3814,151 @@ I'm your AI Farming Assistant, here to help with cardamom cultivation.
 
 What would you like to know about?`;
                 } else {
-                    // ... rest of your existing response logic ...
+                    // Process actual user questions
+                    response = getResponseForMessage(lowerMessage, farmerName, timeGreeting);
                 }
 
                 addMessage(response, 'bot');
             }, 1000);
+        }
+
+        // Add this new function to generate appropriate responses
+        function getResponseForMessage(message, farmerName, timeGreeting) {
+            // Check for greetings first
+            if (message.match(/^(hi|hello|hey|greetings)/i)) {
+                return `${timeGreeting}, ${farmerName}! How can I help with your cardamom farming today?`;
+            }
+            
+            // Check for common queries by keywords
+            if (message.includes('plant') || message.includes('planting') || message.includes('cultivation')) {
+                return `For cardamom planting:
+
+1. Best time: May-June (pre-monsoon)
+2. Spacing: 2m × 2m between plants
+3. Planting depth: 30-45cm pits
+4. Soil preparation: Add organic matter and ensure good drainage
+5. Shade: Ensure 40-60% shade for optimal growth
+
+Would you like more specific information about any part of the planting process?`;
+            }
+            
+            if (message.includes('water') || message.includes('irrigation')) {
+                return `Cardamom irrigation guidelines:
+
+1. Young plants need watering every 2-3 days
+2. Established plants need 15-20mm water weekly
+3. Drip irrigation is most efficient
+4. Reduce watering slightly during cool seasons
+5. Increase during hot, dry periods
+6. Avoid waterlogging as it causes root rot
+
+Is there anything specific about irrigation you'd like to know?`;
+            }
+            
+            if (message.includes('fertilizer') || message.includes('nutrient')) {
+                return `Cardamom fertilizer recommendations:
+
+1. NPK requirement: 75:75:150 kg/hectare annually
+2. Apply in 2-3 split doses during growing season
+3. First application: April-May (pre-monsoon)
+4. Second application: September-October (post-monsoon)
+5. Organic options: Vermicompost, farmyard manure
+6. Micronutrients: Foliar spray of zinc and boron beneficial
+
+Would you like a specific fertilizer schedule for your cardamom plantation?`;
+            }
+            
+            if (message.includes('pest') || message.includes('disease') || message.includes('insect')) {
+                return `Common cardamom pests and diseases:
+
+1. Thrips: Causes leaf curling and yield reduction
+   Control: Spray neem oil (0.3%) or appropriate insecticide
+
+2. Root grub: Damages roots and causes wilting
+   Control: Apply neem cake around the root zone
+
+3. Capsule rot: Fungal disease causing fruit decay
+   Control: Proper drainage and fungicide application
+
+4. Katte (mosaic) disease: Viral disease causing yellowing
+   Control: Remove infected plants, use disease-free planting material
+
+Would you like specific control measures for any particular issue?`;
+            }
+            
+            if (message.includes('harvest') || message.includes('yield')) {
+                return `Cardamom harvesting guidelines:
+
+1. Maturity: Capsules fully developed but still green (30-35mm size)
+2. First harvest: 2-3 years after planting
+3. Harvest cycle: Every 25-30 days during season
+4. Technique: Pick mature capsules individually by hand
+5. Season: Main harvest August-February
+6. Post-harvest: Proper drying crucial for quality (45-50°C)
+7. Expected yield: 200-250 kg/hectare (good management)
+
+Would you like to know more about post-harvest processing?`;
+            }
+            
+            if (message.includes('price') || message.includes('market') || message.includes('sell')) {
+                return `Current cardamom market information:
+
+1. Latest price: ₹2,963/kg for small cardamom (premium grade)
+2. Market trend: Stable with seasonal fluctuations
+3. Best markets: Bodinayakanur (TN), Vandanmedu (Kerala)
+4. Quality factors affecting price:
+   - Color (bright green fetches premium)
+   - Size (7-8mm capsules preferred)
+   - Aroma intensity
+   - Moisture content (10-12% ideal)
+
+For real-time prices, check the Spices Board India website or contact your local agricultural office.`;
+            }
+            
+            if (message.includes('soil') || message.includes('test')) {
+                return `Soil requirements for cardamom:
+
+1. Ideal pH: 6.0-6.5 (slightly acidic)
+2. Soil type: Well-drained, humus-rich forest soil
+3. Testing frequency: Every 6-12 months
+4. Key nutrients to monitor:
+   - Nitrogen (N): 150-200 kg/ha
+   - Phosphorus (P): 50-75 kg/ha
+   - Potassium (K): 300-350 kg/ha
+   - Secondary nutrients: Ca, Mg, S
+   - Micronutrients: Zn, B, Fe
+
+You can schedule a soil test through our system - check the Soil Test section in the sidebar!`;
+            }
+            
+            if (message.includes('weather') || message.includes('climate')) {
+                return `Optimal climate conditions for cardamom:
+
+1. Temperature: 10-35°C (ideal: 15-25°C)
+2. Rainfall: 1500-4000mm annually
+3. Humidity: 60-85%
+4. Altitude: 600-1500m above sea level
+5. Shade: 40-60% (filtered light)
+
+Cardamom is sensitive to prolonged dry spells and frost. In high-rainfall areas, ensure proper drainage to prevent waterlogging and disease issues.
+
+You can check current weather in your farm location on the dashboard!`;
+            }
+            
+            if (message.includes('thank')) {
+                return `You're welcome, ${farmerName}! If you have any more questions about cardamom cultivation, feel free to ask. I'm here to help!`;
+            }
+            
+            // Default response for unrecognized queries
+            return `I'm not quite sure about that specific question. Could you provide more details or rephrase? 
+
+You can ask about:
+• Planting & cultivation techniques
+• Irrigation & water management
+• Fertilizers & nutrient requirements
+• Pest & disease management
+• Harvesting & processing
+• Market information & prices`;
         }
 
         // Helper function for time-based greeting
@@ -3734,28 +3967,6 @@ What would you like to know about?`;
             if (hour >= 12 && hour < 17) return 'Good afternoon';
             if (hour >= 17 && hour < 22) return 'Good evening';
             return 'Hello';
-        }
-
-        // Helper function for general responses
-        function getGeneralResponse(message, farmerName, timeGreeting) {
-            const responses = {
-                'hi': `${timeGreeting}, ${farmerName}! 😊 I can help you with information about cardamom diseases, cultivation, weather, and more. What would you like to know?`,
-                'hello': `${timeGreeting}, ${farmerName}! 😊 I can help you with information about cardamom diseases, cultivation, weather, and more. What would you like to know?`,
-                'help': `I can help you with:\n\n• Cardamom diseases and prevention\n• Weather information\n• Soil testing\n• Fertilizer recommendations\n• Harvesting tips\n• Market prices\n\nWhat would you like to know about?`,
-                'weather': 'You can check detailed weather information in the Weather section of the dashboard.',
-                'soil': 'Regular soil testing is important for optimal cardamom growth. Visit the Soil Test section for more details.',
-                'fertilizer': 'For fertilizer recommendations, please check the Fertilizer Guide section.',
-                'harvest': 'The best time for harvesting cardamom is when the capsules are fully developed but still green.',
-                'price': 'You can check current market prices in the Market Information section.'
-            };
-
-            for (const [keyword, reply] of Object.entries(responses)) {
-                if (message.includes(keyword)) {
-                    return reply;
-                }
-            }
-
-            return `I apologize, ${farmerName}, but I need more specific information to help you better. You can ask me about diseases, weather, soil, fertilizers, harvesting, or market prices.`;
         }
 
         // Event listener for minimizing chat

@@ -1089,3 +1089,24 @@ Stack trace:
 [24-Mar-2025 18:19:26 Europe/Berlin] Login successful - User ID: 66, Role: employee
 [24-Mar-2025 18:29:06 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
 [24-Mar-2025 18:29:06 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[25-Mar-2025 05:05:03 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[25-Mar-2025 05:05:03 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[25-Mar-2025 11:07:44 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[25-Mar-2025 11:07:45 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[26-Mar-2025 09:23:23 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[26-Mar-2025 09:23:23 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[26-Mar-2025 14:08:55 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[26-Mar-2025 14:08:55 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[26-Mar-2025 14:36:45 Europe/Berlin] Login attempt - Email: milujiji702@gmail.com, Role: admin
+[26-Mar-2025 14:36:45 Europe/Berlin] Password verification failed for email: milujiji702@gmail.com
+[26-Mar-2025 14:36:57 Europe/Berlin] Login attempt - Email: milujiji702@gmail.com, Role: admin
+[26-Mar-2025 14:36:57 Europe/Berlin] Login successful - User ID: 36, Role: admin
+[26-Mar-2025 14:36:57 Europe/Berlin] Redirecting admin to admin.php
+[26-Mar-2025 14:42:50 Europe/Berlin] Login attempt - Email: milujiji702@gmail.com, Role: admin
+[26-Mar-2025 14:42:50 Europe/Berlin] Login successful - User ID: 36, Role: admin
+[26-Mar-2025 14:42:50 Europe/Berlin] Redirecting admin to admin.php
+[26-Mar-2025 14:45:00 Europe/Berlin] Login attempt - Email: milujiji702@gmail.com, Role: admin
+[26-Mar-2025 14:45:00 Europe/Berlin] Login successful - User ID: 36, Role: admin
+[26-Mar-2025 14:45:00 Europe/Berlin] Redirecting admin to admin.php
+[26-Mar-2025 14:50:49 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[26-Mar-2025 14:50:49 Europe/Berlin] Login successful - User ID: 67, Role: farmer

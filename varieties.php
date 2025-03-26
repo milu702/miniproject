@@ -484,7 +484,7 @@ while ($row = mysqli_fetch_assoc($result)) {
                 <li><a href="plantations.php"><i class="fas fa-tree"></i> Plantations</a></li>
                 <li><a href="harvests.php"><i class="fas fa-warehouse"></i> Harvests</a></li>
                 <li><a href="reports.php"><i class="fas fa-chart-bar"></i> Reports</a></li>
-                <li><a href="settings.php"><i class="fas fa-cog"></i> Settings</a></li>
+                <li><a href="admin_setting.php"><i class="fas fa-cog"></i> Settings</a></li>
                 <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </nav>
