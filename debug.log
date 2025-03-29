@@ -1110,3 +1110,25 @@ Stack trace:
 [26-Mar-2025 14:45:00 Europe/Berlin] Redirecting admin to admin.php
 [26-Mar-2025 14:50:49 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
 [26-Mar-2025 14:50:49 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[27-Mar-2025 04:15:11 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[27-Mar-2025 04:15:11 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[27-Mar-2025 06:33:11 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[27-Mar-2025 06:33:11 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[27-Mar-2025 06:48:13 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[27-Mar-2025 06:48:13 Europe/Berlin] Password verification failed for email: milujiji800@gmail.com
+[27-Mar-2025 06:48:25 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[27-Mar-2025 06:48:25 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[27-Mar-2025 07:04:29 Europe/Berlin] Login attempt - Email: milujiji702@gmail.com, Role: admin
+[27-Mar-2025 07:04:29 Europe/Berlin] Login successful - User ID: 36, Role: admin
+[27-Mar-2025 07:04:29 Europe/Berlin] Redirecting admin to admin.php
+[27-Mar-2025 07:11:45 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[27-Mar-2025 07:11:46 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[27-Mar-2025 17:05:24 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[27-Mar-2025 17:05:24 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[29-Mar-2025 13:29:22 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[29-Mar-2025 13:29:22 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[29-Mar-2025 14:08:39 Europe/Berlin] Login attempt - Email: milujiji800@gmail.com, Role: farmer
+[29-Mar-2025 14:08:39 Europe/Berlin] Login successful - User ID: 67, Role: farmer
+[29-Mar-2025 17:11:08 Europe/Berlin] No user found with email: annmaria@gmail.com
+[29-Mar-2025 17:11:53 Europe/Berlin] Login attempt - Email: sruthy@gmail.com, Role: farmer
+[29-Mar-2025 17:11:53 Europe/Berlin] Login successful - User ID: 73, Role: farmer

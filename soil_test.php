@@ -276,6 +276,41 @@ function handleFileUpload($file) {
     }
 }
 
+// Add this function near the top with other helper functions
+function checkSoilTestLimit($conn, $farmer_id) {
+    // Get the count of soil tests in the last 30 days
+    $query = "SELECT COUNT(*) as test_count 
+              FROM soil_tests 
+              WHERE farmer_id = ? 
+              AND test_date >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+    
+    $stmt = mysqli_prepare($conn, $query);
+    mysqli_stmt_bind_param($stmt, "i", $farmer_id);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $count = mysqli_fetch_assoc($result)['test_count'];
+    
+    return $count;
+}
+
+// Add this before handling the form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_soil_test'])) {
+    $test_count = checkSoilTestLimit($conn, $_SESSION['user_id']);
+    
+    if ($test_count >= 5) {
+        // Check if payment is made
+        if (!isset($_POST['payment_confirmed'])) {
+            $_SESSION['error'] = "You have reached your free soil test limit. Each additional test costs ₹2.";
+            $_SESSION['show_payment'] = true;
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit();
+        }
+        // Process payment here if needed
+    }
+    
+    // ... rest of the soil test submission code ...
+}
+
 // Add this function to handle both manual entry and file upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_soil_test'])) {
@@ -1470,6 +1505,101 @@ function generateRecommendations($ph, $n, $p, $k) {
         .toggle-btn:hover {
             transform: translateY(-2px);
         }
+
+        .test-limit-warning {
+            background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+            border: 2px solid #ffeeba;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .warning-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+            border-bottom: 2px dashed #ffd700;
+            padding-bottom: 10px;
+        }
+
+        .warning-header i {
+            font-size: 24px;
+            color: #ff9800;
+        }
+
+        .warning-header h3 {
+            color: #b45309;
+            margin: 0;
+            font-size: 1.4em;
+        }
+
+        .warning-content {
+            color: #92400e;
+        }
+
+        .warning-content p {
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1em;
+        }
+
+        .warning-content i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .warning-content strong {
+            color: #b45309;
+            font-weight: 600;
+        }
+
+        .benefits {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            border-left: 4px solid #ffd700;
+        }
+
+        .benefits p {
+            margin: 6px 0;
+            font-size: 0.95em;
+            color: #92400e;
+        }
+
+        .benefits i {
+            color: #d97706;
+        }
+
+        .payment-section {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .payment-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .payment-btn:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
@@ -1734,6 +1864,60 @@ function generateRecommendations($ph, $n, $p, $k) {
                 <!-- Soil Test Form Section -->
                 <div class="soil-test-form">
                     <h2><i class="fas fa-flask"></i> Soil Test Analysis</h2>
+                    
+                    <?php 
+                    // Display message if it exists
+                    if (isset($_SESSION['message']) && !empty($_SESSION['message'])): 
+                    ?>
+                        <div class="alert <?php echo strpos($_SESSION['message'], 'success') !== false ? 'alert-success' : 'alert-error'; ?>">
+                            <i class="fas <?php echo strpos($_SESSION['message'], 'success') !== false ? 'fa-check-circle' : 'fa-exclamation-circle'; ?>"></i>
+                            <?php echo $_SESSION['message']; ?>
+                        </div>
+                    <?php 
+                        // Clear the message after displaying
+                        unset($_SESSION['message']);
+                    endif; 
+                    ?>
+
+                    <?php 
+                    $test_count = checkSoilTestLimit($conn, $_SESSION['user_id']);
+                    if ($test_count >= 5): 
+                    ?>
+                        <div class="test-limit-warning">
+                            <div class="warning-header">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <h3>Free Test Limit Reached!</h3>
+                            </div>
+                            <div class="warning-content">
+                                <p><i class="fas fa-check-circle"></i> You've used all <strong>5 free soil tests</strong> for this 30-day period</p>
+                                <p><i class="fas fa-coins"></i> Additional tests are available at just <strong>₹2 per test</strong></p>
+                                <div class="benefits">
+                                    <p><i class="fas fa-star"></i> Continue monitoring your soil health</p>
+                                    <p><i class="fas fa-chart-line"></i> Track nutrient levels regularly</p>
+                                    <p><i class="fas fa-seedling"></i> Optimize your crop yield</p>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (isset($_SESSION['show_payment']) && $_SESSION['show_payment']): ?>
+                        <div class="payment-section">
+                            <h3>Payment Required</h3>
+                            <p>Cost for additional soil test: ₹2</p>
+                            <!-- Add Razorpay payment button -->
+                            <button id="rzp-button1" class="payment-btn">
+                                <i class="fas fa-credit-card"></i> Pay ₹2 and Continue
+                            </button>
+                            <form method="POST" id="payment-form" style="display: none;">
+                                <input type="hidden" name="payment_confirmed" value="1">
+                                <input type="hidden" name="razorpay_payment_id" id="razorpay_payment_id">
+                            </form>
+                        </div>
+                    <?php 
+                        unset($_SESSION['show_payment']);
+                    endif; 
+                    ?>
+
                     <?php if ($message): ?>
                         <div class="alert <?php echo strpos($message, 'success') !== false ? 'alert-success' : 'alert-error'; ?>">
                             <i class="fas <?php echo strpos($message, 'success') !== false ? 'fa-check-circle' : 'fa-exclamation-circle'; ?>"></i>
@@ -1741,7 +1925,7 @@ function generateRecommendations($ph, $n, $p, $k) {
                         </div>
                     <?php endif; ?>
                     
-                    <form method="POST" id="soilTestForm" enctype="multipart/form-data" onsubmit="return validateForm()">
+                    <form method="POST" id="soilTestForm" enctype="multipart/form-data" onsubmit="return validateAndCheckPayment()">
                         <div class="input-method-toggle">
                             <button type="button" class="toggle-btn active" onclick="toggleInputMethod('manual')">
                                 <i class="fas fa-keyboard"></i> Manual Entry
@@ -1855,6 +2039,10 @@ function generateRecommendations($ph, $n, $p, $k) {
                             </div>
                         </div>
 
+                        <?php if ($test_count >= 5): ?>
+                            <input type="hidden" name="payment_required" value="1">
+                        <?php endif; ?>
+                        
                         <button type="submit" name="add_soil_test" class="submit-btn">
                             <i class="fas fa-save"></i> Submit Soil Test
                         </button>
@@ -1864,404 +2052,172 @@ function generateRecommendations($ph, $n, $p, $k) {
         </div>
     </div>
 
+    <!-- Add this at the bottom of the file, before </body> -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script>
-        const validateSoilTestForm = () => {
-            let isValid = true;
-            const inputs = {
-                ph_level: {
-                    min: 0,
-                    max: 14,
-                    name: 'pH level',
-                    optimal: {min: 5.5, max: 6.5}
+    // Add this to your existing JavaScript
+    function validateAndCheckPayment() {
+        if (!validateForm()) {
+            return false;
+        }
+
+        const paymentRequired = document.querySelector('input[name="payment_required"]');
+        if (paymentRequired && !document.querySelector('input[name="payment_confirmed"]')) {
+            // Show payment warning
+            if (!confirm('You have reached your free soil test limit. Would you like to proceed with payment?')) {
+                return false;
+            }
+            
+            // Initialize Razorpay payment
+            var options = {
+                key: 'YOUR_RAZORPAY_KEY', // Replace with your Razorpay key
+                amount: 200, // Amount in paise (₹2 = 200 paise)
+                currency: 'INR',
+                name: 'GrowGuide',
+                description: 'Additional Soil Test Fee',
+                handler: function (response) {
+                    document.getElementById('razorpay_payment_id').value = response.razorpay_payment_id;
+                    document.getElementById('payment-form').submit();
                 },
-                nitrogen_content: {
-                    min: 0,
-                    max: 5,
-                    name: 'Nitrogen content',
-                    optimal: {min: 0.5, max: 1.0}
+                prefill: {
+                    name: '<?php echo htmlspecialchars($farmers[0]['username']); ?>',
+                    email: '<?php echo isset($farmers[0]['email']) ? htmlspecialchars($farmers[0]['email']) : ''; ?>'
                 },
-                phosphorus_content: {
-                    min: 0,
-                    max: 1,
-                    name: 'Phosphorus content',
-                    optimal: {min: 0.05, max: 0.2}
-                },
-                potassium_content: {
-                    min: 0,
-                    max: 5,
-                    name: 'Potassium content',
-                    optimal: {min: 1.0, max: 2.0}
+                theme: {
+                    color: '#2D5A27'
                 }
             };
-
-            // Reset all fields
-            Object.keys(inputs).forEach(inputId => {
-                const inputGroup = document.getElementById(inputId).closest('.input-group');
-                inputGroup.classList.remove('success', 'error');
-            });
-
-            // Validate each field
-            Object.entries(inputs).forEach(([inputId, config]) => {
-                const input = document.getElementById(inputId);
-                const value = parseFloat(input.value);
-                const inputGroup = input.closest('.input-group');
-                const errorDiv = inputGroup.querySelector('.error-message');
-
-                if (!input.value) {
-                    isValid = false;
-                    inputGroup.classList.add('error');
-                    errorDiv.textContent = `${config.name} is required`;
-                    shakeElement(inputGroup);
-                } else if (isNaN(value) || value < config.min || value > config.max) {
-                        isValid = false;
-                    inputGroup.classList.add('error');
-                    errorDiv.textContent = `${config.name} must be between ${config.min} and ${config.max}`;
-                    shakeElement(inputGroup);
-                } else {
-                    inputGroup.classList.add('success');
-                    // Add warning if outside optimal range
-                    if (value < config.optimal.min || value > config.optimal.max) {
-                        errorDiv.textContent = `Warning: ${config.name} is outside optimal range (${config.optimal.min} - ${config.optimal.max})`;
-                        errorDiv.style.color = '#856404';
-                        errorDiv.style.display = 'block';
-                    }
-                }
-            });
-
-            // Validate file size
-            const fileInput = document.getElementById('soil_test_document');
-            if (fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                if (file.size > 5000000) {
-                    const inputGroup = fileInput.closest('.input-group');
-                    const errorDiv = inputGroup.querySelector('.error-message');
-                    inputGroup.classList.add('error');
-                    errorDiv.textContent = 'File size must be less than 5MB';
-                    shakeElement(inputGroup);
-                    return false;
-                }
-            }
             
-            return isValid;
-        };
-
-        const shakeElement = (element) => {
-            element.style.animation = 'none';
-            element.offsetHeight; // Trigger reflow
-            element.style.animation = 'shake 0.5s ease-in-out';
-        };
-
-        // Add real-time validation
-        document.querySelectorAll('#soilTestForm input').forEach(input => {
-            input.addEventListener('input', () => {
-                const inputGroup = input.closest('.input-group');
-                const errorDiv = inputGroup.querySelector('.error-message');
-                
-                if (!input.value) {
-                    inputGroup.classList.remove('success');
-                    inputGroup.classList.add('error');
-                    errorDiv.textContent = 'This field is required';
-                } else {
-                    inputGroup.classList.remove('error');
-                    inputGroup.classList.add('success');
-                    errorDiv.style.display = 'none';
-                }
-            });
-        });
-
-        // Add this CSS animation
-        document.head.insertAdjacentHTML('beforeend', `
-            <style>
-                @keyframes shake {
-                    0%, 100% { transform: translateX(0); }
-                    20%, 60% { transform: translateX(-5px); }
-                    40%, 80% { transform: translateX(5px); }
-                }
-            </style>
-        `);
-
-        function sortTable(column) {
-            const table = document.querySelector('.results-table');
-            const tbody = table.querySelector('tbody');
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-            
-            const sortedRows = rows.sort((a, b) => {
-                let aCol = a.cells[column].textContent.trim();
-                let bCol = b.cells[column].textContent.trim();
-                
-                // Remove % symbol and status text for numeric columns
-                if (column >= 2 && column <= 5) {
-                    aCol = parseFloat(aCol.replace('%', ''));
-                    bCol = parseFloat(bCol.replace('%', ''));
-                } else if (column === 0) {
-                    // Sort dates
-                    return new Date(aCol) - new Date(bCol);
-                } else {
-                    // Sort strings
-                    return aCol.localeCompare(bCol);
-                }
-                
-                return aCol - bCol;
-            });
-            
-            // Clear the table
-            while (tbody.firstChild) {
-                tbody.removeChild(tbody.firstChild);
-            }
-            
-            // Add sorted rows
-            sortedRows.forEach(row => tbody.appendChild(row));
-        }
-
-        function printSingleResult(timestamp) {
-            const row = document.querySelector(`tr[data-timestamp="${timestamp}"]`);
-            const table = document.querySelector('.results-table').cloneNode(true);
-            const tbody = table.querySelector('tbody');
-            
-            // Clear table body and add only the selected row
-            tbody.innerHTML = '';
-            tbody.appendChild(row.cloneNode(true));
-            
-            const printContent = `
-                <div style="padding: 20px;">
-                    <div style="text-align: center; margin-bottom: 20px;">
-                        <h2>Soil Test Report</h2>
-                        <p>Generated on: ${new Date().toLocaleDateString()}</p>
-                    </div>
-                    ${table.outerHTML}
-                </div>
-            `;
-            
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(printContent);
-            printWindow.document.close();
-            printWindow.print();
-        }
-
-        function printResults() {
-            window.print();
-        }
-
-        function toggleRecommendation(timestamp) {
-            const recommendationRow = document.getElementById(`recommendation-${timestamp}`);
-            const dateWrapper = event.currentTarget.querySelector('.date-wrapper');
-            const allRecommendations = document.querySelectorAll('.recommendation-row');
-            const allDateWrappers = document.querySelectorAll('.date-wrapper');
-            
-            // Hide all other recommendations
-            allRecommendations.forEach(row => {
-                if (row.id !== `recommendation-${timestamp}`) {
-                    row.style.display = 'none';
-                }
-            });
-            
-            // Remove active class from all date wrappers
-            allDateWrappers.forEach(wrapper => {
-                wrapper.classList.remove('active');
-            });
-            
-            // Toggle current recommendation
-            if (recommendationRow.style.display === 'none') {
-                recommendationRow.style.display = 'table-row';
-                dateWrapper.classList.add('active');
-            } else {
-                recommendationRow.style.display = 'none';
-                dateWrapper.classList.remove('active');
-            }
-        }
-
-        function toggleShowMore() {
-            const hiddenRows = document.querySelectorAll('.hidden-row');
-            const showMoreBtn = document.getElementById('showMoreBtn');
-            
-            hiddenRows.forEach(row => {
-                if (row.style.display === 'none' || !row.style.display) {
-                    row.style.display = row.classList.contains('recommendation-row') ? 'none' : 'table-row';
-                    showMoreBtn.innerHTML = '<i class="fas fa-chevron-up"></i> Show Less Tests';
-                    showMoreBtn.classList.add('active');
-                } else {
-                    row.style.display = 'none';
-                    showMoreBtn.innerHTML = '<i class="fas fa-chevron-down"></i> Show More Tests';
-                    showMoreBtn.classList.remove('active');
-                }
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const showMoreBtn = document.getElementById('showMoreBtn');
-            if (showMoreBtn) {
-                showMoreBtn.addEventListener('click', toggleShowMore);
-            }
-        });
-
-        function previewFile(input) {
-            const preview = document.getElementById('filePreview');
-            const file = input.files[0];
-            
-            if (file) {
-                if (file.type === 'application/pdf') {
-                    preview.innerHTML = `
-                        <div class="pdf-preview">
-                            <i class="fas fa-file-pdf" style="color: #dc3545;"></i>
-                            <span>${file.name}</span>
-                        </div>
-                    `;
-                } else if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
-                    }
-                    reader.readAsDataURL(file);
-                }
-            } else {
-                preview.innerHTML = '';
-            }
-        }
-
-        function toggleInputMethod(method) {
-            const manualEntry = document.getElementById('manualEntry');
-            const fileUpload = document.getElementById('fileUpload');
-            const toggleBtns = document.querySelectorAll('.toggle-btn');
-            
-            if (method === 'manual') {
-                manualEntry.style.display = 'grid';
-                fileUpload.style.display = 'none';
-                toggleBtns[0].classList.add('active');
-                toggleBtns[1].classList.remove('active');
-                resetFileUpload();
-                
-                // Focus on first input to improve UX
-                document.getElementById('ph_level').focus();
-            } else {
-                manualEntry.style.display = 'none';
-                fileUpload.style.display = 'grid';
-                toggleBtns[0].classList.remove('active');
-                toggleBtns[1].classList.add('active');
-                resetManualInputs();
-                
-                // Add explanation about file processing
-                const filePreview = document.getElementById('filePreview');
-                filePreview.innerHTML = `
-                    <div style="background: #e9f5ff; padding: 10px; border-radius: 5px; margin-top: 10px;">
-                        <i class="fas fa-info-circle" style="color: #17a2b8;"></i>
-                        <span>We'll attempt to extract soil test values automatically from your document. 
-                        If extraction fails, you can enter values manually.</span>
-                    </div>
-                `;
-            }
-        }
-
-        function resetFileUpload() {
-            const fileInput = document.getElementById('soil_test_document');
-            const filePreview = document.getElementById('filePreview');
-            fileInput.value = '';
-            filePreview.innerHTML = '';
-        }
-
-        function resetManualInputs() {
-            const inputs = document.querySelectorAll('#manualEntry input');
-            inputs.forEach(input => {
-                input.value = '';
-                const inputGroup = input.closest('.input-group');
-                inputGroup.classList.remove('success', 'error');
-            });
-        }
-
-        function validateForm() {
-            const manualEntry = document.getElementById('manualEntry');
-            const fileUpload = document.getElementById('fileUpload');
-            
-            if (manualEntry.style.display !== 'none') {
-                return validateSoilTestForm();
-            } else {
-                return validateFileUpload();
-            }
-        }
-
-        function validateFileUpload() {
-            const fileInput = document.getElementById('soil_test_document');
-            const inputGroup = fileInput.closest('.input-group');
-            const errorDiv = inputGroup.querySelector('.error-message');
-            
-            if (!fileInput.files || fileInput.files.length === 0) {
-                inputGroup.classList.add('error');
-                errorDiv.textContent = 'Please select a file to upload';
-                errorDiv.style.display = 'block';
-                shakeElement(inputGroup);
-                return false;
-            }
-            
-            const file = fileInput.files[0];
-            const fileExtension = file.name.split('.').pop().toLowerCase();
-            
-            if (!['pdf', 'jpg', 'jpeg', 'png'].includes(fileExtension)) {
-                inputGroup.classList.add('error');
-                errorDiv.textContent = 'Only PDF, JPG, JPEG, and PNG files are allowed';
-                errorDiv.style.display = 'block';
-                shakeElement(inputGroup);
-                return false;
-            }
-            
-            if (file.size > 5000000) {
-                inputGroup.classList.add('error');
-                errorDiv.textContent = 'File size must be less than 5MB';
-                errorDiv.style.display = 'block';
-                shakeElement(inputGroup);
-                return false;
-            }
-            
-            inputGroup.classList.add('success');
-            errorDiv.style.display = 'none';
-            return true;
+            var rzp = new Razorpay(options);
+            rzp.open();
+            return false;
         }
         
-        // Add enhanced file preview function
-        function previewFile(input) {
-            const preview = document.getElementById('filePreview');
-            const file = input.files[0];
-            
-            if (file) {
-                preview.innerHTML = '';
-                
-                if (file.type === 'application/pdf') {
-                    preview.innerHTML = `
-                        <div class="pdf-preview">
-                            <i class="fas fa-file-pdf" style="color: #dc3545; font-size: 2em;"></i>
-                            <div>
-                                <div>${file.name}</div>
-                                <div style="font-size: 0.8em; color: #666;">${(file.size / 1024).toFixed(1)} KB</div>
-                            </div>
-                        </div>
-                        <div style="background: #e9f5ff; padding: 10px; border-radius: 5px; margin-top: 10px;">
-                            <i class="fas fa-info-circle" style="color: #17a2b8;"></i>
-                            <span>We'll extract soil test values from your PDF.</span>
-                        </div>
-                    `;
-                } else if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        preview.innerHTML = `
-                            <img src="${e.target.result}" alt="Preview" style="max-height: 150px; border-radius: 4px;">
-                            <div style="font-size: 0.8em; color: #666; margin-top: 5px;">
-                                ${file.name} (${(file.size / 1024).toFixed(1)} KB)
-                            </div>
-                            <div style="background: #e9f5ff; padding: 10px; border-radius: 5px; margin-top: 10px;">
-                                <i class="fas fa-info-circle" style="color: #17a2b8;"></i>
-                                <span>We'll attempt to read soil test values from your image.</span>
-                            </div>
-                        `;
-                    }
-                    reader.readAsDataURL(file);
-                }
-                
-                const inputGroup = input.closest('.input-group');
-                inputGroup.classList.add('success');
-                const errorDiv = inputGroup.querySelector('.error-message');
-                errorDiv.style.display = 'none';
-            } else {
-                preview.innerHTML = '';
+        return true;
+    }
+
+    // Add Razorpay button handler
+    document.getElementById('rzp-button1')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        var options = {
+            key: 'YOUR_RAZORPAY_KEY', // Replace with your Razorpay key
+            amount: 200, // Amount in paise (₹2 = 200 paise)
+            currency: 'INR',
+            name: 'GrowGuide',
+            description: 'Additional Soil Test Fee',
+            handler: function (response) {
+                document.getElementById('razorpay_payment_id').value = response.razorpay_payment_id;
+                document.getElementById('payment-form').submit();
+            },
+            prefill: {
+                name: '<?php echo htmlspecialchars($farmers[0]['username']); ?>',
+                email: '<?php echo isset($farmers[0]['email']) ? htmlspecialchars($farmers[0]['email']) : ''; ?>'
+            },
+            theme: {
+                color: '#2D5A27'
             }
-        }
+        };
+        var rzp = new Razorpay(options);
+        rzp.open();
+    });
     </script>
+
+    <!-- Add these styles to your existing CSS -->
+    <style>
+    .test-limit-warning {
+        background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+        border: 2px solid #ffeeba;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .warning-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 15px;
+        border-bottom: 2px dashed #ffd700;
+        padding-bottom: 10px;
+    }
+
+    .warning-header i {
+        font-size: 24px;
+        color: #ff9800;
+    }
+
+    .warning-header h3 {
+        color: #b45309;
+        margin: 0;
+        font-size: 1.4em;
+    }
+
+    .warning-content {
+        color: #92400e;
+    }
+
+    .warning-content p {
+        margin: 8px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.1em;
+    }
+
+    .warning-content i {
+        width: 20px;
+        text-align: center;
+    }
+
+    .warning-content strong {
+        color: #b45309;
+        font-weight: 600;
+    }
+
+    .benefits {
+        margin-top: 15px;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 8px;
+        border-left: 4px solid #ffd700;
+    }
+
+    .benefits p {
+        margin: 6px 0;
+        font-size: 0.95em;
+        color: #92400e;
+    }
+
+    .benefits i {
+        color: #d97706;
+    }
+
+    .payment-section {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+    }
+
+    .payment-btn {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .payment-btn:hover {
+        background-color: #218838;
+        transform: translateY(-2px);
+    }
+    </style>
 </body>
 </html>

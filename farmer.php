@@ -684,7 +684,47 @@ if ($notifications && mysqli_num_rows($notifications) > 0) {
     }
 }
 
-?>
+// Add this function near the top of the file, after the database connection code
+function getAIResponse($query) {
+    $hour = date('H');
+    $username = isset($_SESSION['username']) ? $_SESSION['username'] : 'Farmer';
+    $query = strtolower($query);
+    
+    // Handle greetings
+    if (preg_match('/^(hi|hello|hey|hai|greetings)/i', $query)) {
+        $greeting = '';
+        if ($hour >= 5 && $hour < 12) {
+            $greeting = 'Good morning';
+        } elseif ($hour >= 12 && $hour < 17) {
+            $greeting = 'Good afternoon';
+        } elseif ($hour >= 17 && $hour < 22) {
+            $greeting = 'Good evening';
+        } else {
+            $greeting = 'Hello';
+        }
+        
+        return $greeting . ", " . $username . "! 👋\n\n" .
+               "I'm your AI Farming Assistant, here to help with your cardamom cultivation queries.\n\n" .
+               "You can ask me about:\n" .
+               "• Planting techniques and timing\n" .
+               "• Irrigation and water management\n" .
+               "• Disease identification and control\n" .
+               "• Pest management\n" .
+               "• Fertilizer recommendations\n" .
+               "• Harvesting guidelines\n" .
+               "• Weather impacts\n" .
+               "• Market prices and trends\n\n" .
+               "Example questions:\n" .
+               "1. \"When is the best time to plant cardamom?\"\n" .
+               "2. \"How often should I water my plants?\"\n" .
+               "3. \"What are signs of capsule rot?\"\n" .
+               "4. \"Which fertilizers work best for cardamom?\"\n\n" .
+               "Feel free to ask any questions, and I'll provide detailed guidance based on best practices!";
+    }
+    
+    // Default response if no greeting is matched
+    return "I'm here to help with your cardamom farming questions. What would you like to know?";
+}
 
 ?>
 
@@ -3015,6 +3055,1572 @@ if ($notifications && mysqli_num_rows($notifications) > 0) {
                 bottom: 25px;
             }
         }
+
+        /* Add these styles for the running messages */
+        .running-message {
+            position: fixed;
+            left: 270px; /* Adjust based on your sidebar width */
+            bottom: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            z-index: 999;
+            animation: slideInLeft 0.3s ease-out;
+        }
+
+        .weather-message {
+            bottom: 80px; /* Position above soil test message */
+            border-left: 4px solid #03A9F4;
+        }
+
+        .soil-message {
+            border-left: 4px solid #4CAF50;
+        }
+
+        @keyframes slideInLeft {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .running-message i {
+            font-size: 16px;
+        }
+
+        .weather-message i {
+            color: #03A9F4;
+        }
+
+        .soil-message i {
+            color: #4CAF50;
+        }
+
+        /* Simplified styles for weather message only */
+        .running-message {
+            position: fixed;
+            left: 270px;
+            bottom: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            z-index: 999;
+            animation: slideInLeft 0.3s ease-out;
+        }
+
+        .weather-message {
+            border-left: 4px solid #03A9F4;
+        }
+
+        @keyframes slideInLeft {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .running-message i {
+            font-size: 16px;
+            color: #03A9F4;
+        }
+
+        /* Update the Farming Assistant positioning */
+        .farming-assistant {
+            position: fixed;
+            right: 20px !important; /* Force right positioning */
+            left: auto !important; /* Remove any left positioning */
+            bottom: 20px;
+            width: 300px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+        }
+
+        /* Keep the existing green header style but update border radius */
+        .farming-assistant-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 15px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Update the chat message container */
+        .farming-assistant-messages {
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: #fff;
+            border-radius: 0 0 12px 12px;
+        }
+
+        /* Update message bubbles */
+        .assistant-message {
+            background: #f0f2f5;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            max-width: 85%;
+        }
+
+        /* Add animation for sliding from right */
+        @keyframes slideInRight {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        .farming-assistant {
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        /* Make it responsive */
+        @media (max-width: 768px) {
+            .farming-assistant {
+                width: 280px;
+                right: 10px !important;
+            }
+        }
+
+        /* Style for the minimize button */
+        .minimize-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        /* Style for the message input area */
+        .message-input {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #eee;
+        }
+
+        .message-input input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            margin-right: 8px;
+        }
+
+        .message-input button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+        }
+
+        /* Update the position of existing farming assistant */
+        .farming-assistant, #farmingAssistant {
+            position: fixed !important;
+            right: 30px !important;  /* Position on right side */
+            left: auto !important;   /* Remove any left positioning */
+            bottom: 30px !important;
+            width: 350px !important;
+            z-index: 1000 !important;
+        }
+
+        /* Ensure proper animation */
+        @keyframes slideInRight {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        .farming-assistant, #farmingAssistant {
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .farming-assistant, #farmingAssistant {
+                width: 300px !important;
+                right: 20px !important;
+                bottom: 20px !important;
+            }
+        }
+
+        .ai-assistant {
+            position: fixed;
+            right: 30px;  /* Changed from left positioning */
+            bottom: 30px;
+            width: 600px;  /* Increased from 480px */
+            height: 400px; /* Added explicit height */
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .ai-assistant-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            padding: 15px 25px;  /* Increased padding */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .ai-assistant-body {
+            height: 320px;  /* Decreased from 600px */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ai-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 25px;  /* Increased padding */
+        }
+
+        .ai-message {
+            display: flex;
+            gap: 15px;  /* Increased gap */
+            margin-bottom: 25px;  /* Increased margin */
+        }
+
+        .ai-avatar {
+            width: 42px;  /* Increased size */
+            height: 42px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;  /* Prevent avatar from shrinking */
+        }
+
+        .message-content {
+            flex: 1;
+            background: #f5f7f9;
+            padding: 16px;  /* Increased padding */
+            border-radius: 15px;
+            border-top-left-radius: 4px;
+            font-size: 14px;  /* Added font size */
+            line-height: 1.6;  /* Added line height */
+        }
+
+        .ai-input {
+            padding: 20px;  /* Increased padding */
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 12px;
+            background: white;  /* Added background */
+        }
+
+        .ai-input input {
+            flex: 1;
+            padding: 12px 20px;  /* Increased padding */
+            border: 1px solid #ddd;
+            border-radius: 25px;  /* Increased border radius */
+            outline: none;
+            font-size: 14px;  /* Added font size */
+        }
+
+        .ai-input button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            width: 42px;  /* Increased size */
+            height: 42px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        /* Add styles for better message formatting */
+        .message-content p {
+            margin: 0 0 12px 0;
+        }
+
+        .message-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .message-content ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .message-content li {
+            margin-bottom: 6px;
+        }
+
+        /* Add custom scrollbar */
+        .ai-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .ai-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .ai-messages::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        .ai-messages::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        .greeting-message {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(45, 90, 39, 0.1);
+            border-left: 3px solid var(--primary-color);
+            border-radius: 0 8px 8px 0;
+        }
+
+        .ai-message p {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .ai-message p:first-child {
+            font-size: 1.1em;
+            font-weight: 500;
+            color: var(--primary-color);
+        }
+
+        /* Add these new styles for horizontal quick actions and animations */
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 10px 0;
+            margin-top: 15px;
+            -ms-overflow-style: none;  /* Hide scrollbar for IE and Edge */
+            scrollbar-width: none;  /* Hide scrollbar for Firefox */
+        }
+
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .quick-actions::-webkit-scrollbar {
+            display: none;
+        }
+
+        .quick-actions button {
+            flex: 0 0 auto;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.3s ease, background-color 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .quick-actions button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .quick-actions button i {
+            animation: bounce 2s infinite;
+        }
+
+        /* Different animations for different icon types */
+        .fa-seedling {
+            animation: grow 2s infinite !important;
+        }
+
+        .fa-cloud-sun {
+            animation: weather 4s infinite !important;
+        }
+
+        .fa-bug {
+            animation: wiggle 2s infinite !important;
+        }
+
+        .fa-calendar-alt {
+            animation: pulse 2s infinite !important;
+        }
+
+        .fa-robot {
+            animation: wave 2s infinite !important;
+        }
+
+        /* Animation keyframes */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        @keyframes grow {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        @keyframes weather {
+            0% { transform: translateX(0) rotate(0); }
+            25% { transform: translateX(3px) rotate(15deg); }
+            75% { transform: translateX(-3px) rotate(-15deg); }
+            100% { transform: translateX(0) rotate(0); }
+        }
+
+        @keyframes wiggle {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(3px); }
+            75% { transform: translateX(-3px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        @keyframes wave {
+            0%, 100% { transform: rotate(0); }
+            25% { transform: rotate(-20deg); }
+            75% { transform: rotate(20deg); }
+        }
+
+        /* Update message content styles */
+        .message-content {
+            flex: 1;
+            background: #f5f7f9;
+            padding: 16px;
+            border-radius: 15px;
+            border-top-left-radius: 4px;
+            font-size: 14px;
+            line-height: 1.6;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Add emoji animations */
+        .message-content p:first-child {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .message-content p:first-child span {
+            display: inline-block;
+        }
+
+        /* Emoji specific animations */
+        .message-content p:first-child span:last-child {
+            animation: wave 2s infinite;
+        }
+
+        /* Update greeting message style */
+        .greeting-message {
+            background: rgba(45, 90, 39, 0.1);
+            border-left: 3px solid var(--primary-color);
+            border-radius: 0 8px 8px 0;
+            padding: 12px;
+            margin: 10px 0;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Update AI assistant width and layout */
+        .ai-assistant {
+            position: fixed;
+            right: 30px;
+            bottom: 30px;
+            width: 600px;  /* Increased from 480px */
+            height: 400px; /* Added explicit height */
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .ai-assistant-body {
+            height: 320px;  /* Decreased from 600px */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Update quick actions to use grid layout instead of scrolling */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);  /* 3 buttons per row */
+            gap: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .quick-actions button {
+            width: 100%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.3s ease, background-color 0.3s ease;
+            font-size: 0.95em;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .ai-assistant {
+                width: 90%;
+                height: 350px; /* Decreased height for mobile */
+                right: 5%;
+                left: 5%;
+                bottom: 20px;
+            }
+
+            .ai-assistant-body {
+                height: 270px; /* Decreased height for mobile */
+            }
+
+            .quick-actions {
+                grid-template-columns: repeat(2, 1fr);  /* 2 buttons per row on mobile */
+            }
+        }
+
+        /* Keep the existing animations */
+        .quick-actions button i {
+            animation: bounce 2s infinite;
+        }
+
+        .fa-seedling { animation: grow 2s infinite !important; }
+        .fa-cloud-sun { animation: weather 4s infinite !important; }
+        .fa-bug { animation: wiggle 2s infinite !important; }
+        .fa-calendar-alt { animation: pulse 2s infinite !important; }
+        .fa-robot { animation: wave 2s infinite !important; }
+
+        /* Keep existing animation keyframes */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        @keyframes grow {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        @keyframes weather {
+            0% { transform: translateX(0) rotate(0); }
+            25% { transform: translateX(3px) rotate(15deg); }
+            75% { transform: translateX(-3px) rotate(-15deg); }
+            100% { transform: translateX(0) rotate(0); }
+        }
+
+        @keyframes wiggle {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(3px); }
+            75% { transform: translateX(-3px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        @keyframes wave {
+            0%, 100% { transform: rotate(0); }
+            25% { transform: rotate(-20deg); }
+            75% { transform: rotate(20deg); }
+        }
+
+        /* Update AI assistant styling for a more professional look */
+        .ai-assistant {
+            position: fixed;
+            right: 30px;
+            bottom: 30px;
+            width: 600px;
+            height: 400px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .ai-assistant-header {
+            padding: 16px 20px;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .ai-assistant-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+            font-size: 16px;
+        }
+
+        .ai-assistant-title i {
+            font-size: 18px;
+        }
+
+        .ai-controls button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .ai-controls button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .ai-assistant-body {
+            height: calc(400px - 60px); /* Adjust based on header height */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ai-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .ai-message {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .ai-avatar {
+            width: 36px;
+            height: 36px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            max-width: 80%;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #2c3e50;
+        }
+
+        .user-message .message-content {
+            background: var(--primary-color);
+            color: white;
+            margin-left: auto;
+        }
+
+        .ai-input {
+            padding: 16px;
+            background: white;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            display: flex;
+            gap: 12px;
+        }
+
+        .ai-input input {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-radius: 24px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .ai-input input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .ai-input button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .ai-input button:hover {
+            background: var(--primary-dark);
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .quick-actions button {
+            background: #f8f9fa;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #2c3e50;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .quick-actions button:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .quick-actions button i {
+            font-size: 14px;
+        }
+
+        /* Custom scrollbar for messages */
+        .ai-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .ai-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .ai-messages::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .ai-messages::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .ai-assistant {
+                width: 90%;
+                height: 350px; /* Decreased height for mobile */
+                right: 5%;
+                left: 5%;
+                bottom: 20px;
+            }
+
+            .ai-assistant-body {
+                height: calc(350px - 60px);
+            }
+
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Add these additional styles to your existing CSS */
+        .user-message {
+            flex-direction: row-reverse;
+        }
+
+        .user-message .message-content {
+            background: var(--primary-color);
+            color: white;
+            margin-left: 0;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+            padding: 8px 0;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            opacity: 0.4;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            50% {
+                transform: translateY(-4px);
+                opacity: 1;
+            }
+        }
+
+        /* Professional AI Assistant Design */
+        .ai-assistant {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        .ai-header {
+            background: #2D5A27;
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ai-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .minimize-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .ai-messages {
+            height: 400px;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: #f5f5f5;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .ai-message {
+            background: white;
+            align-self: flex-start;
+        }
+
+        .user-message {
+            background: #2D5A27;
+            color: white;
+            align-self: flex-end;
+        }
+
+        .ai-input-container {
+            padding: 12px;
+            display: flex;
+            gap: 8px;
+            border-top: 1px solid #eee;
+            background: white;
+        }
+
+        .ai-input-container input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .send-btn {
+            background: #2D5A27;
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .send-btn:hover {
+            background: #234621;
+        }
+
+        .ai-assistant.minimized {
+            height: 60px;
+            overflow: hidden;
+        }
+
+        .ai-assistant-header {
+            padding: 16px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ai-assistant-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+        }
+
+        .ai-avatar {
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ai-controls button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .ai-controls button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .ai-assistant-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .ai-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .ai-message {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: messageAppear 0.3s ease forwards;
+        }
+
+        @keyframes messageAppear {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-content {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            max-width: 80%;
+            line-height: 1.5;
+        }
+
+        .user-message {
+            flex-direction: row-reverse;
+        }
+
+        .user-message .message-content {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 12px;
+            width: fit-content;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            animation: typing 1s infinite;
+        }
+
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        .ai-input {
+            padding: 16px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 12px;
+        }
+
+        .ai-input input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 24px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .ai-input input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(45, 90, 39, 0.1);
+        }
+
+        .ai-input button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .ai-input button:hover {
+            background: var(--primary-dark);
+            transform: scale(1.05);
+        }
+
+        .quick-actions {
+            padding: 12px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            background: white;
+            border-top: 1px solid #eee;
+        }
+
+        .quick-actions button {
+            background: #f8f9fa;
+            border: 1px solid #eee;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--text-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .quick-actions button:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .quick-actions button i {
+            font-size: 14px;
+        }
+
+        /* Custom scrollbar for messages */
+        .ai-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .ai-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .ai-messages::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .ai-messages::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .ai-assistant {
+                width: 90%;
+                height: 350px; /* Decreased height for mobile */
+                right: 5%;
+                left: 5%;
+                bottom: 20px;
+            }
+
+            .ai-assistant-body {
+                height: calc(350px - 60px);
+            }
+
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Add these additional styles to your existing CSS */
+        .user-message {
+            flex-direction: row-reverse;
+        }
+
+        .user-message .message-content {
+            background: var(--primary-color);
+            color: white;
+            margin-left: 0;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+            padding: 8px 0;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            opacity: 0.4;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            50% {
+                transform: translateY(-4px);
+                opacity: 1;
+            }
+        }
+
+        /* Professional AI Assistant Design */
+        .ai-assistant {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        .ai-header {
+            background: #2D5A27;
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ai-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .minimize-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .ai-messages {
+            height: 400px;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: #f5f5f5;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .ai-message {
+            background: white;
+            align-self: flex-start;
+        }
+
+        .user-message {
+            background: #2D5A27;
+            color: white;
+            align-self: flex-end;
+        }
+
+        .ai-input-container {
+            padding: 12px;
+            display: flex;
+            gap: 8px;
+            border-top: 1px solid #eee;
+            background: white;
+        }
+
+        .ai-input-container input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .send-btn {
+            background: #2D5A27;
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .send-btn:hover {
+            background: #234621;
+        }
+
+        .ai-assistant.minimized {
+            height: 60px;
+            overflow: hidden;
+        }
+
+        .ai-assistant-header {
+            padding: 16px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ai-assistant-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+        }
+
+        .ai-avatar {
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ai-controls button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .ai-controls button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .ai-assistant-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .ai-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .ai-message {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: messageAppear 0.3s ease forwards;
+        }
+
+        @keyframes messageAppear {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-content {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            max-width: 80%;
+            line-height: 1.5;
+        }
+
+        .user-message {
+            flex-direction: row-reverse;
+        }
+
+        .user-message .message-content {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 12px;
+            width: fit-content;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            animation: typing 1s infinite;
+        }
+
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        .ai-input {
+            padding: 16px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 12px;
+        }
+
+        .ai-input input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 24px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .ai-input input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(45, 90, 39, 0.1);
+        }
+
+        .ai-input button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .ai-input button:hover {
+            background: var(--primary-dark);
+            transform: scale(1.05);
+        }
+
+        .quick-actions {
+            padding: 12px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            background: white;
+            border-top: 1px solid #eee;
+        }
+
+        .quick-actions button {
+            background: #f8f9fa;
+            border: 1px solid #eee;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--text-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .quick-actions button:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        /* Add these updated styles for better formatting */
+        <style>
+        .message-content {
+            white-space: pre-line;
+            font-size: 14px;
+            line-height: 2;
+            padding: 16px 20px;
+            letter-spacing: 0.3px;
+        }
+
+        .message-content ul, 
+        .message-content ol {
+            margin: 12px 0;
+            padding-left: 24px;
+        }
+
+        .message-content li {
+            margin: 10px 0;
+            padding-left: 8px;
+        }
+
+        .ai-message:first-child .message-content {
+            background: linear-gradient(to bottom right, #f0f7f0, #ffffff);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        /* Add spacing between question blocks */
+        .message-content p {
+            margin: 12px 0;
+        }
+
+        /* Style for question formatting */
+        .message-content [class^="Q"] {
+            margin: 16px 0;
+            padding-left: 16px;
+            border-left: 2px solid var(--primary-color);
+        }
+        </style>
     </style>
 </head>
 <body>
@@ -3571,536 +5177,445 @@ if ($notifications && mysqli_num_rows($notifications) > 0) {
         </div>
     </div>
 
-    <script>
-    // Prevent form resubmission on page refresh
-    if (window.history.replaceState) {
-        window.history.replaceState(null, null, window.location.href);
-    }
-    
-    // Remove the loading screen if it exists
-    window.onload = function() {
-        const loadingScreen = document.querySelector('.loading-screen');
-        if (loadingScreen) {
-            loadingScreen.style.display = 'none';
-        }
-    }
-
-    function toggleLocationUpdate() {
-        const form = document.getElementById('locationUpdateForm');
-        form.classList.toggle('show');
-        
-        // If the form is being shown, scroll it into view
-        if (form.classList.contains('show')) {
-            form.scrollIntoView({ behavior: 'smooth' });
-        }
-    }
-
-    // Add form submission handling
-    document.addEventListener('DOMContentLoaded', function() {
-        const locationForm = document.getElementById('locationUpdateForm');
-        if (locationForm) {
-            locationForm.addEventListener('submit', function(e) {
-                const selectedLocation = document.getElementById('farm_location').value;
-                if (!selectedLocation) {
-                    e.preventDefault();
-                    alert('Please select a location before submitting.');
-                }
-            });
-        }
-    });
-
-    function handleDistrictChange(district) {
-        const subPlaceWrapper = document.getElementById('subPlaceWrapper');
-        const subPlaceSelect = document.getElementById('sub_place');
-        const weatherInfo = document.getElementById('weatherInfo');
-        
-        // Clear previous weather info
-        weatherInfo.style.display = 'none';
-        
-        // Reset sub-place dropdown
-        subPlaceSelect.innerHTML = '<option value="">Select location</option>';
-        
-        // Show suitability message
-        const suitabilityMessage = document.createElement('div');
-        suitabilityMessage.className = 'suitability-message';
-        
-        if (district === 'Idukki' || district === 'Wayanad') {
-            suitabilityMessage.innerHTML = `
-                <div class="suitability-indicator suitable">
-                    <i class="fas fa-check-circle"></i>
-                    <div class="suitability-content">
-                        <h4>${district} - Highly Suitable for Cardamom Cultivation</h4>
-                        <p>Ideal conditions: High altitude, suitable climate, and optimal rainfall pattern.</p>
-                        ${district === 'Idukki' ? 
-                            '<p>Best areas: Vandanmedu, Kumily, Udumbanchola regions</p>' : 
-                            '<p>Best areas: Vythiri, Meppadi, Sultan Bathery regions</p>'
-                        }
-                    </div>
+    <!-- Replace the existing AI assistant HTML with this improved version -->
+    <div class="ai-assistant" id="aiAssistant">
+        <div class="ai-assistant-header">
+            <div class="ai-assistant-title">
+                <div class="ai-avatar">
+                    <i class="fas fa-robot"></i>
                 </div>
-            `;
-            
-            // Get places for selected district
-            const places = <?php echo json_encode($district_places); ?>[district];
-            
-            // Populate sub-place dropdown
-            places.forEach(place => {
-                const option = document.createElement('option');
-                option.value = place;
-                option.textContent = place;
-                subPlaceSelect.appendChild(option);
-            });
-            
-            subPlaceWrapper.style.display = 'block';
-        } else {
-            suitabilityMessage.innerHTML = `
-                <div class="suitability-indicator unsuitable">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <div class="suitability-content">
-                        <h4>${district} - Not Recommended for Cardamom Cultivation</h4>
-                        <p>This region may not provide optimal conditions for cardamom growth.</p>
-                        <p>Consider selecting areas in Idukki or Wayanad districts for better results.</p>
-                    </div>
-                </div>
-            `;
-            subPlaceWrapper.style.display = 'none';
-        }
-        
-        // Add or update suitability message
-        const existingMessage = document.querySelector('.suitability-message');
-        if (existingMessage) {
-            existingMessage.replaceWith(suitabilityMessage);
-        } else {
-            subPlaceWrapper.parentNode.insertBefore(suitabilityMessage, subPlaceWrapper);
-        }
-    }
-
-    function getWeatherForLocation(location) {
-        if (!location) return;
-        
-        const weatherInfo = document.getElementById('weatherInfo');
-        const weatherDetails = document.getElementById('weatherDetails');
-        
-        // Show loading state
-        weatherDetails.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Loading weather data...</p>';
-        weatherInfo.style.display = 'block';
-        
-        // Fetch weather data using the OpenWeatherMap API
-        fetch(`https://api.openweathermap.org/data/2.5/weather?q=${location},IN&units=metric&appid=<?php echo $weather_api_key; ?>`)
-            .then(response => response.json())
-            .then(data => {
-                weatherDetails.innerHTML = `
-                    <p><i class="fas fa-temperature-high"></i> Temperature: ${Math.round(data.main.temp)}°C</p>
-                    <p><i class="fas fa-tint"></i> Humidity: ${data.main.humidity}%</p>
-                    <p><i class="fas fa-wind"></i> Wind: ${data.wind.speed} m/s</p>
-                    <p><i class="fas fa-cloud"></i> Weather: ${data.weather[0].description}</p>
-                `;
-            })
-            .catch(error => {
-                weatherDetails.innerHTML = '<p><i class="fas fa-exclamation-circle"></i> Unable to fetch weather data</p>';
-            });
-    }
-    </script>
-
-    <!-- Add this right before the closing </body> tag -->
-    <div class="chat-widget" id="chatWidget">
-        <div class="chat-header" onclick="toggleChat()">
-            <i class="fas fa-robot"></i>
-            <span>Farming Assistant</span>
-            <button class="chat-minimize" id="chatMinimize">
-                <i class="fas fa-minus"></i>
-            </button>
-        </div>
-        <div class="chat-body" id="chatBody">
-            <div class="chat-messages" id="chatMessages">
-                <div class="message bot-message">
-                    Hello! I'm your farming assistant. How can I help you today?
-                </div>
+                <span>GrowGuide AI Assistant</span>
             </div>
-            <div class="chat-input">
-                <input type="text" id="userInput" placeholder="Type your question..." onkeypress="handleKeyPress(event)">
-                <button onclick="sendMessage()">
+            <div class="ai-controls">
+                <button id="minimizeAI"><i class="fas fa-minus"></i></button>
+            </div>
+        </div>
+
+        <div class="ai-assistant-body">
+            <div class="ai-messages" id="aiMessages">
+                <!-- Messages will be populated here -->
+            </div>
+
+            <div class="ai-input">
+                <input type="text" id="aiQuery" placeholder="Ask me anything about farming...">
+                <button id="sendQuery">
                     <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+
+            <div class="quick-actions">
+                <button onclick="askQuestion('What are the ideal conditions for cardamom growth?')">
+                    <i class="fas fa-seedling"></i> Growing Conditions
+                </button>
+                <button onclick="askQuestion('How do I identify common cardamom diseases?')">
+                    <i class="fas fa-bug"></i> Disease Help
+                </button>
+                <button onclick="askQuestion('When is the best time to harvest cardamom?')">
+                    <i class="fas fa-clock"></i> Harvest Timing
+                </button>
+                <button onclick="askQuestion('What are today\'s cardamom market prices?')">
+                    <i class="fas fa-chart-line"></i> Market Prices
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Add this JavaScript before the closing </body> tag -->
-    <script>
-        let isMinimized = false;
-
-        function toggleChat() {
-            const chatWidget = document.getElementById('chatWidget');
-            const minimizeIcon = document.querySelector('#chatMinimize i');
-            
-            isMinimized = !isMinimized;
-            chatWidget.classList.toggle('minimized');
-            minimizeIcon.className = isMinimized ? 'fas fa-plus' : 'fas fa-minus';
-        }
-
-        function sendMessage() {
-            const userInput = document.getElementById('userInput');
-            const message = userInput.value.trim();
-            
-            if (message) {
-                addMessage(message, 'user');
-                userInput.value = '';
-                
-                // Process the message and get bot response
-                processUserMessage(message);
-            }
-        }
-
-        function handleKeyPress(event) {
-            if (event.key === 'Enter') {
-                sendMessage();
-            }
-        }
-
-        function addMessage(text, sender) {
-            const chatMessages = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}-message`;
-            messageDiv.textContent = text;
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        function processUserMessage(message) {
-            const farmerName = '<?php echo $username; ?>';
-            const hour = new Date().getHours();
-            let timeGreeting = getTimeGreeting(hour);
-
-            // Show typing indicator
-            const chatMessages = document.getElementById('chatMessages');
-            const typingIndicator = document.createElement('div');
-            typingIndicator.className = 'message bot-message typing';
-            typingIndicator.innerHTML = '<span></span><span></span><span></span>';
-            chatMessages.appendChild(typingIndicator);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-
-            // Process the message and generate response
-            setTimeout(() => {
-                // Remove typing indicator
-                chatMessages.removeChild(typingIndicator);
-                
-                let response = '';
-                const lowerMessage = message.toLowerCase();
-
-                // Check if it's the initial greeting or a subsequent message
-                if (document.getElementById('chatMessages').children.length <= 3) {
-                    response = `${timeGreeting}, ${farmerName}! 👋
-
-I'm your AI Farming Assistant, here to help with cardamom cultivation. 
-
-🌟 How to Ask Questions:
-• Be specific (e.g., "How do I plant cardamom?" rather than "Help with planting")
-• One topic at a time for better answers
-• Mention the growth stage if relevant
-
-💡 You can ask about:
-• Planting & Cultivation
-• Irrigation & Water Management
-• Fertilizers & Nutrients
-• Pest & Disease Control
-• Harvesting Tips
-• Market Information
-
-📝 Example Questions:
-"When is the best time to plant cardamom?"
-"How often should I water during summer?"
-"What are the signs of pest infestation?"
-"How do I know when to harvest?"
-
-What would you like to know about?`;
-                } else {
-                    // Process actual user questions
-                    response = getResponseForMessage(lowerMessage, farmerName, timeGreeting);
-                }
-
-                addMessage(response, 'bot');
-            }, 1000);
-        }
-
-        // Add this new function to generate appropriate responses
-        function getResponseForMessage(message, farmerName, timeGreeting) {
-            // Check for greetings first
-            if (message.match(/^(hi|hello|hey|greetings)/i)) {
-                return `${timeGreeting}, ${farmerName}! How can I help with your cardamom farming today?`;
-            }
-            
-            // Check for common queries by keywords
-            if (message.includes('plant') || message.includes('planting') || message.includes('cultivation')) {
-                return `For cardamom planting:
-
-1. Best time: May-June (pre-monsoon)
-2. Spacing: 2m × 2m between plants
-3. Planting depth: 30-45cm pits
-4. Soil preparation: Add organic matter and ensure good drainage
-5. Shade: Ensure 40-60% shade for optimal growth
-
-Would you like more specific information about any part of the planting process?`;
-            }
-            
-            if (message.includes('water') || message.includes('irrigation')) {
-                return `Cardamom irrigation guidelines:
-
-1. Young plants need watering every 2-3 days
-2. Established plants need 15-20mm water weekly
-3. Drip irrigation is most efficient
-4. Reduce watering slightly during cool seasons
-5. Increase during hot, dry periods
-6. Avoid waterlogging as it causes root rot
-
-Is there anything specific about irrigation you'd like to know?`;
-            }
-            
-            if (message.includes('fertilizer') || message.includes('nutrient')) {
-                return `Cardamom fertilizer recommendations:
-
-1. NPK requirement: 75:75:150 kg/hectare annually
-2. Apply in 2-3 split doses during growing season
-3. First application: April-May (pre-monsoon)
-4. Second application: September-October (post-monsoon)
-5. Organic options: Vermicompost, farmyard manure
-6. Micronutrients: Foliar spray of zinc and boron beneficial
-
-Would you like a specific fertilizer schedule for your cardamom plantation?`;
-            }
-            
-            if (message.includes('pest') || message.includes('disease') || message.includes('insect')) {
-                return `Common cardamom pests and diseases:
-
-1. Thrips: Causes leaf curling and yield reduction
-   Control: Spray neem oil (0.3%) or appropriate insecticide
-
-2. Root grub: Damages roots and causes wilting
-   Control: Apply neem cake around the root zone
-
-3. Capsule rot: Fungal disease causing fruit decay
-   Control: Proper drainage and fungicide application
-
-4. Katte (mosaic) disease: Viral disease causing yellowing
-   Control: Remove infected plants, use disease-free planting material
-
-Would you like specific control measures for any particular issue?`;
-            }
-            
-            if (message.includes('harvest') || message.includes('yield')) {
-                return `Cardamom harvesting guidelines:
-
-1. Maturity: Capsules fully developed but still green (30-35mm size)
-2. First harvest: 2-3 years after planting
-3. Harvest cycle: Every 25-30 days during season
-4. Technique: Pick mature capsules individually by hand
-5. Season: Main harvest August-February
-6. Post-harvest: Proper drying crucial for quality (45-50°C)
-7. Expected yield: 200-250 kg/hectare (good management)
-
-Would you like to know more about post-harvest processing?`;
-            }
-            
-            if (message.includes('price') || message.includes('market') || message.includes('sell')) {
-                return `Current cardamom market information:
-
-1. Latest price: ₹2,963/kg for small cardamom (premium grade)
-2. Market trend: Stable with seasonal fluctuations
-3. Best markets: Bodinayakanur (TN), Vandanmedu (Kerala)
-4. Quality factors affecting price:
-   - Color (bright green fetches premium)
-   - Size (7-8mm capsules preferred)
-   - Aroma intensity
-   - Moisture content (10-12% ideal)
-
-For real-time prices, check the Spices Board India website or contact your local agricultural office.`;
-            }
-            
-            if (message.includes('soil') || message.includes('test')) {
-                return `Soil requirements for cardamom:
-
-1. Ideal pH: 6.0-6.5 (slightly acidic)
-2. Soil type: Well-drained, humus-rich forest soil
-3. Testing frequency: Every 6-12 months
-4. Key nutrients to monitor:
-   - Nitrogen (N): 150-200 kg/ha
-   - Phosphorus (P): 50-75 kg/ha
-   - Potassium (K): 300-350 kg/ha
-   - Secondary nutrients: Ca, Mg, S
-   - Micronutrients: Zn, B, Fe
-
-You can schedule a soil test through our system - check the Soil Test section in the sidebar!`;
-            }
-            
-            if (message.includes('weather') || message.includes('climate')) {
-                return `Optimal climate conditions for cardamom:
-
-1. Temperature: 10-35°C (ideal: 15-25°C)
-2. Rainfall: 1500-4000mm annually
-3. Humidity: 60-85%
-4. Altitude: 600-1500m above sea level
-5. Shade: 40-60% (filtered light)
-
-Cardamom is sensitive to prolonged dry spells and frost. In high-rainfall areas, ensure proper drainage to prevent waterlogging and disease issues.
-
-You can check current weather in your farm location on the dashboard!`;
-            }
-            
-            if (message.includes('thank')) {
-                return `You're welcome, ${farmerName}! If you have any more questions about cardamom cultivation, feel free to ask. I'm here to help!`;
-            }
-            
-            // Default response for unrecognized queries
-            return `I'm not quite sure about that specific question. Could you provide more details or rephrase? 
-
-You can ask about:
-• Planting & cultivation techniques
-• Irrigation & water management
-• Fertilizers & nutrient requirements
-• Pest & disease management
-• Harvesting & processing
-• Market information & prices`;
-        }
-
-        // Helper function for time-based greeting
-        function getTimeGreeting(hour) {
-            if (hour >= 5 && hour < 12) return 'Good morning';
-            if (hour >= 12 && hour < 17) return 'Good afternoon';
-            if (hour >= 17 && hour < 22) return 'Good evening';
-            return 'Hello';
-        }
-
-        // Event listener for minimizing chat
-        document.getElementById('chatMinimize').addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleChat();
-        });
-    </script>
-
-    <!-- Add this JavaScript to show the tooltip for first-time users -->
+    <!-- Add this JavaScript before the closing body tag -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Check if it's the user's first time
-        if (!localStorage.getItem('chatWidgetSeen')) {
-            document.querySelector('.chat-widget').classList.add('first-time');
-            
-            // Remove the first-time class after the user clicks
-            document.querySelector('.chat-widget').addEventListener('click', function() {
-                this.classList.remove('first-time');
-                localStorage.setItem('chatWidgetSeen', 'true');
+        const aiAssistant = document.getElementById('aiAssistant');
+        const aiMessages = document.getElementById('aiMessages');
+        const aiInput = document.getElementById('aiQuery');
+        const sendButton = document.getElementById('sendQuery');
+        const minimizeButton = document.getElementById('minimizeAI');
+        
+        // Replace the initial greeting with this better formatted version
+        addAIMessage(`
+👋 Welcome to GrowGuide AI!
+
+Hello jiji jacob! I'm your dedicated Cardamom Farming Assistant.
+
+🌿 I'm here to help you with:
+
+1. 🌱 Planting & Cultivation
+2. 💧 Irrigation Management 
+3. 🔍 Disease Identification
+4. 🐛 Pest Control
+5. 🌿 Fertilizer Guidelines
+6. 🌾 Harvesting Best Practices
+7. ☀️ Weather Impact Analysis
+8. 📊 Market Trends & Prices
+
+💡 For the most helpful answers:
+• Be specific with your questions
+• Tell me your plants' growth stage
+• Describe any symptoms or concerns
+
+📝 Example Questions:
+Q1: "What's the best spacing for new cardamom plants?"
+Q2: "How do I treat yellowing cardamom leaves?"
+Q3: "When should I harvest my cardamom pods?"
+Q4: "What's the ideal watering schedule during flowering?"
+
+🤝 Ready to assist you in growing healthy, productive cardamom!
+Type your question below to get started...
+        `);
+
+        // Send message on button click or Enter key
+        sendButton.addEventListener('click', handleUserMessage);
+        aiInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleUserMessage();
+            }
+        });
+
+        // Minimize/Maximize AI assistant
+        minimizeButton.addEventListener('click', function() {
+            aiAssistant.classList.toggle('minimized');
+            minimizeButton.querySelector('i').classList.toggle('fa-minus');
+            minimizeButton.querySelector('i').classList.toggle('fa-plus');
+        });
+
+        function handleUserMessage() {
+            const message = aiInput.value.trim();
+            if (!message) return;
+
+            // Add user message
+            addUserMessage(message);
+            aiInput.value = '';
+
+            // Show typing animation
+            showTypingIndicator();
+
+            // Simulate AI processing (replace with actual API call)
+            setTimeout(() => {
+                removeTypingIndicator();
+                processUserQuery(message);
+            }, 1500);
+        }
+
+        function addUserMessage(text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'ai-message user-message';
+            messageDiv.innerHTML = `
+                <div class="message-content">${text}</div>
+            `;
+            aiMessages.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        function addAIMessage(text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'ai-message';
+            messageDiv.innerHTML = `
+                <div class="ai-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="message-content">${text}</div>
+            `;
+            aiMessages.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        function showTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'ai-message typing-indicator';
+            typingDiv.innerHTML = `
+                <div class="ai-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="typing-dots">
+                    <span></span><span></span><span></span>
+                </div>
+            `;
+            aiMessages.appendChild(typingDiv);
+            scrollToBottom();
+        }
+
+        function removeTypingIndicator() {
+            const typingIndicator = aiMessages.querySelector('.typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        function scrollToBottom() {
+            aiMessages.scrollTop = aiMessages.scrollHeight;
+        }
+
+        function processUserQuery(query) {
+            // Get AI response using PHP function
+            fetch('get_ai_response.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'query=' + encodeURIComponent(query)
+            })
+            .then(response => response.text())
+            .then(response => {
+                addAIMessage(response);
+            })
+            .catch(error => {
+                addAIMessage("I apologize, but I'm having trouble processing your request. Please try again.");
             });
+        }
+
+        // Function to handle quick action buttons
+        window.askQuestion = function(question) {
+            aiInput.value = question;
+            handleUserMessage();
         }
     });
     </script>
 
-    <!-- Add scroll-to buttons -->
-    <div class="scroll-btn scroll-to-top" onclick="scrollToTop()" title="Scroll to Top">
-        <i class="fas fa-arrow-up"></i>
-    </div>
-    
-    <div class="scroll-btn scroll-to-bottom" onclick="scrollToBottom()" title="Scroll to Bottom">
-        <i class="fas fa-arrow-down"></i>
-    </div>
+    <!-- Add these additional styles to your existing CSS -->
+    <style>
+    .ai-assistant {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 380px;
+        height: 600px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s ease;
+        z-index: 1000;
+    }
 
-    <!-- Add this JavaScript for scroll buttons -->
-    <script>
-    // Show/hide scroll-to-top button based on scroll position
-    window.onscroll = function() {
-        const scrollTopBtn = document.querySelector('.scroll-to-top');
-        if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
-            scrollTopBtn.classList.add('visible');
-        } else {
-            scrollTopBtn.classList.remove('visible');
+    .ai-assistant.minimized {
+        height: 60px;
+        overflow: hidden;
+    }
+
+    .ai-assistant-header {
+        padding: 16px;
+        background: var(--primary-color);
+        color: white;
+        border-radius: 12px 12px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .ai-assistant-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 500;
+    }
+
+    .ai-avatar {
+        width: 36px;
+        height: 36px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ai-controls button {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+
+    .ai-controls button:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .ai-assistant-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .ai-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        background: #f8f9fa;
+    }
+
+    .ai-message {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+        opacity: 0;
+        transform: translateY(20px);
+        animation: messageAppear 0.3s ease forwards;
+    }
+
+    @keyframes messageAppear {
+        to {
+            opacity: 1;
+            transform: translateY(0);
         }
-    };
-
-    function scrollToTop() {
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
     }
 
-    function scrollToBottom() {
-        window.scrollTo({
-            top: document.body.scrollHeight,
-            behavior: 'smooth'
-        });
+    .message-content {
+        background: white;
+        padding: 12px 16px;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        max-width: 80%;
+        line-height: 1.5;
     }
+
+    .user-message {
+        flex-direction: row-reverse;
+    }
+
+    .user-message .message-content {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .typing-dots {
+        display: flex;
+        gap: 4px;
+        padding: 12px 16px;
+        background: white;
+        border-radius: 12px;
+        width: fit-content;
+    }
+
+    .typing-dots span {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        animation: typing 1s infinite;
+    }
+
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-6px); }
+    }
+
+    .ai-input {
+        padding: 16px;
+        background: white;
+        border-top: 1px solid #eee;
+        display: flex;
+        gap: 12px;
+    }
+
+    .ai-input input {
+        flex: 1;
+        padding: 12px 16px;
+        border: 1px solid #ddd;
+        border-radius: 24px;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .ai-input input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(45, 90, 39, 0.1);
+    }
+
+    .ai-input button {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .ai-input button:hover {
+        background: var(--primary-dark);
+        transform: scale(1.05);
+    }
+
+    .quick-actions {
+        padding: 12px;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        background: white;
+        border-top: 1px solid #eee;
+    }
+
+    .quick-actions button {
+        background: #f8f9fa;
+        border: 1px solid #eee;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        color: var(--text-color);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+    .quick-actions button:hover {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+        transform: translateY(-2px);
+    }
+    </style>
+
+    <!-- Only weather message element -->
+    <div id="weatherMessage" class="running-message weather-message" style="display: none;">
+        <i class="fas fa-cloud-sun fa-spin"></i>
+        <span id="weatherText">Updating weather information...</span>
+    </div>
+
+    <script>
+    // Weather message functions only
+    function showWeatherMessage(message) {
+        const weatherMsg = document.getElementById('weatherMessage');
+        const weatherText = document.getElementById('weatherText');
+        weatherText.textContent = message;
+        weatherMsg.style.display = 'flex';
+    }
+
+    function hideWeatherMessage() {
+        const weatherMsg = document.getElementById('weatherMessage');
+        weatherMsg.style.display = 'none';
+    }
+
+    function updateWeather() {
+        showWeatherMessage('Fetching latest weather data...');
+        // Your weather update logic here
+        setTimeout(() => {
+            showWeatherMessage('Weather data updated successfully!');
+            setTimeout(hideWeatherMessage, 3000);
+        }, 2000);
+    }
+
+    // Auto-update weather periodically
+    setInterval(() => {
+        updateWeather();
+    }, 1800000); // Update every 30 minutes
+
+    // Initial weather update
+    document.addEventListener('DOMContentLoaded', () => {
+        updateWeather();
+    });
     </script>
 </body>
 </html>
-
-<!-- Add this before closing body tag -->
-<?php
-// Check if soil test is needed (you can modify this condition based on your requirements)
-$last_soil_test_date = strtotime("2024-01-01"); // Replace with actual date from database
-$days_since_last_test = floor((time() - $last_soil_test_date) / (60 * 60 * 24));
-$soil_test_needed = $days_since_last_test > 90; // If more than 90 days since last test
-
-if ($soil_test_needed):
-?>
-<div class="running-message" onclick="window.location.href='weather.php'">
-    <i class="fas fa-cloud-sun"></i>
-    <div class="running-message-content">
-        <span class="running-message-text">Check Today's Weather Forecast!</span>
-        <a href="weather.php" class="running-message-link">
-            View Details <i class="fas fa-arrow-right"></i>
-        </a>
-    </div>
-</div>
-
-<div class="soil-test-running-message" onclick="window.location.href='soil_test.php'">
-    <div class="message-icon">
-        <i class="fas fa-flask"></i>
-    </div>
-    <div class="message-content">
-        <div class="message-text">
-            <span class="primary-text">Soil Test Due!</span>
-        </div>
-        <a href="soil_test.php" class="message-action">
-            Test Now <i class="fas fa-arrow-right"></i>
-        </a>
-    </div>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle weather message animation
-    const weatherMessage = document.querySelector('.running-message');
-    if (weatherMessage) {
-        weatherMessage.addEventListener('animationend', function() {
-            this.style.animation = 'none';
-            this.offsetHeight; // Trigger reflow
-            this.style.animation = 'slideInOut 15s linear infinite';
-        });
-    }
-
-    // Handle soil test message animation
-    const soilTestMessage = document.querySelector('.soil-test-running-message');
-    if (soilTestMessage) {
-        soilTestMessage.addEventListener('animationend', function() {
-            this.style.animation = 'none';
-            this.offsetHeight; // Trigger reflow
-            this.style.animation = 'slideInOut 15s linear infinite 1s';
-        });
-    }
-});
-</script>
-<?php endif; ?>
-
-<!-- Add this JavaScript if you haven't already -->
-<script>
-function scrollToSection(sectionId) {
-    const section = document.getElementById(sectionId);
-    if (section) {
-        const offset = 80; // Adjust this value as needed
-        const sectionPosition = section.getBoundingClientRect().top;
-        const offsetPosition = sectionPosition + window.pageYOffset - offset;
-
-        window.scrollTo({
-            top: offsetPosition,
-            behavior: 'smooth'
-        });
-    }
-}
-</script>

@@ -26,13 +26,13 @@ function sendTaskNotification($userEmail, $taskTitle, $taskDate, $taskDescriptio
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
-        $mail->Username   = 'sherinmariyamvarghese@gmail.com';  // Your Gmail address
-        $mail->Password   = 'uhfo rkzj aewm kdpb';              // Your Gmail app password
+        $mail->Username   = 'growguide2025@gmail.com';  // Your Gmail address
+        $mail->Password   = 'uhfo rkzj aewm kdpb';   ;  // Your Gmail app password
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = 587;
         
         // Recipients
-        $mail->setFrom('sherinmariyamvarghese2027@mca.ajce.in', 'GrowGuide');
+        $mail->setFrom('growguide2025@gmail.com', 'GrowGuide');
         $mail->addAddress($userEmail);
         
         // Format date for better readability
@@ -87,6 +87,94 @@ function sendTaskNotification($userEmail, $taskTitle, $taskDate, $taskDescriptio
     } catch (Exception $e) {
         error_log("Task notification email failed: " . $mail->ErrorInfo);
         return false;
+    }
+}
+
+// Add this new function after the existing sendTaskNotification function
+function sendReminderNotification($userEmail, $taskTitle, $taskDate, $taskDescription, $priority) {
+    $mail = new PHPMailer(true);
+    
+    try {
+        // Server settings
+        $mail->isSMTP();
+        $mail->Host       = 'smtp.gmail.com';
+        $mail->SMTPAuth   = true;
+        $mail->Username   = 'sherinmariyamvarghese@gmail.com';
+        $mail->Password   = 'uhfo rkzj aewm kdpb';
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = 587;
+        
+        // Recipients
+        $mail->setFrom('sherinmariyamvarghese2027@mca.ajce.in', 'GrowGuide');
+        $mail->addAddress($userEmail);
+        
+        // Format date for better readability
+        $formattedDate = date('l, F j, Y', strtotime($taskDate));
+        
+        // Priority label
+        $priorityLabel = ucfirst($priority);
+        $priorityIcon = ($priority == 'high') ? '🔴' : (($priority == 'medium') ? '🟠' : '🟢');
+        
+        // Content
+        $mail->isHTML(true);
+        $mail->Subject = "GrowGuide: Reminder - Task Tomorrow - $taskTitle";
+        
+        // Create an attractive HTML email body
+        $mail->Body = "
+        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;'>
+            <div style='background-color: #2D5A27; padding: 15px; border-radius: 5px 5px 0 0;'>
+                <h2 style='color: white; margin: 0;'>🌱 GrowGuide - Task Reminder</h2>
+            </div>
+            
+            <div style='padding: 20px; background-color: #f9f9f9;'>
+                <p style='font-size: 16px;'>Hello Farmer,</p>
+                
+                <p style='font-size: 16px;'>This is a reminder for your scheduled farming task tomorrow:</p>
+                
+                <div style='background-color: white; border-left: 4px solid #2D5A27; padding: 15px; margin: 15px 0; border-radius: 4px;'>
+                    <h3 style='color: #2D5A27; margin-top: 0;'>$taskTitle</h3>
+                    <p><strong>Date:</strong> $formattedDate</p>
+                    <p><strong>Priority:</strong> <span style='color: " . ($priority == 'high' ? '#dc3545' : ($priority == 'medium' ? '#28a745' : '#6c757d')) . ";'>$priorityIcon $priorityLabel</span></p>
+                    <p><strong>Description:</strong><br>$taskDescription</p>
+                </div>
+                
+                <p>Please make necessary preparations for tomorrow's task.</p>
+                
+                <div style='margin-top: 30px;'>
+                    <p style='margin-bottom: 5px;'>Happy Farming!</p>
+                    <p style='margin-top: 0;'><em>- The GrowGuide Team</em></p>
+                </div>
+            </div>
+        </div>
+        ";
+        
+        $mail->AltBody = "Reminder: Task Tomorrow\nTask: $taskTitle\nDate: $formattedDate\nPriority: $priorityLabel\nDescription: $taskDescription";
+        
+        $mail->send();
+        return true;
+    } catch (Exception $e) {
+        error_log("Reminder notification email failed: " . $mail->ErrorInfo);
+        return false;
+    }
+}
+
+// Add this function to schedule the reminder
+function scheduleReminder($taskId, $userEmail, $taskTitle, $taskDate, $taskDescription, $priority) {
+    // Calculate the reminder date (1 day before the task)
+    $reminderDate = date('Y-m-d', strtotime('-1 day', strtotime($taskDate)));
+    
+    try {
+        global $pdo;
+        $stmt = $pdo->prepare("INSERT INTO task_reminders (task_id, reminder_date, sent) VALUES (?, ?, 0)");
+        $stmt->execute([$taskId, $reminderDate]);
+        
+        // If the reminder date is tomorrow, send the notification immediately
+        $tomorrow = date('Y-m-d', strtotime('+1 day'));
+        if ($reminderDate === $tomorrow) {
+            sendReminderNotification($userEmail, $taskTitle, $taskDate, $taskDescription, $priority);
+        }
+    } catch (PDOException $e) {
+        error_log("Error scheduling reminder: " . $e->getMessage());
     }
 }
 
@@ -629,7 +717,7 @@ try {
                                 <input type="checkbox" class="task-checkbox">
                                 <div class="task-content">
                                     <div class="task-title">' . htmlspecialchars($task['title']) . '</div>
-                                    <div class="task-date">' . date('M d, Y H:i', strtotime($task['task_date'])) . '</div>
+                                    <div class="task-date">' . date('M d, Y', strtotime($task['task_date'])) . '</div>
                                     <div class="task-description">' . htmlspecialchars($task['description']) . '</div>
                                 </div>
                                 <div class="task-actions">
@@ -665,7 +753,7 @@ try {
                 </div>
                 <div class="form-group">
                     <label for="taskDate">Date</label>
-                    <input type="datetime-local" id="taskDate" name="taskDate" required>
+                    <input type="date" id="taskDate" name="taskDate" required>
                 </div>
                 <div class="form-group">
                     <label for="taskDescription">Description</label>
@@ -693,19 +781,18 @@ try {
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize FullCalendar
             var calendarEl = document.getElementById('calendar');
-            calendar = new FullCalendar.Calendar(calendarEl, {  // Remove 'var' to use global calendar
+            calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                    right: 'dayGridMonth'
                 },
                 events: 'get_tasks.php',
                 eventClick: function(info) {
                     alert('Task: ' + info.event.title + '\nDescription: ' + info.event.extendedProps.description);
                 },
                 dateClick: function(info) {
-                    // Add date validation when clicking on calendar
                     const selectedDate = new Date(info.dateStr);
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
@@ -716,8 +803,8 @@ try {
                     }
                     
                     showAddTaskModal();
-                    // Pre-fill the date input with the selected date
-                    document.getElementById('taskDate').value = info.dateStr + 'T00:00';
+                    // Update to only set the date without time
+                    document.getElementById('taskDate').value = info.dateStr;
                 }
             });
             calendar.render();
@@ -725,7 +812,7 @@ try {
             // Add min attribute to taskDate input to prevent selecting past dates
             const today = new Date();
             const todayStr = today.toISOString().split('T')[0];
-            document.getElementById('taskDate').setAttribute('min', todayStr + 'T00:00');
+            document.getElementById('taskDate').setAttribute('min', todayStr);
         });
 
         // Modal functions
@@ -740,12 +827,12 @@ try {
         function handleAddTask(event) {
             event.preventDefault();
             
-            // Add date validation before submission
             const selectedDate = new Date(document.getElementById('taskDate').value);
-            const now = new Date();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Reset time to midnight for date-only comparison
 
-            if (selectedDate < now) {
-                alert('Cannot create tasks for past dates. Please select a current or future date and time.');
+            if (selectedDate < today) {
+                alert('Cannot create tasks for past dates. Please select a current or future date.');
                 return;
             }
 
@@ -784,7 +871,7 @@ try {
                         <input type="checkbox" class="task-checkbox">
                         <div class="task-content">
                             <div class="task-title">${document.getElementById('taskTitle').value}</div>
-                            <div class="task-date">${new Date(document.getElementById('taskDate').value).toLocaleString()}</div>
+                            <div class="task-date">${new Date(document.getElementById('taskDate').value).toLocaleDateString()}</div>
                             <div class="task-description">${document.getElementById('taskDescription').value}</div>
                         </div>
                         <div class="task-actions">
@@ -801,6 +888,16 @@ try {
 
                     // Send email notification
                     sendTaskNotification($user['email'], document.getElementById('taskTitle').value, document.getElementById('taskDate').value, document.getElementById('taskDescription').value, priority);
+
+                    // Schedule reminder for the task
+                    scheduleReminder(
+                        data.task_id,
+                        '<?php echo $_SESSION['user_email']; ?>', // Make sure to add user_email to session
+                        document.getElementById('taskTitle').value,
+                        document.getElementById('taskDate').value,
+                        document.getElementById('taskDescription').value,
+                        document.getElementById('taskPriority').value
+                    );
                 }
                 // Commented out error message
                 // else {

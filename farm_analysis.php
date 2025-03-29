@@ -276,23 +276,33 @@ function getPesticideAndFertilizerRecommendations($weather_data, $soil_data) {
         $humidity = $weather_data['main']['humidity'] ?? null;
         $weather_condition = $weather_data['weather'][0]['main'] ?? null;
 
-        // High humidity conditions
+        // High humidity conditions (>80%)
         if ($humidity > 80) {
             $recommendations[] = [
                 'type' => 'pesticide',
-                'title' => 'Fungicide Application',
-                'description' => 'High humidity detected. Apply copper oxychloride (2.5g/L) or bordeaux mixture to prevent fungal diseases.',
-                'timing' => 'Apply during early morning or late evening'
+                'title' => 'Fungal Disease Prevention',
+                'description' => 'Apply copper oxychloride (2.5g/L) or bordeaux mixture (1%) as preventive spray. Focus on leaf axils and stem bases.',
+                'timing' => 'Early morning application recommended'
             ];
         }
 
-        // Rainy conditions
-        if (strtolower($weather_condition) === 'rain') {
+        // Monsoon season conditions
+        if (strtolower($weather_condition) === 'rain' && $humidity > 75) {
             $recommendations[] = [
                 'type' => 'pesticide',
-                'title' => 'Root Disease Prevention',
-                'description' => 'Apply Trichoderma viride (2.5 kg/ha) mixed with organic manure to prevent root rot during wet conditions.',
-                'timing' => 'Apply after rain subsides'
+                'title' => 'Root Disease Management',
+                'description' => 'Apply Trichoderma viride (2.5 kg/ha) mixed with FYM. For severe cases, use Metalaxyl MZ-68 (0.125%).',
+                'timing' => 'Apply after rain subsides when soil is moist'
+            ];
+        }
+
+        // Hot and dry conditions
+        if ($temp > 30 && $humidity < 60) {
+            $recommendations[] = [
+                'type' => 'fertilizer',
+                'title' => 'Stress Management',
+                'description' => 'Apply seaweed extract (2ml/L) with water-soluble fertilizer (19:19:19) at 5g/L for heat stress management.',
+                'timing' => 'Evening application recommended'
             ];
         }
     }
@@ -300,12 +310,21 @@ function getPesticideAndFertilizerRecommendations($weather_data, $soil_data) {
     // Soil-based recommendations
     if (isset($soil_data['avg_ph'])) {
         $ph = $soil_data['avg_ph'];
+        
+        // pH correction recommendations
         if ($ph < 5.5) {
             $recommendations[] = [
                 'type' => 'fertilizer',
                 'title' => 'pH Correction',
-                'description' => 'Apply dolomitic limestone (2-3 tons/ha) to raise soil pH.',
-                'timing' => 'Apply before planting or during land preparation'
+                'description' => 'Apply dolomitic limestone (2-3 tons/ha) mixed with organic matter. Incorporate into soil at 15-20cm depth.',
+                'timing' => 'Pre-monsoon application'
+            ];
+        } elseif ($ph > 6.5) {
+            $recommendations[] = [
+                'type' => 'fertilizer',
+                'title' => 'pH Adjustment',
+                'description' => 'Apply elemental sulfur (500 kg/ha) or aluminum sulfate. Mix with organic compost for better results.',
+                'timing' => 'Apply during land preparation'
             ];
         }
     }
@@ -314,18 +333,18 @@ function getPesticideAndFertilizerRecommendations($weather_data, $soil_data) {
     if (isset($soil_data['avg_nitrogen']) && $soil_data['avg_nitrogen'] < 150) {
         $recommendations[] = [
             'type' => 'fertilizer',
-            'title' => 'Nitrogen Supplement',
-            'description' => 'Apply neem cake (1 kg/plant) and vermicompost (2 kg/plant) to improve nitrogen content.',
-            'timing' => 'Apply during pre-monsoon period'
+            'title' => 'Nitrogen Enhancement',
+            'description' => 'Apply combination of neem cake (1 kg/plant) and vermicompost (2 kg/plant). Supplement with Azospirillum biofertilizer.',
+            'timing' => 'Split application: Pre-monsoon and post-monsoon'
         ];
     }
 
     if (isset($soil_data['avg_phosphorus']) && $soil_data['avg_phosphorus'] < 15) {
         $recommendations[] = [
             'type' => 'fertilizer',
-            'title' => 'Phosphorus Supplement',
-            'description' => 'Apply rock phosphate (100g/plant) mixed with organic manure.',
-            'timing' => 'Apply during planting or as top dressing'
+            'title' => 'Phosphorus Management',
+            'description' => 'Apply rock phosphate (100g/plant) mixed with phosphate solubilizing bacteria. Add bone meal for organic option.',
+            'timing' => 'During planting or as top dressing'
         ];
     }
 
@@ -333,8 +352,26 @@ function getPesticideAndFertilizerRecommendations($weather_data, $soil_data) {
         $recommendations[] = [
             'type' => 'fertilizer',
             'title' => 'Potassium Supplement',
-            'description' => 'Apply wood ash (500g/plant) or potassium sulfate (100g/plant).',
-            'timing' => 'Apply during flowering stage'
+            'description' => 'Apply potassium sulfate (100g/plant) or wood ash (500g/plant). Include banana pseudostem enriched with K.',
+            'timing' => 'Apply during flowering and capsule formation'
+        ];
+    }
+
+    // Seasonal pest management
+    $month = date('n');
+    if ($month >= 6 && $month <= 8) { // Monsoon season
+        $recommendations[] = [
+            'type' => 'pesticide',
+            'title' => 'Monsoon Pest Control',
+            'description' => 'Spray Pseudomonas fluorescens (20g/L) for thrips control. Monitor for shoot borer and apply neem oil (0.5%) if needed.',
+            'timing' => 'Biweekly application during monsoon'
+        ];
+    } elseif ($month >= 12 || $month <= 2) { // Winter season
+        $recommendations[] = [
+            'type' => 'pesticide',
+            'title' => 'Winter Protection',
+            'description' => 'Apply sulfur dust (2kg/ha) for mite control. Use botanical pesticides for thrips management.',
+            'timing' => 'Monthly application during winter'
         ];
     }
 
@@ -557,12 +594,19 @@ $pesticide_fertilizer_recommendations = getPesticideAndFertilizerRecommendations
             background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             padding: 30px;
             margin-top: 35px;
+            color: white;
+        }
+
+        .recommendations-card h2 {
+            color: white;
+            margin-top: 0;
         }
 
         .recommendations-list li {
             margin: 15px 0;
             padding-left: 25px;
             line-height: 1.6;
+            color: rgba(255, 255, 255, 0.9);
         }
 
         /* Update parameter values */
@@ -857,37 +901,74 @@ $pesticide_fertilizer_recommendations = getPesticideAndFertilizerRecommendations
                 <div class="summary-message">
                     <i class="fas fa-clipboard-list summary-icon"></i>
                     <div class="summary-text">
-                        Hello <span class="highlight"><?php echo htmlspecialchars($farmerData['farmer_name'] ?? 'Farmer'); ?></span>, 
-                        based on today's analysis:
                         <?php
                         $optimalCount = 0;
                         $totalConditions = 0;
-                        foreach ($analysis['conditions'] as $condition) {
-                            if ($condition['status'] === 'optimal') {
-                                $optimalCount++;
-                            }
-                            $totalConditions++;
-                        }
-                        
-                        if ($totalConditions > 0) {
-                            $percentage = round(($optimalCount / $totalConditions) * 100);
+                        $soilMessage = '';
+                        $weatherMessage = '';
+
+                        // Check soil conditions
+                        if (isset($farmerData['avg_ph'])) {
+                            $soilParams = ['soil_ph', 'nitrogen_content', 'phosphorus_content', 'potassium_content'];
+                            $soilIssues = [];
                             
-                            if ($percentage >= 75) {
-                                echo "<br><i class='fas fa-circle-check' style='color: #2d6a4f; margin-right: 8px;'></i> 
-                                     <strong style='color: #2d6a4f;'>Excellent conditions!</strong> $percentage% of parameters are in optimal range.
-                                     <br><span style='font-size: 0.9em; margin-top: 8px; display: block;'>
-                                     Your farm is thriving under ideal conditions. Keep up the great work!</span>";
-                            } elseif ($percentage >= 50) {
-                                echo "<br><i class='fas fa-circle-exclamation' style='color: #b7791f; margin-right: 8px;'></i>
-                                     <strong style='color: #b7791f;'>Moderate conditions.</strong> $percentage% of parameters are in optimal range.
-                                     <br><span style='font-size: 0.9em; margin-top: 8px; display: block;'>
-                                     Some parameters need attention. Check the recommendations below.</span>";
-                            } else {
-                                echo "<br><i class='fas fa-triangle-exclamation' style='color: #c53030; margin-right: 8px;'></i>
-                                     <strong style='color: #c53030;'>Action required!</strong> Only $percentage% of parameters are in optimal range.
-                                     <br><span style='font-size: 0.9em; margin-top: 8px; display: block;'>
-                                     Several parameters need immediate attention. Please review recommendations carefully.</span>";
+                            foreach ($soilParams as $param) {
+                                if (isset($analysis['conditions'][$param])) {
+                                    if ($analysis['conditions'][$param]['status'] === 'optimal') {
+                                        $optimalCount++;
+                                    } else {
+                                        $soilIssues[] = str_replace('_', ' ', $param);
+                                    }
+                                    $totalConditions++;
+                                }
                             }
+                            
+                            if (!empty($soilIssues)) {
+                                $soilMessage = "Soil concerns: " . implode(', ', $soilIssues) . ". ";
+                            }
+                        }
+
+                        // Check weather conditions
+                        if (isset($weather_data)) {
+                            $weatherParams = ['temperature', 'humidity'];
+                            $weatherIssues = [];
+                            
+                            foreach ($weatherParams as $param) {
+                                if (isset($analysis['conditions'][$param])) {
+                                    if ($analysis['conditions'][$param]['status'] === 'optimal') {
+                                        $optimalCount++;
+                                    } else {
+                                        $weatherIssues[] = $param;
+                                    }
+                                    $totalConditions++;
+                                }
+                            }
+                            
+                            if (!empty($weatherIssues)) {
+                                $weatherMessage = "Weather concerns: " . implode(', ', $weatherIssues) . ". ";
+                            }
+                        }
+
+                        // Calculate overall health percentage
+                        $percentage = $totalConditions > 0 ? round(($optimalCount / $totalConditions) * 100) : 0;
+                        
+                        echo "Hello " . htmlspecialchars($farmerData['farmer_name'] ?? 'Farmer') . ", based on today's soil test and weather analysis:<br>";
+                        
+                        if ($percentage >= 75) {
+                            echo "<br><i class='fas fa-circle-check' style='color: #2d6a4f; margin-right: 8px;'></i>
+                                 <strong style='color: #2d6a4f;'>Excellent farm conditions!</strong> $percentage% of parameters are in optimal range.
+                                 <br><span style='font-size: 0.9em; margin-top: 8px; display: block;'>
+                                 Your cardamom plantation is showing healthy signs. " . ($soilMessage || $weatherMessage ? "Minor attention needed: " . $soilMessage . $weatherMessage : "Keep maintaining current practices.") . "</span>";
+                        } elseif ($percentage >= 50) {
+                            echo "<br><i class='fas fa-circle-exclamation' style='color: #b7791f; margin-right: 8px;'></i>
+                                 <strong style='color: #b7791f;'>Moderate farm conditions.</strong> $percentage% of parameters are in optimal range.
+                                 <br><span style='font-size: 0.9em; margin-top: 8px; display: block;'>
+                                 Your cardamom plantation needs attention. " . $soilMessage . $weatherMessage . "Check detailed recommendations below.</span>";
+                        } else {
+                            echo "<br><i class='fas fa-triangle-exclamation' style='color: #c53030; margin-right: 8px;'></i>
+                                 <strong style='color: #c53030;'>Immediate action required!</strong> Only $percentage% of parameters are in optimal range.
+                                 <br><span style='font-size: 0.9em; margin-top: 8px; display: block;'>
+                                 Critical issues detected: " . $soilMessage . $weatherMessage . "Please review and implement recommendations promptly.</span>";
                         }
                         ?>
                     </div>

@@ -52,53 +52,88 @@ if ($soil_data) {
 function getFertilizerRecommendations($soil_data, $weather_data) {
     $recommendations = [];
     
-    // Base fertilizer recommendation for cardamom
+    // Base recommendation for cardamom (always included)
     $recommendations[] = [
         'type' => 'NPK',
         'ratio' => '6:6:20',
         'amount' => '250-300 kg/ha',
-        'frequency' => 'Every 3-4 months',
-        'notes' => 'Apply during pre-monsoon period'
+        'frequency' => 'Split into 4 applications',
+        'notes' => 'Apply during pre-monsoon, post-monsoon, winter, and spring seasons'
     ];
 
-    // Check nitrogen levels
+    // pH-based recommendations
+    if (isset($soil_data['ph_level'])) {
+        if ($soil_data['ph_level'] < 5.5) {
+            $recommendations[] = [
+                'type' => 'Agricultural Lime',
+                'amount' => '2-3 tons/ha',
+                'frequency' => 'Once per year',
+                'notes' => 'Apply and incorporate thoroughly into soil. Wait 2-3 weeks before fertilizer application'
+            ];
+        } elseif ($soil_data['ph_level'] > 6.5) {
+            $recommendations[] = [
+                'type' => 'Elemental Sulfur',
+                'amount' => '1-2 tons/ha',
+                'frequency' => 'Once per year',
+                'notes' => 'Apply and incorporate with organic matter to reduce soil pH'
+            ];
+        }
+    }
+
+    // Nitrogen recommendations
     if (!isset($soil_data['nitrogen_content']) || $soil_data['nitrogen_content'] < 0.5) {
         $recommendations[] = [
             'type' => 'Urea',
             'amount' => '100-150 kg/ha',
-            'frequency' => 'Split in 2-3 applications',
-            'notes' => 'Apply during active growth period'
+            'frequency' => 'Split into 3 applications',
+            'notes' => 'Apply during active growth periods. Increase frequency during rainy season'
         ];
     }
 
-    // Check phosphorus levels
-    if (!isset($soil_data['phosphorus_content']) || $soil_data['phosphorus_content'] < 0.3) {
+    // Phosphorus recommendations
+    if (!isset($soil_data['phosphorus_content']) || $soil_data['phosphorus_content'] < 0.05) {
         $recommendations[] = [
             'type' => 'Single Super Phosphate',
             'amount' => '200-250 kg/ha',
-            'frequency' => 'Once per year',
-            'notes' => 'Apply before planting or during soil preparation'
+            'frequency' => 'Split into 2 applications',
+            'notes' => 'Apply during planting and flowering stages'
         ];
     }
 
-    // Check potassium levels
+    // Potassium recommendations
     if (!isset($soil_data['potassium_content']) || $soil_data['potassium_content'] < 1.0) {
         $recommendations[] = [
             'type' => 'Muriate of Potash',
             'amount' => '150-200 kg/ha',
-            'frequency' => 'Split in 2-3 applications',
-            'notes' => 'Essential for pod development'
+            'frequency' => 'Split into 3 applications',
+            'notes' => 'Essential for pod development. Increase during fruiting stage'
         ];
     }
 
-    // Check organic matter
-    if (!isset($soil_data['organic_matter']) || $soil_data['organic_matter'] < 3.0) {
-        $recommendations[] = [
-            'type' => 'Organic Manure',
-            'amount' => '5-10 tons/ha',
-            'frequency' => 'Once per year',
-            'notes' => 'Apply well-decomposed organic matter during soil preparation'
-        ];
+    // Weather-based adjustments
+    if ($weather_data && isset($weather_data['main'])) {
+        $temp = $weather_data['main']['temp'];
+        $humidity = $weather_data['main']['humidity'];
+
+        // Adjust for high temperature
+        if ($temp > 30) {
+            $recommendations[] = [
+                'type' => 'Foliar Spray',
+                'amount' => '20-25 L/ha',
+                'frequency' => 'Every 15 days',
+                'notes' => 'Apply micronutrient mixture during cooler hours to prevent heat stress'
+            ];
+        }
+
+        // Adjust for high humidity
+        if ($humidity > 75) {
+            $recommendations[] = [
+                'type' => 'Calcium Nitrate',
+                'amount' => '15-20 kg/ha',
+                'frequency' => 'Monthly',
+                'notes' => 'Apply to strengthen plant resistance to fungal diseases'
+            ];
+        }
     }
 
     return $recommendations;
@@ -106,41 +141,69 @@ function getFertilizerRecommendations($soil_data, $weather_data) {
 
 $fertilizer_recommendations = getFertilizerRecommendations($soil_data, $weather_data);
 
-// Add this function after getFertilizerRecommendations function
+// Function to get pesticide recommendations
 function getPesticideRecommendations($weather_data) {
     $recommendations = [];
     $current_temp = isset($weather_data['main']['temp']) ? $weather_data['main']['temp'] : 25;
     $humidity = isset($weather_data['main']['humidity']) ? $weather_data['main']['humidity'] : 60;
     
-    // High risk conditions for pests
-    $high_risk = ($humidity > 75 || ($current_temp > 25 && $current_temp < 30));
-    
-    if ($high_risk) {
+    // Base recommendations (always included)
+    $recommendations[] = [
+        'type' => 'Preventive',
+        'name' => 'Neem Oil',
+        'dosage' => '2-3 ml/L water',
+        'frequency' => 'Every 15 days',
+        'notes' => 'Natural pesticide safe for cardamom. Apply early morning or evening'
+    ];
+
+    // High humidity conditions (fungal disease risk)
+    if ($humidity > 75) {
         $recommendations[] = [
-            'type' => 'Preventive',
-            'name' => 'Neem Oil Spray',
-            'dosage' => '2-3 ml/L of water',
-            'frequency' => 'Every 15 days',
-            'notes' => 'Natural pesticide safe for cardamom plants. Apply early morning or evening.'
+            'type' => 'Fungicide',
+            'name' => 'Copper Oxychloride',
+            'dosage' => '2.5 g/L water',
+            'frequency' => 'Every 10 days during high humidity',
+            'notes' => 'Preventive fungicide for leaf rot and capsule rot'
         ];
         
         $recommendations[] = [
-            'type' => 'Curative',
-            'name' => 'Quinalphos',
-            'dosage' => '2ml/L of water',
-            'frequency' => 'When pest infestation is noticed',
-            'notes' => 'Use only if significant pest damage is observed.'
-        ];
-    } else {
-        $recommendations[] = [
-            'type' => 'Monitoring',
-            'name' => 'Regular Inspection',
-            'dosage' => 'N/A',
-            'frequency' => 'Weekly',
-            'notes' => 'Current conditions are not favorable for pests. Continue monitoring.'
+            'type' => 'Fungicide',
+            'name' => 'Bordeaux Mixture',
+            'dosage' => '1%',
+            'frequency' => 'Monthly',
+            'notes' => 'Apply during monsoon season for disease prevention'
         ];
     }
-    
+
+    // Temperature based recommendations
+    if ($current_temp > 28 && $humidity > 65) {
+        $recommendations[] = [
+            'type' => 'Insecticide',
+            'name' => 'Quinalphos',
+            'dosage' => '2 ml/L water',
+            'frequency' => 'When pest infestation is noticed',
+            'notes' => 'Target thrips and shoot borer. Apply during early morning'
+        ];
+    }
+
+    // Add biological control recommendations
+    $recommendations[] = [
+        'type' => 'Biological Control',
+        'name' => 'Trichoderma viride',
+        'dosage' => '2.5 kg/ha',
+        'frequency' => 'Quarterly',
+        'notes' => 'Mix with organic matter and apply to soil for disease prevention'
+    ];
+
+    // Add trap recommendations
+    $recommendations[] = [
+        'type' => 'Physical Control',
+        'name' => 'Pheromone Traps',
+        'dosage' => '4-5 traps/ha',
+        'frequency' => 'Replace lures monthly',
+        'notes' => 'Monitor and control shoot borer population'
+    ];
+
     return $recommendations;
 }
 
@@ -867,6 +930,129 @@ if (isset($_POST['process_upi_payment'])) {
         .status-optimal { background-color: #28a745; color: white; }
         .status-action { background-color: #dc3545; color: white; }
         .status-attention { background-color: #ffc107; color: #000; }
+
+        /* New Styles for Recommendations Layout */
+        .recommendations-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .recommendation-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-header h3 {
+            margin: 0;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        .card-content {
+            padding: 15px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .info-row:last-of-type {
+            border-bottom: none;
+        }
+
+        .label {
+            color: #666;
+        }
+
+        .value {
+            font-weight: 500;
+        }
+
+        .value.warning {
+            color: #ff9800;
+        }
+
+        .value.alert {
+            color: #f44336;
+        }
+
+        .view-details {
+            text-align: right;
+            padding: 10px 0 0;
+        }
+
+        .view-details a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        /* Details Section Styling */
+        .details-section {
+            display: none;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+            padding: 20px;
+        }
+
+        .details-content {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .details-content h4 {
+            color: var(--primary-color);
+            margin: 0 0 15px;
+        }
+
+        .detail-item {
+            margin-bottom: 20px;
+        }
+
+        .detail-item h5 {
+            color: #333;
+            margin: 0 0 10px;
+        }
+
+        .detail-item ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .detail-item li {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .recommendations-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .recommendations-row {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1006,315 +1192,195 @@ if (isset($_POST['process_upi_payment'])) {
                 </div>
             </div>
 
-            <!-- Replace the existing recommendations section with this updated version -->
-            <div class="recommendation-card">
-                <h2>
-                    <i class="fas fa-leaf"></i>
-                    Soil Test Results & Recommendations
-                </h2>
-                
-                <!-- Soil Test Results Table -->
-                <table class="recommendations-table">
-                    <thead>
-                        <tr>
-                            <th>Parameter</th>
-                            <th>Current Level</th>
-                            <th>Optimal Range</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if ($soil_data): ?>
-                            <!-- pH Level -->
-                            <tr>
-                                <td><strong>pH Level</strong></td>
-                                <td><?php echo number_format($soil_data['ph_level'], 2); ?></td>
-                                <td>5.5 - 6.5</td>
-                                <td>
-                                    <?php
-                                    if ($soil_data['ph_level'] < 5.5) {
-                                        echo '<span class="status-badge status-action"><i class="fas fa-exclamation-circle"></i> Acidic</span>';
-                                    } elseif ($soil_data['ph_level'] > 6.5) {
-                                        echo '<span class="status-badge status-attention"><i class="fas fa-exclamation-triangle"></i> Alkaline</span>';
-                                    } else {
-                                        echo '<span class="status-badge status-optimal"><i class="fas fa-check-circle"></i> Optimal</span>';
-                                    }
-                                    ?>
-                                </td>
-                            </tr>
-                            <!-- Nitrogen -->
-                            <tr>
-                                <td><strong>Nitrogen (N)</strong></td>
-                                <td><?php echo number_format($soil_data['nitrogen_content'], 2); ?>%</td>
-                                <td>0.5% - 1.0%</td>
-                                <td>
-                                    <?php
-                                    if ($soil_data['nitrogen_content'] < 0.5) {
-                                        echo '<span class="status-badge status-action"><i class="fas fa-exclamation-circle"></i> Deficient</span>';
-                                    } elseif ($soil_data['nitrogen_content'] > 1.0) {
-                                        echo '<span class="status-badge status-attention"><i class="fas fa-exclamation-triangle"></i> Excessive</span>';
-                                    } else {
-                                        echo '<span class="status-badge status-optimal"><i class="fas fa-check-circle"></i> Optimal</span>';
-                                    }
-                                    ?>
-                                </td>
-                            </tr>
-                            <!-- Phosphorus -->
-                            <tr>
-                                <td><strong>Phosphorus (P)</strong></td>
-                                <td><?php echo number_format($soil_data['phosphorus_content'], 2); ?>%</td>
-                                <td>0.05% - 0.2%</td>
-                                <td>
-                                    <?php
-                                    if ($soil_data['phosphorus_content'] < 0.05) {
-                                        echo '<span class="status-badge status-action"><i class="fas fa-exclamation-circle"></i> Deficient</span>';
-                                    } elseif ($soil_data['phosphorus_content'] > 0.2) {
-                                        echo '<span class="status-badge status-attention"><i class="fas fa-exclamation-triangle"></i> Excessive</span>';
-                                    } else {
-                                        echo '<span class="status-badge status-optimal"><i class="fas fa-check-circle"></i> Optimal</span>';
-                                    }
-                                    ?>
-                                </td>
-                                </tr>
-                            <!-- Potassium -->
-                            <tr>
-                                <td><strong>Potassium (K)</strong></td>
-                                <td><?php echo number_format($soil_data['potassium_content'], 2); ?>%</td>
-                                <td>1.0% - 2.0%</td>
-                                <td>
-                                    <?php
-                                    if ($soil_data['potassium_content'] < 1.0) {
-                                        echo '<span class="status-badge status-action"><i class="fas fa-exclamation-circle"></i> Deficient</span>';
-                                    } elseif ($soil_data['potassium_content'] > 2.0) {
-                                        echo '<span class="status-badge status-attention"><i class="fas fa-exclamation-triangle"></i> Excessive</span>';
-                                    } else {
-                                        echo '<span class="status-badge status-optimal"><i class="fas fa-check-circle"></i> Optimal</span>';
-                                    }
-                                    ?>
-                                </td>
-                            </tr>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="4" class="text-center">
-                                    <p class="alert-info">No recent soil test data available. Please conduct a soil test.</p>
-                                    <a href="soil_test.php" class="btn btn-primary mt-3">
-                                        <i class="fas fa-flask"></i> Conduct Soil Test
-                                    </a>
-                                </td>
-                            </tr>
-                        <?php endif; ?>
-                        </tbody>
-                    </table>
-                    
-                <!-- Fertilizer Recommendations -->
-                <?php if ($soil_data): ?>
-                <div class="recommendation-content">
-                    <h3><i class="fas fa-lightbulb"></i> Fertilizer Recommendations</h3>
-                    <div class="recommendation-grid">
-                        <!-- Base Recommendation -->
-                        <div class="recommendation-item">
-                            <h5><i class="fas fa-seedling"></i> Base Fertilizer Plan</h5>
-                            <ul>
-                                <li>Apply NPK (6:6:20) at 250-300 kg/ha as base fertilizer</li>
-                                <li>Split application into 3-4 doses throughout the growing season</li>
-                                <li>First application: Pre-monsoon period</li>
-                                <li>Subsequent applications: Every 3-4 months</li>
-                            </ul>
-                        </div>
-
-                        <!-- pH Specific Recommendations -->
-                        <div class="recommendation-item">
-                            <h5><i class="fas fa-vial"></i> pH Management</h5>
-                            <?php if ($soil_data['ph_level'] < 5.5): ?>
-                                <ul>
-                                    <li>Apply agricultural lime (2-3 tons/ha)</li>
-                                    <li>Mix lime thoroughly with soil</li>
-                                    <li>Allow 2-3 weeks before fertilizer application</li>
-                                    <li>Consider dolomitic lime for additional Mg</li>
-                                </ul>
-                            <?php elseif ($soil_data['ph_level'] > 6.5): ?>
-                                <ul>
-                                    <li>Apply elemental sulfur (1-2 tons/ha)</li>
-                                    <li>Incorporate organic matter</li>
-                                    <li>Use acidifying fertilizers</li>
-                                    <li>Monitor pH changes monthly</li>
-                                </ul>
-                            <?php else: ?>
-                                <ul>
-                                    <li>Maintain current pH management practices</li>
-                                    <li>Monitor pH quarterly</li>
-                                </ul>
-                            <?php endif; ?>
-                        </div>
-
-                        <!-- Nutrient Specific Recommendations -->
-                        <div class="recommendation-item">
-                            <h5><i class="fas fa-flask"></i> Nutrient Management</h5>
-                            <ul>
-                                <?php if ($soil_data['nitrogen_content'] < 0.5): ?>
-                                    <li>Apply Urea (46-0-0) at 100-150 kg/ha</li>
-                                    <li>Split into 3 applications</li>
-                    <?php endif; ?>
-                                
-                                <?php if ($soil_data['phosphorus_content'] < 0.05): ?>
-                                    <li>Apply Single Super Phosphate at 200-250 kg/ha</li>
-                                    <li>Apply during soil preparation</li>
-                <?php endif; ?>
-                
-                                <?php if ($soil_data['potassium_content'] < 1.0): ?>
-                                    <li>Apply Muriate of Potash at 150-200 kg/ha</li>
-                                    <li>Split into 2-3 applications</li>
-                                <?php endif; ?>
-                                
-                                <?php if ($soil_data['nitrogen_content'] >= 0.5 && 
-                                         $soil_data['phosphorus_content'] >= 0.05 && 
-                                         $soil_data['potassium_content'] >= 1.0): ?>
-                                    <li>Maintain current fertilization program</li>
-                                    <li>Monitor nutrient levels quarterly</li>
-                                <?php endif; ?>
-                    </ul>
-            </div>
-
-                        <!-- Application Schedule -->
-                        <div class="recommendation-item">
-                            <h5><i class="fas fa-calendar-alt"></i> Application Schedule</h5>
-                            <ul>
-                                <li>First Application: Pre-monsoon (May-June)</li>
-                                <li>Second Application: Post-monsoon (September-October)</li>
-                                <li>Third Application: Winter (December-January)</li>
-                                <li>Final Application: Spring (March-April)</li>
-                                <li>Note: Adjust timing based on local weather conditions</li>
-                            </ul>
+            <!-- Replace the existing recommendations section with this new layout -->
+            <div class="recommendations-row">
+                <!-- Fertilizer Box -->
+                <div class="recommendation-card">
+                    <div class="card-header">
+                        <i class="fas fa-leaf"></i>
+                        <h3>Fertilizer Recommendations</h3>
                     </div>
+                    <div class="card-content">
+                        <div class="info-row">
+                            <span class="label">NPK Base:</span>
+                            <span class="value">6:6:20 (250-300 kg/ha)</span>
                         </div>
+                        <div class="info-row">
+                            <span class="label">pH Correction:</span>
+                            <span class="value warning">Agricultural Lime Needed</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Nitrogen:</span>
+                            <span class="value alert">Urea Supplement Required</span>
+                        </div>
+                        <div class="view-details">
+                            <a href="javascript:void(0)" onclick="toggleDetails('fertilizer-details')">View Details →</a>
+                        </div>
+                    </div>
+                    <!-- Expandable Details Section -->
+                    <div id="fertilizer-details" class="details-section">
+                        <div class="details-content">
+                            <h4>Detailed Recommendations</h4>
+                            <div class="detail-item">
+                                <h5>NPK Application</h5>
+                                <ul>
+                                    <li>Apply NPK (6:6:20) at 250-300 kg/ha</li>
+                                    <li>Split into 4 applications throughout the year</li>
+                                    <li>First application: Pre-monsoon (May-June)</li>
+                                    <li>Subsequent applications: Every 3 months</li>
+                                </ul>
+                            </div>
+                            <div class="detail-item">
+                                <h5>pH Correction Plan</h5>
+                                <ul>
+                                    <li>Apply agricultural lime at 2-3 tons/ha</li>
+                                    <li>Incorporate thoroughly into soil</li>
+                                    <li>Wait 2-3 weeks before fertilizer application</li>
+                                    <li>Monitor pH levels monthly</li>
+                                </ul>
+                            </div>
+                            <div class="detail-item">
+                                <h5>Nitrogen Management</h5>
+                                <ul>
+                                    <li>Apply Urea at 100-150 kg/ha</li>
+                                    <li>Split into 3 applications</li>
+                                    <li>Apply during active growth periods</li>
+                                    <li>Increase frequency during rainy season</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <?php endif; ?>
+
+                <!-- Weather Impact Box -->
+                <div class="recommendation-card">
+                    <div class="card-header">
+                        <i class="fas fa-cloud-sun"></i>
+                        <h3>Weather Impact</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="info-row">
+                            <span class="label">Temperature:</span>
+                            <span class="value"><?php echo isset($weather_data['main']['temp']) ? round($weather_data['main']['temp']) : '0'; ?>°C</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Humidity:</span>
+                            <span class="value"><?php echo isset($weather_data['main']['humidity']) ? $weather_data['main']['humidity'] : '0'; ?>%</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Risk Level:</span>
+                            <span class="value <?php echo ($weather_data['main']['humidity'] > 75) ? 'alert' : ''; ?>">
+                                <?php echo ($weather_data['main']['humidity'] > 75) ? 'High' : 'Normal'; ?>
+                            </span>
+                        </div>
+                        <div class="view-details">
+                            <a href="javascript:void(0)" onclick="toggleDetails('weather-details')">View Details →</a>
+                        </div>
+                    </div>
+                    <!-- Expandable Details Section -->
+                    <div id="weather-details" class="details-section">
+                        <div class="details-content">
+                            <h4>Weather Impact Analysis</h4>
+                            <div class="detail-item">
+                                <h5>Current Conditions</h5>
+                                <ul>
+                                    <li>Temperature: Optimal range for growth</li>
+                                    <li>Humidity: High risk for disease development</li>
+                                    <li>Forecast: Monitor for potential disease outbreak</li>
+                                </ul>
+                            </div>
+                            <div class="detail-item">
+                                <h5>Recommended Actions</h5>
+                                <ul>
+                                    <li>Increase ventilation in plantation</li>
+                                    <li>Monitor for early signs of disease</li>
+                                    <li>Prepare preventive fungicide application</li>
+                                    <li>Adjust irrigation schedule</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pesticide Box -->
+                <div class="recommendation-card">
+                    <div class="card-header">
+                        <i class="fas fa-shield-alt"></i>
+                        <h3>Pesticide Recommendations</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="info-row">
+                            <span class="label">Base Treatment:</span>
+                            <span class="value">Neem Oil (2-3 ml/L)</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Disease Risk:</span>
+                            <span class="value warning">Fungicide Required</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Prevention:</span>
+                            <span class="value">Pheromone Traps Active</span>
+                        </div>
+                        <div class="view-details">
+                            <a href="javascript:void(0)" onclick="toggleDetails('pesticide-details')">View Details →</a>
+                        </div>
+                    </div>
+                    <!-- Expandable Details Section -->
+                    <div id="pesticide-details" class="details-section">
+                        <div class="details-content">
+                            <h4>Pesticide Application Guide</h4>
+                            <div class="detail-item">
+                                <h5>Base Treatment</h5>
+                                <ul>
+                                    <li>Apply Neem oil solution (2-3 ml/L)</li>
+                                    <li>Spray during early morning or evening</li>
+                                    <li>Repeat every 15 days</li>
+                                    <li>Ensure complete coverage of foliage</li>
+                                </ul>
+                            </div>
+                            <div class="detail-item">
+                                <h5>Disease Management</h5>
+                                <ul>
+                                    <li>Apply Copper Oxychloride (2.5 g/L)</li>
+                                    <li>Use Bordeaux mixture monthly</li>
+                                    <li>Monitor for disease symptoms</li>
+                                    <li>Maintain field hygiene</li>
+                                </ul>
+                            </div>
+                            <div class="detail-item">
+                                <h5>Preventive Measures</h5>
+                                <ul>
+                                    <li>Install 4-5 pheromone traps per hectare</li>
+                                    <li>Replace trap lures monthly</li>
+                                    <li>Monitor trap catches weekly</li>
+                                    <li>Record pest population trends</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Add Weather Impact Section -->
-            <div class="recommendation-card">
-                <h2>
-                    <i class="fas fa-cloud-sun"></i>
-                    Weather Impact & Recommendations
-                </h2>
-                <table class="recommendations-table">
-                    <thead>
-                        <tr>
-                            <th>Factor</th>
-                            <th>Current Condition</th>
-                            <th>Impact</th>
-                            <th>Action Required</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if ($weather_data): ?>
-                            <tr>
-                                <td><strong>Temperature</strong></td>
-                                <td><?php echo round($weather_data['main']['temp']); ?>°C</td>
-                                <td>
-                                    <?php
-                                    $temp = $weather_data['main']['temp'];
-                                    if ($temp < 15) {
-                                        echo '<span class="status-badge status-attention">Cold Stress Risk</span>';
-                                    } elseif ($temp > 30) {
-                                        echo '<span class="status-badge status-action">Heat Stress Risk</span>';
-                                    } else {
-                                        echo '<span class="status-badge status-optimal">Optimal</span>';
-                                    }
-                                    ?>
-                                </td>
-                                <td>
-                                    <?php
-                                    if ($temp < 15) {
-                                        echo 'Consider protective measures against cold';
-                                    } elseif ($temp > 30) {
-                                        echo 'Ensure adequate irrigation and mulching';
-                                    } else {
-                                        echo 'Continue regular maintenance';
-                                    }
-                                    ?>
-                                </td>
-                            </tr>
-                            <!-- Add similar rows for Humidity and other weather factors -->
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-    </div>
+            <script>
+                function toggleDetails(detailsId) {
+                    const detailsSection = document.getElementById(detailsId);
+                    const allDetails = document.querySelectorAll('.details-section');
+                    
+                    // Close all other details sections
+                    allDetails.forEach(section => {
+                        if (section.id !== detailsId && section.style.display === 'block') {
+                            section.style.display = 'none';
+                        }
+                    });
 
-            <!-- Add Pesticide Recommendations -->
-            <div class="recommendation-card">
-                <h2>
-                    <i class="fas fa-shield-alt"></i>
-                    Pesticide Recommendations
-                </h2>
-                <table class="recommendations-table">
-                    <thead>
-                        <tr>
-                            <th>Condition</th>
-                            <th>Risk Level</th>
-                            <th>Treatment</th>
-                            <th>Application Guide</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if ($weather_data): ?>
-                            <?php
-                            $humidity = $weather_data['main']['humidity'];
-                            $temp = $weather_data['main']['temp'];
-                            $high_risk = ($humidity > 75 || ($temp > 25 && $temp < 30));
-                            ?>
-                            <tr>
-                                <td><strong>Disease Risk</strong></td>
-                                <td>
-                                    <?php if ($high_risk): ?>
-                                        <span class="status-badge status-action"><i class="fas fa-exclamation-circle"></i> High Risk</span>
-                                    <?php else: ?>
-                                        <span class="status-badge status-optimal"><i class="fas fa-check-circle"></i> Low Risk</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <?php if ($high_risk): ?>
-                                        Neem Oil Spray + Preventive Fungicide
-                                    <?php else: ?>
-                                        Regular Monitoring
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <?php if ($high_risk): ?>
-                                        Apply neem oil (2-3 ml/L) early morning or evening. Monitor for disease symptoms daily.
-                                    <?php else: ?>
-                                        Continue weekly inspections. No immediate action required.
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Pest Control</strong></td>
-                                <td>
-                                    <?php if ($humidity > 75): ?>
-                                        <span class="status-badge status-attention"><i class="fas fa-exclamation-triangle"></i> Medium Risk</span>
-                                    <?php else: ?>
-                                        <span class="status-badge status-optimal"><i class="fas fa-check-circle"></i> Low Risk</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <?php if ($humidity > 75): ?>
-                                        Biological Control + Sticky Traps
-                                    <?php else: ?>
-                                        Preventive Measures
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <?php if ($humidity > 75): ?>
-                                        Install yellow sticky traps (1 trap/100 sq.m). Apply neem cake to soil (100 kg/ha).
-                                    <?php else: ?>
-                                        Maintain field hygiene and monitor pest populations.
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
+                    // Toggle the clicked section
+                    if (detailsSection.style.display === 'block') {
+                        detailsSection.style.display = 'none';
+                    } else {
+                        detailsSection.style.display = 'block';
+                    }
+                }
+            </script>
         </div>
     </div>
 
